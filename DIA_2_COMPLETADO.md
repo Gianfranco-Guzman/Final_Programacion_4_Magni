@@ -42,7 +42,7 @@ docker-compose up -d
 
 # Si aún no lo hiciste en DÍA 1:
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+venv\Scripts\activate # Windows
 pip install -r requirements.txt
 
 # Crear tablas + seed

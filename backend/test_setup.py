@@ -120,19 +120,19 @@ def check_security():
         print(f"  ✓ Password verification OK")
         
         # Test JWT
-        token = create_access_token({"sub": 1})
+        token = create_access_token({"sub": "1"})
         if not token:
             print(f"  ✗ JWT creation failed")
             return False
-        
+
         print(f"  ✓ JWT creation OK: {len(token)} caracteres")
-        
+
         # Decode JWT
         payload = decode_token(token)
-        if not payload or payload.get("sub") != 1:
+        if not payload or payload.get("sub") != "1":
             print(f"  ✗ JWT decode failed")
             return False
-        
+
         print(f"  ✓ JWT decode OK: user_id={payload.get('sub')}")
         
         return True

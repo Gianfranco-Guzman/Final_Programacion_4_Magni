@@ -1,7 +1,8 @@
 import React from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
+import { useUIStore } from '@store/uiStore'
 import { useAuth } from '@hooks/useAuth'
-import { useNavigate } from 'react-router-dom'
 import { Button } from '@components/Button'
 
 interface MainLayoutProps {
@@ -12,6 +13,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navigate = useNavigate()
   const usuario = useAuthStore((state) => state.usuario)
   const { logout } = useAuth()
+  const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
 
   const handleLogout = () => {
     logout()
@@ -21,30 +23,27 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Navbar */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-white shadow-sm border-b border-gray-200 z-30 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold text-blue-600">🍕 Food Store</h1>
-            </div>
-
-            {/* Center - Links */}
-            <div className="flex-1 flex justify-center gap-8">
-              <a
-                href="/catalogo"
-                className="text-gray-700 hover:text-blue-600 font-medium"
+            {/* Hamburger + Logo */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={toggleSidebar}
+                className="flex flex-col justify-center items-center w-10 h-10 rounded hover:bg-gray-100 gap-1.5"
+                aria-label="Menú"
               >
-                Catálogo
-              </a>
+                <span className="block w-6 h-0.5 bg-gray-700" />
+                <span className="block w-6 h-0.5 bg-gray-700" />
+                <span className="block w-6 h-0.5 bg-gray-700" />
+              </button>
+              <h1 className="text-xl font-bold text-blue-600">Food Store</h1>
             </div>
 
-            {/* Right - User & Logout */}
+            {/* Right — User & Logout */}
             <div className="flex items-center gap-4">
               {usuario && (
-                <div className="text-sm text-gray-700">
-                  <span className="font-medium">{usuario.nombre}</span>
-                </div>
+                <span className="text-sm text-gray-700 font-medium">{usuario.nombre}</span>
               )}
               <Button variant="secondary" size="sm" onClick={handleLogout}>
                 Salir
@@ -53,6 +52,53 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </div>
         </div>
       </nav>
+
+      {/* Sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-40"
+          onClick={closeSidebar}
+        />
+      )}
+
+      {/* Sidebar panel */}
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform transition-transform duration-200 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between px-4 h-16 border-b border-gray-200">
+          <span className="text-lg font-bold text-blue-600">Food Store</span>
+          <button
+            onClick={closeSidebar}
+            className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500"
+          >
+            ✕
+          </button>
+        </div>
+
+        <nav className="p-4 flex flex-col gap-2">
+          <Link
+            to="/catalogo"
+            onClick={closeSidebar}
+            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+          >
+            Catálogo
+          </Link>
+        </nav>
+
+        {usuario && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500 mb-2">Sesión: {usuario.nombre}</p>
+            <button
+              onClick={() => { closeSidebar(); handleLogout() }}
+              className="w-full text-left px-3 py-2 rounded text-red-600 hover:bg-red-50 font-medium text-sm"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        )}
+      </aside>
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">

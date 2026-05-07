@@ -15,7 +15,19 @@ export interface GetProductosParams {
   categoria_id?: number | null
   search?: string
   disponible?: boolean
+  incluir_baja?: boolean
 }
+
+export interface ProductoCreateInput {
+  nombre: string
+  descripcion?: string
+  precio: number
+  stock_cantidad: number
+  categoria_id: number
+  codigo: string
+}
+
+export type ProductoUpdateInput = Partial<ProductoCreateInput>
 
 export const productosApi = {
   getProductos: async (params?: GetProductosParams): Promise<PaginatedResponse<Producto>> => {
@@ -33,6 +45,21 @@ export const productosApi = {
 
   getCategorias: async () => {
     const response = await axiosClient.get('/productos/categorias/')
+    return response.data
+  },
+
+  createProducto: async (data: ProductoCreateInput): Promise<Producto> => {
+    const response = await axiosClient.post<Producto>('/productos/', data)
+    return response.data
+  },
+
+  updateProducto: async (id: number, data: ProductoUpdateInput): Promise<Producto> => {
+    const response = await axiosClient.put<Producto>(`/productos/${id}`, data)
+    return response.data
+  },
+
+  darDeBajaProducto: async (id: number): Promise<Producto> => {
+    const response = await axiosClient.patch<Producto>(`/productos/${id}/baja`)
     return response.data
   },
 }

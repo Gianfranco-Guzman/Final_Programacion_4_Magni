@@ -32,10 +32,9 @@ class Producto(SQLModel, table=True):
         description="ID de la categoría"
     )
     codigo: str = Field(
-        unique=True,
         index=True,
         max_length=50,
-        description="Código único del producto (SKU)"
+        description="Código único entre productos activos (SKU). Unicidad validada a nivel servicio."
     )
     deleted_at: Optional[datetime] = Field(
         default=None,

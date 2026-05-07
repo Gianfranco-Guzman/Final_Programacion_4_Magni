@@ -7,6 +7,17 @@ interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
+function hasStoredToken(): boolean {
+  try {
+    const raw = localStorage.getItem('auth-store')
+    if (!raw) return false
+    const parsed = JSON.parse(raw)
+    return !!parsed?.state?.accessToken
+  } catch {
+    return false
+  }
+}
+
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const loading = useAuthStore((state) => state.loading)
@@ -19,7 +30,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     )
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !hasStoredToken()) {
     return <Navigate to="/login" replace />
   }
 

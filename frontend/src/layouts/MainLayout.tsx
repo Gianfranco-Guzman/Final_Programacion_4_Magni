@@ -22,11 +22,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Navbar */}
       <nav className="bg-white shadow-sm border-b border-gray-200 z-30 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Hamburger + Logo */}
             <div className="flex items-center gap-4">
               <button
                 onClick={toggleSidebar}
@@ -40,7 +38,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <h1 className="text-xl font-bold text-blue-600">Food Store</h1>
             </div>
 
-            {/* Right — User & Logout */}
             <div className="flex items-center gap-4">
               {usuario && (
                 <span className="text-sm text-gray-700 font-medium">{usuario.nombre}</span>
@@ -53,7 +50,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       </nav>
 
-      {/* Sidebar overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-30 z-40"
@@ -61,7 +57,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         />
       )}
 
-      {/* Sidebar panel */}
       <aside
         className={`fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform transition-transform duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -85,6 +80,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           >
             Catálogo
           </Link>
+          <Link
+            to="/productos/nuevo"
+            onClick={closeSidebar}
+            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+          >
+            Nuevo Producto
+          </Link>
         </nav>
 
         {usuario && (
@@ -100,12 +102,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         )}
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
 
-      {/* Footer */}
       <footer className="bg-gray-100 border-t border-gray-200 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600 text-sm">
           <p>&copy; 2026 Food Store. Todos los derechos reservados.</p>

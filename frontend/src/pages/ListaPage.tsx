@@ -1,42 +1,27 @@
-import React, { useState } from 'react'
+import React from 'react'
+import { Link } from 'react-router-dom'
 import { useProductos, useCategorias, useDarDeBaja, useReactivar } from '@hooks/useProductos'
-import { ProductGrid } from './ProductGrid'
-import { ProductFilters } from './ProductFilters'
-import { ProductForm } from './ProductForm'
+import { useProductosContext } from '@context/ProductosContext'
+import { ProductGrid } from '@features/store/ProductGrid'
+import { ProductFilters } from '@features/store/ProductFilters'
 import { Spinner } from '@components/Spinner'
 import { Button } from '@components/Button'
-import { Producto } from '@types/index'
 
-export const CatalogoPage: React.FC = () => {
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [categoriaId, setCategoriaId] = useState<number | null>(null)
-  const [disponible, setDisponible] = useState<boolean | null>(null)
-  const [showDeleted, setShowDeleted] = useState(false)
-  const [formOpen, setFormOpen] = useState(false)
-  const [editingProducto, setEditingProducto] = useState<Producto | null>(null)
+export const ListaPage: React.FC = () => {
+  const { state, dispatch } = useProductosContext()
 
   const { data: productosData, isLoading, error } = useProductos({
-    page,
+    page: state.page,
     size: 8,
-    search: search || undefined,
-    categoria_id: categoriaId || undefined,
-    disponible: disponible ?? undefined,
-    incluir_baja: showDeleted,
+    search: state.search || undefined,
+    categoria_id: state.categoriaId || undefined,
+    disponible: state.disponible ?? undefined,
+    incluir_baja: state.showDeleted,
   })
 
   const { data: categorias = [] } = useCategorias()
   const darDeBajaMutation = useDarDeBaja()
   const reactivarMutation = useReactivar()
-
-  const handleSearchChange = (value: string) => { setSearch(value); setPage(1) }
-  const handleCategoriaChange = (catId: number | null) => { setCategoriaId(catId); setPage(1) }
-  const handleDisponibleChange = (disp: boolean | null) => { setDisponible(disp); setPage(1) }
-
-  const handleEdit = (producto: Producto) => {
-    setEditingProducto(producto)
-    setFormOpen(true)
-  }
 
   const handleDarDeBaja = (id: number) => {
     if (!window.confirm('¿Dar de baja este producto?')) return
@@ -52,9 +37,8 @@ export const CatalogoPage: React.FC = () => {
     })
   }
 
-  const handleNuevoProducto = () => {
-    setEditingProducto(null)
-    setFormOpen(true)
+  const handleResetFilters = () => {
+    dispatch({ type: 'RESET_FILTROS' })
   }
 
   if (error) {
@@ -70,7 +54,6 @@ export const CatalogoPage: React.FC = () => {
 
   return (
     <div>
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-1">Catálogo</h1>
@@ -78,27 +61,28 @@ export const CatalogoPage: React.FC = () => {
             {productosData ? `${productosData.total} productos` : 'Cargando...'}
           </p>
         </div>
-        <Button onClick={handleNuevoProducto}>+ Nuevo Producto</Button>
+        <Link to="/productos/nuevo">
+          <Button>+ Nuevo Producto</Button>
+        </Link>
       </div>
 
-      {/* Filters */}
       <ProductFilters
-        search={search}
-        onSearchChange={handleSearchChange}
-        categoriaId={categoriaId}
-        onCategoriaChange={handleCategoriaChange}
+        search={state.search}
+        onSearchChange={(v) => dispatch({ type: 'SET_SEARCH', payload: v })}
+        categoriaId={state.categoriaId}
+        onCategoriaChange={(v) => dispatch({ type: 'SET_CATEGORIA', payload: v })}
         categorias={categorias}
-        disponible={disponible}
-        onDisponibleChange={handleDisponibleChange}
+        disponible={state.disponible}
+        onDisponibleChange={(v) => dispatch({ type: 'SET_DISPONIBLE', payload: v })}
+        onResetFilters={handleResetFilters}
       />
 
-      {/* Show deleted toggle */}
       <div className="flex items-center gap-2 mb-4">
         <input
           type="checkbox"
           id="show-deleted"
-          checked={showDeleted}
-          onChange={(e) => { setShowDeleted(e.target.checked); setPage(1) }}
+          checked={state.showDeleted}
+          onChange={(e) => dispatch({ type: 'SET_SHOW_DELETED', payload: e.target.checked })}
           className="w-4 h-4 rounded accent-red-500"
         />
         <label htmlFor="show-deleted" className="text-sm text-gray-600 cursor-pointer">
@@ -113,7 +97,6 @@ export const CatalogoPage: React.FC = () => {
           {productosData && (
             <ProductGrid
               productos={productosData.items}
-              onEdit={handleEdit}
               onDarDeBaja={handleDarDeBaja}
               onReactivar={handleReactivar}
             />
@@ -122,33 +105,23 @@ export const CatalogoPage: React.FC = () => {
           {productosData && productosData.pages > 1 && (
             <div className="flex justify-center gap-2 mt-8 mb-8">
               <Button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
+                onClick={() => dispatch({ type: 'SET_PAGE', payload: Math.max(1, state.page - 1) })}
+                disabled={state.page === 1}
               >
                 Anterior
               </Button>
               <span className="flex items-center text-gray-600">
-                Página {page} de {productosData.pages}
+                Página {state.page} de {productosData.pages}
               </span>
               <Button
-                onClick={() => setPage(Math.min(productosData.pages, page + 1))}
-                disabled={page === productosData.pages}
+                onClick={() => dispatch({ type: 'SET_PAGE', payload: Math.min(productosData.pages, state.page + 1) })}
+                disabled={state.page === productosData.pages}
               >
                 Siguiente
               </Button>
             </div>
           )}
         </>
-      )}
-
-      {/* Product Form Modal */}
-      {formOpen && (
-        <ProductForm
-          producto={editingProducto ?? undefined}
-          categorias={categorias}
-          onClose={() => setFormOpen(false)}
-          onSuccess={() => setFormOpen(false)}
-        />
       )}
     </div>
   )

@@ -14,13 +14,14 @@ interface AuthState {
   logout: () => void
   setToken: (token: string) => void
   setUser: (user: Usuario) => void
+  setLoading: (loading: boolean) => void
   clearError: () => void
   fetchMe: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       accessToken: null,
       usuario: null,
       isAuthenticated: false,
@@ -64,6 +65,10 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user: Usuario) => {
         set({ usuario: user, isAuthenticated: true })
+      },
+
+      setLoading: (loading: boolean) => {
+        set({ loading })
       },
 
       clearError: () => {

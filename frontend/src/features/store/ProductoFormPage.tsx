@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Producto, Categoria } from '@types/index'
 import { useCreateProducto, useUpdateProducto } from '@hooks/useProductos'
 import { ProductoCreateInput } from '@api/productosApi'
 
-interface ProductFormProps {
+interface ProductoFormPageProps {
   producto?: Producto
   categorias: Categoria[]
-  onClose: () => void
-  onSuccess: () => void
+  title: string
 }
 
 const empty: ProductoCreateInput = {
@@ -19,12 +19,12 @@ const empty: ProductoCreateInput = {
   descripcion: '',
 }
 
-export const ProductForm: React.FC<ProductFormProps> = ({
+export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
   producto,
   categorias,
-  onClose,
-  onSuccess,
+  title,
 }) => {
+  const navigate = useNavigate()
   const isEdit = producto != null
   const [form, setForm] = useState<ProductoCreateInput>(empty)
   const [error, setError] = useState('')
@@ -71,31 +71,26 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       } else {
         await createMutation.mutateAsync(form)
       }
-      onSuccess()
-      onClose()
+      navigate('/catalogo')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al guardar el producto')
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">
-            {isEdit ? 'Editar Producto' : 'Nuevo Producto'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 text-gray-500"
-          >
-            ✕
-          </button>
-        </div>
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+        <button
+          onClick={() => navigate('/catalogo')}
+          className="text-sm text-gray-600 hover:text-gray-800 underline"
+        >
+          Volver al catálogo
+        </button>
+      </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-4 flex flex-col gap-4">
+      <div className="bg-white rounded-lg shadow-md max-w-lg">
+        <form onSubmit={handleSubmit} className="px-6 py-6 flex flex-col gap-4">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
               {error}
@@ -186,11 +181,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             />
           </div>
 
-          {/* Actions */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => navigate('/catalogo')}
               className="flex-1 border border-gray-300 text-gray-700 rounded px-4 py-2 text-sm hover:bg-gray-50"
             >
               Cancelar

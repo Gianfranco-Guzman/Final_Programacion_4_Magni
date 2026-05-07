@@ -10,6 +10,7 @@ interface ProductFiltersProps {
   categorias: Categoria[]
   disponible?: boolean | null
   onDisponibleChange: (disponible: boolean | null) => void
+  onResetFilters: () => void
 }
 
 export const ProductFilters: React.FC<ProductFiltersProps> = ({
@@ -20,13 +21,13 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   categorias,
   disponible,
   onDisponibleChange,
+  onResetFilters,
 }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mb-6">
       <h2 className="font-semibold text-gray-800 mb-4">Filtros</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Búsqueda */}
         <Input
           label="Buscar producto"
           placeholder="Nombre o código..."
@@ -34,7 +35,6 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           onChange={(e) => onSearchChange(e.target.value)}
         />
 
-        {/* Categoría */}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Categoría</label>
           <select
@@ -51,7 +51,6 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           </select>
         </div>
 
-        {/* Disponibilidad */}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Disponibilidad</label>
           <select
@@ -68,6 +67,16 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             <option value="unavailable">Sin stock</option>
           </select>
         </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <button
+          type="button"
+          onClick={onResetFilters}
+          className="text-sm text-gray-600 hover:text-gray-800 underline"
+        >
+          Limpiar filtros
+        </button>
       </div>
     </div>
   )

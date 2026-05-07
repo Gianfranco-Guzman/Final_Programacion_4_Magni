@@ -74,7 +74,7 @@ export const LoginForm: React.FC = () => {
           <Input
             label="Email"
             type="email"
-            placeholder="admin@example.com"
+            placeholder="admin@foodstore.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             error={errors.email}
@@ -103,7 +103,7 @@ export const LoginForm: React.FC = () => {
         <div className="mt-6 text-center text-sm text-gray-600">
           <p>Usuario de prueba:</p>
           <p className="font-mono text-xs mt-2">
-            admin@example.com / admin123
+            admin@foodstore.com / admin123
           </p>
         </div>
       </Card>

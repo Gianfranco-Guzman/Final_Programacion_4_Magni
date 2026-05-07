@@ -29,7 +29,7 @@ def populate_seed_data() -> None:
         admin_rol = session.exec(select(Rol).where(Rol.nombre == "ADMIN")).first()
 
         admin_user = Usuario(
-            email="admin@foodstore.local",
+            email="admin@foodstore.com",
             password_hash=hash_password("admin123"),
             nombre="Administrador",
             is_active=True,

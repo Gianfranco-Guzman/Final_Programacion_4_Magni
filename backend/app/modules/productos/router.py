@@ -1,19 +1,21 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
-from sqlmodel import Session, select, func
 from typing import Optional
-from datetime import datetime
 
-from app.db.base import get_session
-from app.db.models import Producto, Categoria
-from app.db.models.usuario import Usuario
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlmodel import Session, func, select
+
 from app.core.dependencies import get_current_user
+from app.db.base import get_session
+from app.db.models import Categoria, Producto
+from app.db.models.usuario import Usuario
+from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.productos.schemas import (
-    ProductoRead,
-    ProductoCreate,
-    ProductoUpdate,
-    PaginatedResponse,
     CategoriaRead,
+    PaginatedResponse,
+    ProductoCreate,
+    ProductoRead,
+    ProductoUpdate,
 )
+from app.modules.productos.service import ProductoService
 
 router = APIRouter(tags=["productos"])
 
@@ -109,29 +111,10 @@ def obtener_producto(producto_id: int, session: Session = Depends(get_session)):
 )
 def crear_producto(
     data: ProductoCreate,
-    session: Session = Depends(get_session),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
-    existing = session.exec(
-        select(Producto).where(
-            (Producto.codigo == data.codigo) & (Producto.deleted_at.is_(None))
-        )
-    ).first()
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Ya existe un producto activo con el código '{data.codigo}'",
-        )
-
-    now = datetime.utcnow()
-    producto = Producto(
-        **data.dict(),
-        created_at=now,
-        updated_at=now,
-    )
-    session.add(producto)
-    session.commit()
-    session.refresh(producto)
+    producto = ProductoService.crear_producto(data, uow)
     return ProductoRead.from_orm(producto)
 
 
@@ -143,39 +126,10 @@ def crear_producto(
 def actualizar_producto(
     producto_id: int,
     data: ProductoUpdate,
-    session: Session = Depends(get_session),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
-    producto = session.exec(
-        select(Producto).where(
-            (Producto.id == producto_id) & (Producto.deleted_at.is_(None))
-        )
-    ).first()
-    if not producto:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-
-    if data.codigo is not None and data.codigo != producto.codigo:
-        conflict = session.exec(
-            select(Producto).where(
-                (Producto.codigo == data.codigo)
-                & (Producto.deleted_at.is_(None))
-                & (Producto.id != producto_id)
-            )
-        ).first()
-        if conflict:
-            raise HTTPException(
-                status_code=409,
-                detail=f"Ya existe un producto activo con el código '{data.codigo}'",
-            )
-
-    update_data = data.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(producto, field, value)
-    producto.updated_at = datetime.utcnow()
-
-    session.add(producto)
-    session.commit()
-    session.refresh(producto)
+    producto = ProductoService.actualizar_producto(producto_id, data, uow)
     return ProductoRead.from_orm(producto)
 
 
@@ -186,22 +140,10 @@ def actualizar_producto(
 )
 def dar_de_baja(
     producto_id: int,
-    session: Session = Depends(get_session),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
-    producto = session.exec(
-        select(Producto).where(Producto.id == producto_id)
-    ).first()
-    if not producto:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-    if producto.deleted_at is not None:
-        raise HTTPException(status_code=400, detail="El producto ya está dado de baja")
-
-    producto.deleted_at = datetime.utcnow()
-    producto.updated_at = datetime.utcnow()
-    session.add(producto)
-    session.commit()
-    session.refresh(producto)
+    producto = ProductoService.dar_de_baja(producto_id, uow)
     return ProductoRead.from_orm(producto)
 
 
@@ -212,33 +154,8 @@ def dar_de_baja(
 )
 def reactivar_producto(
     producto_id: int,
-    session: Session = Depends(get_session),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
-    producto = session.exec(
-        select(Producto).where(Producto.id == producto_id)
-    ).first()
-    if not producto:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-    if producto.deleted_at is None:
-        raise HTTPException(status_code=400, detail="El producto no está dado de baja")
-
-    conflict = session.exec(
-        select(Producto).where(
-            (Producto.codigo == producto.codigo)
-            & (Producto.deleted_at.is_(None))
-            & (Producto.id != producto_id)
-        )
-    ).first()
-    if conflict:
-        raise HTTPException(
-            status_code=409,
-            detail=f"No se puede reactivar: ya existe otro producto activo con el código '{producto.codigo}'",
-        )
-
-    producto.deleted_at = None
-    producto.updated_at = datetime.utcnow()
-    session.add(producto)
-    session.commit()
-    session.refresh(producto)
+    producto = ProductoService.reactivar_producto(producto_id, uow)
     return ProductoRead.from_orm(producto)

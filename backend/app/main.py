@@ -20,7 +20,6 @@ async def lifespan(app: FastAPI):
     
     yield
     
-    # Shutdown
     print("Deteniendo Food Store API...")
 
 

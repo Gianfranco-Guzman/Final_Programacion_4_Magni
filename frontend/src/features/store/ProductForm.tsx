@@ -59,6 +59,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     e.preventDefault()
     setError('')
 
+    if (!form.nombre.trim()) return setError('El nombre es requerido')
+    if (!form.codigo.trim()) return setError('El código es requerido')
+    if (form.precio <= 0) return setError('El precio debe ser mayor a 0')
+    if (form.stock_cantidad < 0) return setError('El stock no puede ser negativo')
+    if (!form.categoria_id || form.categoria_id === 0) return setError('Seleccioná una categoría')
+
     try {
       if (isEdit) {
         await updateMutation.mutateAsync({ id: producto!.id, data: form })

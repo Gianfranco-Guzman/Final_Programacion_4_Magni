@@ -32,8 +32,8 @@ export const LoginForm: React.FC = () => {
 
     if (!password) {
       newErrors.password = 'Contraseña es requerida'
-    } else if (password.length < 3) {
-      newErrors.password = 'Contraseña debe tener al menos 3 caracteres'
+    } else if (password.length < 8) {
+      newErrors.password = 'Contraseña debe tener al menos 8 caracteres'
     }
 
     setErrors(newErrors)

@@ -62,4 +62,9 @@ export const productosApi = {
     const response = await axiosClient.patch<Producto>(`/productos/${id}/baja`)
     return response.data
   },
+
+  reactivarProducto: async (id: number): Promise<Producto> => {
+    const response = await axiosClient.patch<Producto>(`/productos/${id}/reactivar`)
+    return response.data
+  },
 }

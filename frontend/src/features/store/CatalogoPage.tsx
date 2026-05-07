@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useProductos, useCategorias, useDarDeBaja } from '@hooks/useProductos'
+import { useProductos, useCategorias, useDarDeBaja, useReactivar } from '@hooks/useProductos'
 import { ProductGrid } from './ProductGrid'
 import { ProductFilters } from './ProductFilters'
 import { ProductForm } from './ProductForm'
@@ -18,7 +18,7 @@ export const CatalogoPage: React.FC = () => {
 
   const { data: productosData, isLoading, error } = useProductos({
     page,
-    size: 20,
+    size: 8,
     search: search || undefined,
     categoria_id: categoriaId || undefined,
     disponible: disponible ?? undefined,
@@ -27,6 +27,7 @@ export const CatalogoPage: React.FC = () => {
 
   const { data: categorias = [] } = useCategorias()
   const darDeBajaMutation = useDarDeBaja()
+  const reactivarMutation = useReactivar()
 
   const handleSearchChange = (value: string) => { setSearch(value); setPage(1) }
   const handleCategoriaChange = (catId: number | null) => { setCategoriaId(catId); setPage(1) }
@@ -40,6 +41,15 @@ export const CatalogoPage: React.FC = () => {
   const handleDarDeBaja = (id: number) => {
     if (!window.confirm('¿Dar de baja este producto?')) return
     darDeBajaMutation.mutate(id)
+  }
+
+  const handleReactivar = (id: number) => {
+    if (!window.confirm('¿Reactivar este producto?')) return
+    reactivarMutation.mutate(id, {
+      onError: (err: unknown) => {
+        alert(err instanceof Error ? err.message : 'No se pudo reactivar el producto')
+      },
+    })
   }
 
   const handleNuevoProducto = () => {
@@ -105,6 +115,7 @@ export const CatalogoPage: React.FC = () => {
               productos={productosData.items}
               onEdit={handleEdit}
               onDarDeBaja={handleDarDeBaja}
+              onReactivar={handleReactivar}
             />
           )}
 

@@ -203,3 +203,42 @@ def dar_de_baja(
     session.commit()
     session.refresh(producto)
     return ProductoRead.from_orm(producto)
+
+
+@router.patch(
+    "/{producto_id}/reactivar",
+    response_model=ProductoRead,
+    summary="Reactivar producto dado de baja",
+)
+def reactivar_producto(
+    producto_id: int,
+    session: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user),
+):
+    producto = session.exec(
+        select(Producto).where(Producto.id == producto_id)
+    ).first()
+    if not producto:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    if producto.deleted_at is None:
+        raise HTTPException(status_code=400, detail="El producto no está dado de baja")
+
+    conflict = session.exec(
+        select(Producto).where(
+            (Producto.codigo == producto.codigo)
+            & (Producto.deleted_at.is_(None))
+            & (Producto.id != producto_id)
+        )
+    ).first()
+    if conflict:
+        raise HTTPException(
+            status_code=409,
+            detail=f"No se puede reactivar: ya existe otro producto activo con el código '{producto.codigo}'",
+        )
+
+    producto.deleted_at = None
+    producto.updated_at = datetime.utcnow()
+    session.add(producto)
+    session.commit()
+    session.refresh(producto)
+    return ProductoRead.from_orm(producto)

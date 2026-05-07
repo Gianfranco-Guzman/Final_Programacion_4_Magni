@@ -6,9 +6,10 @@ interface ProductCardProps {
   producto: Producto
   onEdit?: (producto: Producto) => void
   onDarDeBaja?: (id: number) => void
+  onReactivar?: (id: number) => void
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ producto, onEdit, onDarDeBaja }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ producto, onEdit, onDarDeBaja, onReactivar }) => {
   const isDeleted = producto.deleted_at != null
   const stockDisplay = producto.stock_cantidad > 0 ? `${producto.stock_cantidad} en stock` : 'Sin stock'
   const stockColor = producto.stock_cantidad > 0 ? 'text-green-600' : 'text-red-600'
@@ -16,10 +17,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onEdit, onDa
   return (
     <Card className={`h-full flex flex-col ${isDeleted ? 'bg-red-50 border-red-300' : ''}`}>
       {isDeleted && (
-        <div className="mb-2">
+        <div className="flex items-center justify-between mb-2">
           <span className="inline-block bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
             DADO DE BAJA
           </span>
+          {onReactivar && (
+            <button
+              onClick={() => onReactivar(producto.id)}
+              className="text-xs bg-green-50 text-green-700 border border-green-300 rounded px-2 py-0.5 hover:bg-green-100"
+            >
+              Reactivar
+            </button>
+          )}
         </div>
       )}
 

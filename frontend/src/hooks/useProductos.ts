@@ -41,3 +41,11 @@ export const useDarDeBaja = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['productos'] }),
   })
 }
+
+export const useReactivar = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: productosApi.reactivarProducto,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['productos'] }),
+  })
+}

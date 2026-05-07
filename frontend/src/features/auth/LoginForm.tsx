@@ -12,7 +12,6 @@ export const LoginForm: React.FC = () => {
 
   const { login, loginLoading, loginError } = useAuth()
 
-  // Capturar error y guardarlo en estado LOCAL (no se limpia automáticamente)
   useEffect(() => {
     if (loginError) {
       const errorMessage = loginError instanceof Error ? loginError.message : 'Error en login'
@@ -47,7 +46,6 @@ export const LoginForm: React.FC = () => {
       return
     }
 
-    // Limpiar error ANTES de intentar de nuevo
     setDisplayError(null)
     login({ email, password })
   }

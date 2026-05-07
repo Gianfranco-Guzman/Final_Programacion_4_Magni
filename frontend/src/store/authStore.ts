@@ -10,7 +10,6 @@ interface AuthState {
   loading: boolean
   error: string | null
 
-  // Actions
   login: (email: string, password: string) => Promise<void>
   logout: () => void
   setToken: (token: string) => void
@@ -38,7 +37,6 @@ export const useAuthStore = create<AuthState>()(
             loading: false,
           })
 
-          // Fetch user info
           const user = await authApi.me()
           set({ usuario: user })
         } catch (err) {

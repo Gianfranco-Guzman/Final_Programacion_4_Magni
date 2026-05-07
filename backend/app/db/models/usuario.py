@@ -4,7 +4,6 @@ from sqlmodel import SQLModel, Field, Relationship
 
 
 class UsuarioRol(SQLModel, table=True):
-    """Tabla de asociación N:M entre Usuario y Rol"""
 
     __tablename__ = "usuario_rol"
 
@@ -13,7 +12,6 @@ class UsuarioRol(SQLModel, table=True):
 
 
 class Usuario(SQLModel, table=True):
-    """Modelo de usuario del sistema"""
 
     __tablename__ = "usuario"
 

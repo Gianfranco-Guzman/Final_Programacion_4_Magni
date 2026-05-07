@@ -12,32 +12,25 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Lifecycle de la aplicaciÃ³n.
-    - startup: Crea tablas y seed data
-    - shutdown: Cleanup
-    """
-    # Startup
-    print("ðŸš€ Iniciando Food Store API...")
+
+    print("Iniciando Food Store API...")
     create_all_tables()
-    print("âœ“ Tablas creadas")
+    print("Tablas creadas")
     populate_seed_data()
     
     yield
     
     # Shutdown
-    print("ðŸ›‘ Deteniendo Food Store API...")
+    print("Deteniendo Food Store API...")
 
 
-# Crear aplicaciÃ³n FastAPI
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    description="API de Food Store con autenticaciÃ³n JWT",
+    description="API de Food Store con autenticacion JWT",
     lifespan=lifespan,
 )
 
-# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -46,14 +39,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Incluir routers
 app.include_router(auth_router, prefix=settings.api_prefix)
 app.include_router(productos_router, prefix=f"{settings.api_prefix}/productos")
 
 
 @app.get("/", tags=["root"])
 async def root():
-    """Endpoint raÃ­z para verificar que la API estÃ¡ funcionando"""
     return {
         "message": "Food Store API",
         "version": settings.app_version,
@@ -63,7 +54,6 @@ async def root():
 
 @app.get("/health", tags=["health"])
 async def health_check():
-    """Health check para load balancers y orchestration"""
     return {
         "status": "healthy",
         "app": settings.app_name,

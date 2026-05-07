@@ -4,7 +4,6 @@ from sqlmodel import SQLModel, Field
 
 
 class Rol(SQLModel, table=True):
-    """Modelo de roles en el sistema: ADMIN, CLIENT, STOCK, PEDIDOS"""
 
     __tablename__ = "rol"
 
@@ -13,20 +12,20 @@ class Rol(SQLModel, table=True):
         index=True,
         unique=True,
         max_length=50,
-        description="Nombre único del rol (ADMIN, CLIENT, STOCK, PEDIDOS)"
+        description="Nombre unico del rol (ADMIN, CLIENT, STOCK, PEDIDOS)"
     )
     descripcion: Optional[str] = Field(
         default=None,
         max_length=255,
-        description="Descripción del rol"
+        description="Descripcion del rol"
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
-        description="Fecha de creación"
+        description="Fecha de creacion"
     )
     updated_at: datetime = Field(
         default_factory=datetime.utcnow,
-        description="Fecha de última actualización"
+        description="Fecha de ultima actualización"
     )
 
     def __repr__(self) -> str:

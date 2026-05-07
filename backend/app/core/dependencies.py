@@ -12,20 +12,7 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     session: Session = Depends(get_session)
 ) -> Usuario:
-    """
-    Dependencia para obtener el usuario actual desde el token JWT.
-    Se usa en endpoints que requieren autenticación.
-
-    Args:
-        credentials: Credenciales HTTP Bearer
-        session: Sesión de base de datos
-
-    Returns:
-        Usuario autenticado
-
-    Raises:
-        HTTPException 401: Token inválido o expirado
-    """
+    
     token = credentials.credentials
     payload = decode_token(token)
 
@@ -53,7 +40,6 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"}
         )
 
-    # Obtener usuario de la base de datos
     statement = select(Usuario).where(Usuario.id == user_id)
     user = session.exec(statement).first()
 
@@ -75,19 +61,8 @@ async def get_current_user(
 
 
 def require_role(*required_roles: str):
-    """
-    Dependencia para requerir que el usuario tenga uno de los roles especificados.
-    Uso: @app.get("/admin", dependencies=[Depends(require_role("ADMIN"))])
 
-    Args:
-        required_roles: Nombres de roles requeridos
-
-    Returns:
-        Función decoradora que valida roles
-    """
     async def verify_role(current_user: Usuario = Depends(get_current_user)) -> Usuario:
-        # TODO: Implementar en FASE 2 cuando tengamos relaciones cargadas
-        # Por ahora retornamos el usuario directamente
         return current_user
 
     return verify_role

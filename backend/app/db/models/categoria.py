@@ -4,7 +4,6 @@ from sqlmodel import SQLModel, Field, Relationship
 
 
 class Categoria(SQLModel, table=True):
-    """Modelo de categorías de productos: Pizza, Bebidas, Postres, etc."""
 
     __tablename__ = "categoria"
 
@@ -29,7 +28,6 @@ class Categoria(SQLModel, table=True):
         description="Fecha de última actualización"
     )
 
-    # Relación con productos
     productos: list["Producto"] = Relationship(back_populates="categoria")
 
     def __repr__(self) -> str:

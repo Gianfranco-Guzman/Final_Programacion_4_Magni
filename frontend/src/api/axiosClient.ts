@@ -10,7 +10,6 @@ export const axiosClient = axios.create({
   },
 })
 
-// Request interceptor: Agregar token JWT
 axiosClient.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().accessToken
@@ -24,7 +23,6 @@ axiosClient.interceptors.request.use(
   }
 )
 
-// Response interceptor: Manejar 401 y mejorar mensajes de error
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -35,11 +33,9 @@ axiosClient.interceptors.response.use(
       error.message ||
       'Error desconocido'
     
-    // Crear error con mensaje limpio
     const cleanError = new Error(message)
     
     if (error.response?.status === 401) {
-      // Token inválido o expirado - logout
       useAuthStore.getState().logout()
       window.location.href = '/login'
     }

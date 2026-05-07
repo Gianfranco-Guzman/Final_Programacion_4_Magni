@@ -14,7 +14,6 @@ function App() {
   const setToken = useAuthStore((state) => state.setToken)
   const fetchMe = useAuthStore((state) => state.fetchMe)
 
-  // Recuperar token del localStorage y validar
   useEffect(() => {
     const restoreSession = async () => {
       try {

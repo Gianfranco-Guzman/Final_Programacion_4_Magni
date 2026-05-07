@@ -6,15 +6,7 @@ from app.core.config import get_settings
 
 
 def hash_password(password: str) -> str:
-    """
-    Genera hash bcrypt de una contraseña.
-    
-    Args:
-        password: Contraseña en texto plano
-        
-    Returns:
-        Hash bcrypt de la contraseña
-    """
+
     password_bytes = password.encode('utf-8')
     salt = bcrypt.gensalt(rounds=12)
     hashed = bcrypt.hashpw(password_bytes, salt)
@@ -22,16 +14,7 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verifica si una contraseña coincide con su hash.
-    
-    Args:
-        plain_password: Contraseña en texto plano
-        hashed_password: Hash bcrypt almacenado
-        
-    Returns:
-        True si la contraseña es válida, False en caso contrario
-    """
+
     plain_password_bytes = plain_password.encode('utf-8')
     hashed_password_bytes = hashed_password.encode('utf-8')
     return bcrypt.checkpw(plain_password_bytes, hashed_password_bytes)
@@ -41,16 +24,7 @@ def create_access_token(
     subject: Dict[str, Any],
     expires_delta: Optional[timedelta] = None
 ) -> str:
-    """
-    Crea un JWT access token.
-    
-    Args:
-        subject: Datos a incluir en el token (ej: {"user_id": 1})
-        expires_delta: Duración del token. Si no se proporciona usa ACCESS_TOKEN_EXPIRE_MINUTES
-        
-    Returns:
-        JWT token como string
-    """
+
     settings = get_settings()
     
     if expires_delta is None:
@@ -69,15 +43,7 @@ def create_access_token(
 
 
 def decode_token(token: str) -> Optional[Dict[str, Any]]:
-    """
-    Decodifica y valida un JWT token.
-    
-    Args:
-        token: JWT token como string
-        
-    Returns:
-        Diccionario con el payload del token, o None si es inválido
-    """
+
     settings = get_settings()
     
     try:

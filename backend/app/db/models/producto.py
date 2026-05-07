@@ -4,7 +4,6 @@ from sqlmodel import SQLModel, Field, Relationship
 
 
 class Producto(SQLModel, table=True):
-    """Modelo de productos del catálogo"""
 
     __tablename__ = "producto"
 
@@ -17,7 +16,7 @@ class Producto(SQLModel, table=True):
     descripcion: Optional[str] = Field(
         default=None,
         max_length=500,
-        description="Descripción detallada del producto"
+        description="Descripcion detallada del producto"
     )
     precio: float = Field(
         gt=0,
@@ -50,7 +49,6 @@ class Producto(SQLModel, table=True):
         description="Fecha de última actualización"
     )
 
-    # Relación con categoría
     categoria: Optional["Categoria"] = Relationship(back_populates="productos")
 
     def __repr__(self) -> str:
@@ -58,5 +56,4 @@ class Producto(SQLModel, table=True):
 
     @property
     def is_deleted(self) -> bool:
-        """Verifica si el producto está marcado como eliminado"""
         return self.deleted_at is not None

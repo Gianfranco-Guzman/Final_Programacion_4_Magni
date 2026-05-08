@@ -17,8 +17,7 @@ class CategoriaRead(CategoriaBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class ProductoBase(BaseModel):
@@ -50,8 +49,7 @@ class ProductoRead(ProductoBase):
     updated_at: datetime
     categoria: Optional[CategoriaRead] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class PaginatedResponse(BaseModel):
@@ -61,5 +59,4 @@ class PaginatedResponse(BaseModel):
     size: int
     pages: int
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

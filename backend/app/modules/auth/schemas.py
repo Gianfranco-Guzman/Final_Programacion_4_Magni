@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Optional
 
 
 class LoginRequest(BaseModel):
@@ -29,7 +29,6 @@ class UsuarioResponse(BaseModel):
     email: str
     nombre: str
     is_active: bool
-    roles: List[RolResponse] = []
+    roles: list[RolResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

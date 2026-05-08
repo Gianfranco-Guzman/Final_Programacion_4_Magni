@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import Optional, List
+from datetime import datetime, timezone
+from typing import Optional
 from sqlmodel import SQLModel, Field, Relationship
 
 
@@ -35,11 +35,11 @@ class Usuario(SQLModel, table=True):
         description="Estado activo/inactivo del usuario"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de creación"
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de última actualización"
     )
     deleted_at: Optional[datetime] = Field(

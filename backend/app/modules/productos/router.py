@@ -67,7 +67,7 @@ def listar_productos(
     productos = session.exec(query).all()
 
     return PaginatedResponse(
-        items=[ProductoRead.from_orm(p) for p in productos],
+        items=[ProductoRead.model_validate(p) for p in productos],
         total=total,
         page=page,
         size=size,
@@ -82,7 +82,7 @@ def listar_productos(
 )
 def listar_categorias(session: Session = Depends(get_session)):
     categorias = session.exec(select(Categoria)).all()
-    return [CategoriaRead.from_orm(c) for c in categorias]
+    return [CategoriaRead.model_validate(c) for c in categorias]
 
 
 @router.get(
@@ -100,7 +100,7 @@ def obtener_producto(producto_id: int, session: Session = Depends(get_session)):
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
-    return ProductoRead.from_orm(producto)
+    return ProductoRead.model_validate(producto)
 
 
 @router.post(
@@ -115,7 +115,7 @@ def crear_producto(
     current_user: Usuario = Depends(get_current_user),
 ):
     producto = ProductoService.crear_producto(data, uow)
-    return ProductoRead.from_orm(producto)
+    return ProductoRead.model_validate(producto)
 
 
 @router.put(
@@ -130,7 +130,7 @@ def actualizar_producto(
     current_user: Usuario = Depends(get_current_user),
 ):
     producto = ProductoService.actualizar_producto(producto_id, data, uow)
-    return ProductoRead.from_orm(producto)
+    return ProductoRead.model_validate(producto)
 
 
 @router.patch(
@@ -144,7 +144,7 @@ def dar_de_baja(
     current_user: Usuario = Depends(get_current_user),
 ):
     producto = ProductoService.dar_de_baja(producto_id, uow)
-    return ProductoRead.from_orm(producto)
+    return ProductoRead.model_validate(producto)
 
 
 @router.patch(
@@ -158,4 +158,4 @@ def reactivar_producto(
     current_user: Usuario = Depends(get_current_user),
 ):
     producto = ProductoService.reactivar_producto(producto_id, uow)
-    return ProductoRead.from_orm(producto)
+    return ProductoRead.model_validate(producto)

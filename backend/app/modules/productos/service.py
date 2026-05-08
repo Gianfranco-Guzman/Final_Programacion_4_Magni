@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from sqlmodel import select
@@ -25,9 +25,9 @@ class ProductoService:
                 detail=f"Ya existe un producto activo con el código '{data.codigo}'",
             )
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         producto = Producto(
-            **data.dict(),
+            **data.model_dump(),
             created_at=now,
             updated_at=now,
         )
@@ -64,10 +64,10 @@ class ProductoService:
                     detail=f"Ya existe un producto activo con el código '{data.codigo}'",
                 )
 
-        update_data = data.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(producto, field, value)
-        producto.updated_at = datetime.utcnow()
+        producto.updated_at = datetime.now(timezone.utc)
 
         session.add(producto)
         uow.flush()
@@ -82,8 +82,8 @@ class ProductoService:
         if producto.deleted_at is not None:
             raise HTTPException(status_code=400, detail="El producto ya está dado de baja")
 
-        producto.deleted_at = datetime.utcnow()
-        producto.updated_at = datetime.utcnow()
+        producto.deleted_at = datetime.now(timezone.utc)
+        producto.updated_at = datetime.now(timezone.utc)
         session.add(producto)
         uow.flush()
         return producto
@@ -111,7 +111,7 @@ class ProductoService:
             )
 
         producto.deleted_at = None
-        producto.updated_at = datetime.utcnow()
+        producto.updated_at = datetime.now(timezone.utc)
         session.add(producto)
         uow.flush()
         return producto

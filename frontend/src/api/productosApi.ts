@@ -1,5 +1,5 @@
 import axiosClient from './axiosClient'
-import { Producto } from '@types/index'
+import { Producto } from '@models/index'
 
 interface PaginatedResponse<T> {
   items: T[]

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Usuario, LoginRequest, LoginResponse } from '@types/index'
+import { Usuario } from '@models/index'
 import { authApi } from '@api/authApi'
 
 interface AuthState {

@@ -1,6 +1,5 @@
-import React from 'react'
 import { Input } from '@components/Input'
-import { Categoria } from '@types/index'
+import { Categoria } from '@models/index'
 
 interface ProductFiltersProps {
   search?: string

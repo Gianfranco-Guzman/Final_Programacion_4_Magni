@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Producto, Categoria } from '@types/index'
+import { Producto, Categoria } from '@models/index'
 import { useCreateProducto, useUpdateProducto } from '@hooks/useProductos'
 import { ProductoCreateInput } from '@api/productosApi'
 

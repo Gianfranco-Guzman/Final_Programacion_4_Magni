@@ -1,5 +1,5 @@
 import axiosClient from './axiosClient'
-import { LoginRequest, LoginResponse, Usuario, RegisterRequest, RegisterResponse } from '@types/index'
+import { LoginRequest, LoginResponse, Usuario, RegisterRequest, RegisterResponse } from '@models/index'
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {

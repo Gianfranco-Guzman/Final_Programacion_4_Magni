@@ -1,7 +1,6 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import { Card } from '@components/Card'
-import { Producto } from '@types/index'
+import { Producto } from '@models/index'
 
 interface ProductCardProps {
   producto: Producto

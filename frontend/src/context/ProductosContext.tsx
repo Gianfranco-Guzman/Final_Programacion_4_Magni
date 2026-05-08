@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react'
-import { Producto } from '@types/index'
+import { createContext, useContext, useReducer, ReactNode } from 'react'
+import { Producto } from '@models/index'
 
 interface ProductosState {
   search: string

@@ -75,7 +75,7 @@ python -c "from app.db.seed import populate_seed_data; populate_seed_data()"
 # Output esperado:
 # ✓ Seed data poblado exitosamente
 #   - Roles creados: 4 (ADMIN, CLIENT, STOCK, PEDIDOS)
-#   - Usuario admin: admin@foodstore.local / admin123
+#   - Usuario admin: admin@foodstore.local / admin1234
 ```
 
 Alternativa: todo se ejecuta automáticamente al iniciar el server (ver paso 5).
@@ -112,7 +112,7 @@ Autenticar usuario y obtener JWT token.
 ```json
 {
   "email": "admin@foodstore.local",
-  "password": "admin123"
+  "password": "admin1234"
 }
 ```
 
@@ -178,7 +178,7 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@foodstore.local",
-    "password": "admin123"
+    "password": "admin1234"
   }'
 ```
 
@@ -307,7 +307,7 @@ docker-compose up -d
 Verifica que el usuario existe en seed data:
 ```bash
 # Email: admin@foodstore.local
-# Password: admin123
+# Password: admin1234
 ```
 
 ### Error: "No module named 'app'"

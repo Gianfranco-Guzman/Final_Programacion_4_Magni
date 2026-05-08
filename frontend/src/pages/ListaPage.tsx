@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { useProductos, useCategorias, useDarDeBaja, useReactivar } from '@hooks/useProductos'
+import { useProductos, useCategorias, useDarDeBaja, useReactivar, useExportarProductos } from '@hooks/useProductos'
 import { useProductosContext } from '@context/ProductosContext'
 import { ProductGrid } from '@features/store/ProductGrid'
 import { ProductFilters } from '@features/store/ProductFilters'
@@ -22,6 +22,7 @@ export const ListaPage: React.FC = () => {
   const { data: categorias = [] } = useCategorias()
   const darDeBajaMutation = useDarDeBaja()
   const reactivarMutation = useReactivar()
+  const exportarMutation = useExportarProductos()
 
   const handleDarDeBaja = (id: number) => {
     if (!window.confirm('¿Dar de baja este producto?')) return
@@ -35,6 +36,27 @@ export const ListaPage: React.FC = () => {
         alert(err instanceof Error ? err.message : 'No se pudo reactivar el producto')
       },
     })
+  }
+
+  const handleExportar = () => {
+    exportarMutation.mutate(
+      state.search || undefined,
+      {
+        onSuccess: (blob) => {
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `productos_${new Date().toISOString().split('T')[0]}.xlsx`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+        },
+        onError: () => {
+          alert('Error al exportar los productos')
+        },
+      },
+    )
   }
 
   const handleResetFilters = () => {
@@ -61,9 +83,14 @@ export const ListaPage: React.FC = () => {
             {productosData ? `${productosData.total} productos` : 'Cargando...'}
           </p>
         </div>
-        <Link to="/productos/nuevo">
-          <Button>+ Nuevo Producto</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Button onClick={handleExportar} disabled={exportarMutation.isPending}>
+            {exportarMutation.isPending ? 'Exportando...' : 'Exportar a Excel'}
+          </Button>
+          <Link to="/productos/nuevo">
+            <Button>+ Nuevo Producto</Button>
+          </Link>
+        </div>
       </div>
 
       <ProductFilters

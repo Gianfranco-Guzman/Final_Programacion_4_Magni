@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
+from io import BytesIO
 
 from fastapi import HTTPException
+from openpyxl import Workbook
 from sqlmodel import select
 
 from app.db.models import Producto
@@ -9,7 +11,6 @@ from app.modules.productos.schemas import ProductoCreate, ProductoUpdate
 
 
 class ProductoService:
-    """Lógica de aplicación para productos."""
 
     @staticmethod
     def crear_producto(data: ProductoCreate, uow: SqlModelUnitOfWork) -> Producto:
@@ -22,7 +23,7 @@ class ProductoService:
         if existing:
             raise HTTPException(
                 status_code=409,
-                detail=f"Ya existe un producto activo con el código '{data.codigo}'",
+                detail=f"Ya existe un producto activo con el codigo '{data.codigo}'",
             )
 
         now = datetime.now(timezone.utc)
@@ -61,7 +62,7 @@ class ProductoService:
             if conflict:
                 raise HTTPException(
                     status_code=409,
-                    detail=f"Ya existe un producto activo con el código '{data.codigo}'",
+                    detail=f"Ya existe un producto activo con el codigo '{data.codigo}'",
                 )
 
         update_data = data.model_dump(exclude_unset=True)
@@ -107,7 +108,7 @@ class ProductoService:
         if conflict:
             raise HTTPException(
                 status_code=409,
-                detail=f"No se puede reactivar: ya existe otro producto activo con el código '{producto.codigo}'",
+                detail=f"No se puede reactivar: ya existe otro producto activo con el codigo '{producto.codigo}'",
             )
 
         producto.deleted_at = None
@@ -115,3 +116,58 @@ class ProductoService:
         session.add(producto)
         uow.flush()
         return producto
+
+    @staticmethod
+    def exportar_a_excel(productos: list[Producto]) -> BytesIO:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Productos"
+
+        headers = [
+            "ID",
+            "Código",
+            "Nombre",
+            "Descripción",
+            "Precio",
+            "Stock",
+            "Categoría",
+            "Estado",
+            "Fecha Creación",
+            "Fecha Actualización",
+        ]
+        ws.append(headers)
+
+        for prod in productos:
+            estado = "Baja" if prod.deleted_at else "Activo"
+            categoria_nombre = prod.categoria.nombre if prod.categoria else "Sin categoría"
+            ws.append(
+                [
+                    prod.id,
+                    prod.codigo,
+                    prod.nombre,
+                    prod.descripcion or "",
+                    prod.precio,
+                    prod.stock_cantidad,
+                    categoria_nombre,
+                    estado,
+                    prod.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    prod.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+                ]
+            )
+
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except Exception:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        return output

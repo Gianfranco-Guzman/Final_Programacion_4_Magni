@@ -30,7 +30,7 @@ def populate_seed_data() -> None:
 
         admin_user = Usuario(
             email="admin@foodstore.com",
-            password_hash=hash_password("admin123"),
+            password_hash=hash_password("admin1234"),
             nombre="Administrador",
             is_active=True,
         )

@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session, func, select
 
 from app.core.dependencies import get_current_user
@@ -72,6 +73,35 @@ def listar_productos(
         page=page,
         size=size,
         pages=pages,
+    )
+
+
+@router.get(
+    "/exportar",
+    summary="Exportar productos a Excel",
+)
+def exportar_productos(
+    search: Optional[str] = Query(default=None),
+    session: Session = Depends(get_session),
+):
+    query = select(Producto).order_by(Producto.created_at.desc())
+    query = query.where(Producto.deleted_at.is_(None))
+
+    if search:
+        term = f"%{search.lower()}%"
+        query = query.where(
+            (Producto.nombre.ilike(term)) | (Producto.codigo.ilike(term))
+        )
+
+    query = query.limit(1000)
+    productos = session.exec(query).all()
+
+    excel_file = ProductoService.exportar_a_excel(productos)
+
+    return StreamingResponse(
+        excel_file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=productos.xlsx"},
     )
 
 

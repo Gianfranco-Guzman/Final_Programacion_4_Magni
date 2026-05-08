@@ -67,4 +67,16 @@ export const productosApi = {
     const response = await axiosClient.patch<Producto>(`/productos/${id}/reactivar`)
     return response.data
   },
+
+  exportarProductos: async (search?: string): Promise<Blob> => {
+    const params: Record<string, string> = {}
+    if (search) {
+      params.search = search
+    }
+    const response = await axiosClient.get('/productos/exportar', {
+      params,
+      responseType: 'blob',
+    })
+    return response.data
+  },
 }

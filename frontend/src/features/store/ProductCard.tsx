@@ -47,6 +47,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
             {producto.categoria.nombre}
           </p>
         )}
+
+        {producto.ingredientes && producto.ingredientes.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {producto.ingredientes.slice(0, 3).map((ing) => (
+              <span
+                key={ing.id}
+                className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                  ing.es_alergeno
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                {ing.nombre}
+              </span>
+            ))}
+            {producto.ingredientes.length > 3 && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                +{producto.ingredientes.length - 3}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="border-t pt-3 mt-3">

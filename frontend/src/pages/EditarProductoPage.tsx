@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useCategorias, useProductos } from '@hooks/useProductos'
+import { useCategoriasList } from '@hooks/useCategorias'
+import { useIngredientes } from '@hooks/useIngredientes'
+import { useProductos } from '@hooks/useProductos'
 import { ProductoFormPage } from '@features/store/ProductoFormPage'
 import { Spinner } from '@components/Spinner'
 
@@ -8,7 +10,8 @@ export const EditarProductoPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
-  const { data: categorias = [], isLoading: catsLoading } = useCategorias()
+  const { data: categorias = [], isLoading: catsLoading } = useCategoriasList()
+  const { data: ingredientes = [], isLoading: ingLoading } = useIngredientes()
   const { data: productosData, isLoading: prodLoading } = useProductos({
     page: 1,
     size: 100,
@@ -22,7 +25,7 @@ export const EditarProductoPage: React.FC = () => {
     }
   }, [producto, prodLoading, navigate])
 
-  if (catsLoading || prodLoading) {
+  if (catsLoading || ingLoading || prodLoading) {
     return (
       <div className="py-12 flex justify-center">
         <Spinner />
@@ -38,6 +41,7 @@ export const EditarProductoPage: React.FC = () => {
     <ProductoFormPage
       producto={producto}
       categorias={categorias}
+      ingredientes={ingredientes}
       title="Editar Producto"
     />
   )

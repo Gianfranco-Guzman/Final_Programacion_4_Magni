@@ -8,6 +8,8 @@ import { LoginPage } from '@features/auth/LoginPage'
 import { ListaPage } from '@pages/ListaPage'
 import { NuevoProductoPage } from '@pages/NuevoProductoPage'
 import { EditarProductoPage } from '@pages/EditarProductoPage'
+import { CategoriasPage } from '@pages/CategoriasPage'
+import { IngredientesPage } from '@pages/IngredientesPage'
 import { MainLayout } from '@layouts/MainLayout'
 
 const queryClient = new QueryClient()
@@ -75,6 +77,26 @@ function App() {
                     <EditarProductoPage />
                   </MainLayout>
                 </ProductosProvider>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/categorias"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <CategoriasPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ingredientes"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <IngredientesPage />
+                </MainLayout>
               </ProtectedRoute>
             }
           />

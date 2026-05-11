@@ -50,6 +50,7 @@ class Producto(SQLModel, table=True):
     )
 
     categoria: Optional["Categoria"] = Relationship(back_populates="productos")
+    ingredientes: list["ProductoIngrediente"] = Relationship(back_populates="producto")
 
     def __repr__(self) -> str:
         return f"<Producto id={self.id} nombre={self.nombre} precio={self.precio}>"

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Producto, Categoria } from '@models/index'
+import { Producto, Categoria, Ingrediente } from '@models/index'
 import { useCreateProducto, useUpdateProducto } from '@hooks/useProductos'
-import { ProductoCreateInput } from '@api/productosApi'
+import { ProductoCreateInput, ProductoUpdateInput } from '@api/productosApi'
 
 interface ProductoFormPageProps {
   producto?: Producto
   categorias: Categoria[]
+  ingredientes: Ingrediente[]
   title: string
 }
 
@@ -17,11 +18,13 @@ const empty: ProductoCreateInput = {
   stock_cantidad: 0,
   categoria_id: 0,
   descripcion: '',
+  ingredientes_ids: [],
 }
 
 export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
   producto,
   categorias,
+  ingredientes,
   title,
 }) => {
   const navigate = useNavigate()
@@ -42,6 +45,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
         stock_cantidad: producto.stock_cantidad,
         categoria_id: producto.categoria_id,
         descripcion: producto.descripcion || '',
+        ingredientes_ids: producto.ingredientes?.map((i) => i.id) || [],
       })
     } else {
       setForm({ ...empty, categoria_id: categorias[0]?.id ?? 0 })
@@ -55,6 +59,17 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
     setForm((prev) => ({ ...prev, [field]: val }))
   }
 
+  const toggleIngrediente = (ingredienteId: number) => {
+    setForm((prev) => {
+      const ids = prev.ingredientes_ids || []
+      if (ids.includes(ingredienteId)) {
+        return { ...prev, ingredientes_ids: ids.filter((id) => id !== ingredienteId) }
+      } else {
+        return { ...prev, ingredientes_ids: [...ids, ingredienteId] }
+      }
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -64,10 +79,12 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
     if (form.precio <= 0) return setError('El precio debe ser mayor a 0')
     if (form.stock_cantidad < 0) return setError('El stock no puede ser negativo')
     if (!form.categoria_id || form.categoria_id === 0) return setError('Seleccioná una categoría')
+    if (!form.ingredientes_ids || form.ingredientes_ids.length === 0) return setError('Seleccioná al menos un ingrediente')
 
     try {
       if (isEdit) {
-        await updateMutation.mutateAsync({ id: producto!.id, data: form })
+        const updateData: ProductoUpdateInput = { ...form }
+        await updateMutation.mutateAsync({ id: producto!.id, data: updateData })
       } else {
         await createMutation.mutateAsync(form)
       }
@@ -167,6 +184,40 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
                 <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ingredientes <span className="text-red-500">*</span>
+            </label>
+            <div className="border border-gray-300 rounded px-3 py-2 max-h-48 overflow-y-auto">
+              {ingredientes.length === 0 ? (
+                <p className="text-sm text-gray-500">No hay ingredientes disponibles</p>
+              ) : (
+                ingredientes.map((ing) => (
+                  <label
+                    key={ing.id}
+                    className="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 px-1 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={(form.ingredientes_ids || []).includes(ing.id)}
+                      onChange={() => toggleIngrediente(ing.id)}
+                      className="w-4 h-4 rounded accent-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{ing.nombre}</span>
+                    {ing.es_alergeno && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Alérgeno
+                      </span>
+                    )}
+                  </label>
+                ))
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {(form.ingredientes_ids || []).length} ingrediente(s) seleccionado(s)
+            </p>
           </div>
 
           <div>

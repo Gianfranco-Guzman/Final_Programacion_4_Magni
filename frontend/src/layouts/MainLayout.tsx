@@ -87,6 +87,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           >
             Nuevo Producto
           </Link>
+          <Link
+            to="/categorias"
+            onClick={closeSidebar}
+            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+          >
+            Categorías
+          </Link>
+          <Link
+            to="/ingredientes"
+            onClick={closeSidebar}
+            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+          >
+            Ingredientes
+          </Link>
         </nav>
 
         {usuario && (

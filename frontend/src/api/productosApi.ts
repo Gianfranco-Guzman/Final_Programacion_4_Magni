@@ -25,9 +25,18 @@ export interface ProductoCreateInput {
   stock_cantidad: number
   categoria_id: number
   codigo: string
+  ingredientes_ids: number[]
 }
 
-export type ProductoUpdateInput = Partial<ProductoCreateInput>
+export interface ProductoUpdateInput {
+  nombre?: string
+  descripcion?: string
+  precio?: number
+  stock_cantidad?: number
+  categoria_id?: number
+  codigo?: string
+  ingredientes_ids?: number[]
+}
 
 export const productosApi = {
   getProductos: async (params?: GetProductosParams): Promise<PaginatedResponse<Producto>> => {

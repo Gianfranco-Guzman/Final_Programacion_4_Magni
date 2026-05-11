@@ -20,6 +20,20 @@ class CategoriaRead(CategoriaBase):
     model_config = {"from_attributes": True}
 
 
+class IngredienteBase(BaseModel):
+    nombre: str = Field(..., min_length=1, max_length=100)
+    descripcion: Optional[str] = Field(default=None, max_length=500)
+    es_alergeno: bool = Field(default=False)
+
+
+class IngredienteRead(IngredienteBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class ProductoBase(BaseModel):
     nombre: str = Field(..., min_length=1, max_length=150)
     descripcion: Optional[str] = Field(default=None, max_length=500)
@@ -30,7 +44,7 @@ class ProductoBase(BaseModel):
 
 
 class ProductoCreate(ProductoBase):
-    pass
+    ingredientes_ids: list[int] = Field(..., min_length=1, description="Lista de IDs de ingredientes")
 
 
 class ProductoUpdate(BaseModel):
@@ -40,6 +54,7 @@ class ProductoUpdate(BaseModel):
     stock_cantidad: Optional[int] = Field(None, ge=0)
     categoria_id: Optional[int] = None
     codigo: Optional[str] = Field(None, min_length=1, max_length=50)
+    ingredientes_ids: Optional[list[int]] = None
 
 
 class ProductoRead(ProductoBase):
@@ -48,6 +63,7 @@ class ProductoRead(ProductoBase):
     created_at: datetime
     updated_at: datetime
     categoria: Optional[CategoriaRead] = None
+    ingredientes: list[IngredienteRead] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 

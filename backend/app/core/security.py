@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
+
 import jwt
 import bcrypt
 from app.core.config import get_settings
@@ -32,7 +33,7 @@ def create_access_token(
     
     to_encode = subject.copy()
     expire = datetime.now(timezone.utc) + expires_delta
-    to_encode.update({"exp": expire})
+    to_encode.update({"type": "access", "exp": expire})
     
     encoded_jwt = jwt.encode(
         to_encode,
@@ -42,7 +43,7 @@ def create_access_token(
     return encoded_jwt
 
 
-def decode_token(token: str) -> dict[str, Any] | None:
+def decode_access_token(token: str) -> dict[str, Any] | None:
 
     settings = get_settings()
     
@@ -52,6 +53,8 @@ def decode_token(token: str) -> dict[str, Any] | None:
             settings.secret_key,
             algorithms=[settings.algorithm]
         )
+        if payload.get("type") != "access":
+            return None
         return payload
     except jwt.InvalidTokenError:
         return None

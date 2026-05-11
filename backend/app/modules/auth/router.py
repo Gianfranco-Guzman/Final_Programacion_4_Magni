@@ -1,4 +1,7 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.config import get_settings
 from app.core.dependencies import get_current_user
@@ -21,7 +24,7 @@ settings = get_settings()
     "/login",
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
-    summary="Login de usuario",
+    summary="Login de usuario (JSON)",
     responses={
         200: {"description": "Login exitoso"},
         401: {"description": "Credenciales inválidas"},
@@ -31,8 +34,34 @@ async def login(
     request: LoginRequest,
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> TokenResponse:
-    user = AuthService.autenticar(request.email, request.password, uow)
-    access_token = create_access_token({"sub": str(user.id)})
+    user, roles = AuthService.autenticar(request.email, request.password, uow)
+    access_token = create_access_token({"sub": str(user.id), "roles": roles})
+    print(f"Usuario {user.email} autenticado con roles: {roles}")
+
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=settings.access_token_expire_minutes * 60,
+    )
+
+
+@router.post(
+    "/token",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Login OAuth2 - para Swagger UI",
+    responses={
+        200: {"description": "Login exitoso"},
+        401: {"description": "Credenciales inválidas"},
+    },
+)
+async def login_oauth2(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+) -> TokenResponse:
+    user, roles = AuthService.autenticar(
+        form_data.username, form_data.password, uow)
+    access_token = create_access_token({"sub": str(user.id), "roles": roles})
 
     return TokenResponse(
         access_token=access_token,

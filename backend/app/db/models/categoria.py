@@ -28,7 +28,7 @@ class Categoria(SQLModel, table=True):
         description="Fecha de última actualización"
     )
 
-    productos: list["Producto"] = Relationship(back_populates="categoria")
+    producto_categorias: list["ProductoCategoria"] = Relationship(back_populates="categoria")
 
     def __repr__(self) -> str:
         return f"<Categoria id={self.id} nombre={self.nombre}>"

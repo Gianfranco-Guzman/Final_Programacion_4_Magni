@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Producto, Categoria, Ingrediente } from '@models/index'
 import { useCreateProducto, useUpdateProducto } from '@hooks/useProductos'
-import { ProductoCreateInput, ProductoIngredienteInput, ProductoUpdateInput } from '@api/productosApi'
+import {
+  ProductoCreateInput,
+  ProductoIngredienteInput,
+  ProductoUpdateInput,
+} from '@api/productosApi'
 
 interface ProductoFormPageProps {
   producto?: Producto
@@ -16,9 +20,9 @@ const empty: ProductoCreateInput = {
   codigo: '',
   precio: 0,
   stock_cantidad: 0,
-  categoria_id: 0,
   descripcion: '',
   disponible: true,
+  categorias: [],
   ingredientes: [],
 }
 
@@ -44,9 +48,12 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
         codigo: producto.codigo,
         precio: producto.precio,
         stock_cantidad: producto.stock_cantidad,
-        categoria_id: producto.categoria_id,
         descripcion: producto.descripcion || '',
         disponible: producto.disponible,
+        categorias: producto.categorias?.map((item) => ({
+          categoria_id: item.categoria_id,
+          es_principal: item.es_principal,
+        })) || [],
         ingredientes: producto.ingredientes?.map((item) => ({
           ingrediente_id: item.ingrediente_id,
           es_removible: item.es_removible,
@@ -54,7 +61,11 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
         })) || [],
       })
     } else {
-      setForm({ ...empty, categoria_id: categorias[0]?.id ?? 0 })
+      const defaultCategoryId = categorias[0]?.id
+      setForm({
+        ...empty,
+        categorias: defaultCategoryId ? [{ categoria_id: defaultCategoryId, es_principal: true }] : [],
+      })
     }
   }, [producto, categorias])
 
@@ -103,6 +114,47 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
     }))
   }
 
+  const toggleCategoria = (categoriaId: number) => {
+    setForm((prev) => {
+      const categoriasConfig = prev.categorias || []
+      const exists = categoriasConfig.some((item) => item.categoria_id === categoriaId)
+
+      if (exists) {
+        const nextCategorias = categoriasConfig.filter((item) => item.categoria_id !== categoriaId)
+        if (nextCategorias.length > 0 && !nextCategorias.some((item) => item.es_principal)) {
+          nextCategorias[0] = { ...nextCategorias[0], es_principal: true }
+        }
+        return { ...prev, categorias: nextCategorias }
+      }
+
+      return {
+        ...prev,
+        categorias: [
+          ...categoriasConfig,
+          {
+            categoria_id: categoriaId,
+            es_principal: categoriasConfig.length === 0,
+          },
+        ],
+      }
+    })
+  }
+
+  const isCategoriaSelected = (categoriaId: number) =>
+    (form.categorias || []).some((item) => item.categoria_id === categoriaId)
+
+  const setCategoriaPrincipal = (categoriaId: number) => {
+    setForm((prev) => ({
+      ...prev,
+      categorias: (prev.categorias || []).map((item) => ({
+        ...item,
+        es_principal: item.categoria_id === categoriaId,
+      })),
+    }))
+  }
+
+  const categoriaPrincipalId = (form.categorias || []).find((item) => item.es_principal)?.categoria_id ?? null
+
   const isIngredienteSelected = (ingredienteId: number) =>
     (form.ingredientes || []).some((item) => item.ingrediente_id === ingredienteId)
 
@@ -117,7 +169,8 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
     if (!form.codigo.trim()) return setError('El código es requerido')
     if (form.precio <= 0) return setError('El precio debe ser mayor a 0')
     if (form.stock_cantidad < 0) return setError('El stock no puede ser negativo')
-    if (!form.categoria_id || form.categoria_id === 0) return setError('Seleccioná una categoría')
+    if (!form.categorias || form.categorias.length === 0) return setError('Seleccioná al menos una categoría')
+    if (!form.categorias.some((item) => item.es_principal)) return setError('Definí una categoría principal')
     if (!form.ingredientes || form.ingredientes.length === 0) return setError('Seleccioná al menos un ingrediente')
 
     try {
@@ -220,19 +273,46 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categoría <span className="text-red-500">*</span>
+              Categorías <span className="text-red-500">*</span>
             </label>
-            <select
-              required
-              value={form.categoria_id}
-              onChange={set('categoria_id')}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option value={0} disabled>Seleccionar...</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
-              ))}
-            </select>
+            <div className="border border-gray-300 rounded px-3 py-2 max-h-48 overflow-y-auto">
+              {categorias.length === 0 ? (
+                <p className="text-sm text-gray-500">No hay categorías disponibles</p>
+              ) : (
+                categorias.map((categoria) => (
+                  <div
+                    key={categoria.id}
+                    className="py-2 px-1 rounded hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                  >
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isCategoriaSelected(categoria.id)}
+                        onChange={() => toggleCategoria(categoria.id)}
+                        className="w-4 h-4 rounded accent-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{categoria.nombre}</span>
+                    </label>
+
+                    {isCategoriaSelected(categoria.id) && (
+                      <label className="inline-flex items-center gap-2 mt-2 ml-6 text-xs text-gray-600">
+                        <input
+                          type="radio"
+                          name="categoria_principal"
+                          checked={categoriaPrincipalId === categoria.id}
+                          onChange={() => setCategoriaPrincipal(categoria.id)}
+                          className="w-4 h-4 accent-blue-500"
+                        />
+                        Categoría principal
+                      </label>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {(form.categorias || []).length} categoría(s) seleccionada(s)
+            </p>
           </div>
 
           <div>

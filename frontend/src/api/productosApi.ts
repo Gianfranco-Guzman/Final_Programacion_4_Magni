@@ -7,6 +7,11 @@ export interface ProductoIngredienteInput {
   es_opcional: boolean
 }
 
+export interface ProductoCategoriaInput {
+  categoria_id: number
+  es_principal: boolean
+}
+
 interface PaginatedResponse<T> {
   items: T[]
   total: number
@@ -29,9 +34,9 @@ export interface ProductoCreateInput {
   descripcion?: string
   precio: number
   stock_cantidad: number
-  categoria_id: number
   codigo: string
   disponible: boolean
+  categorias: ProductoCategoriaInput[]
   ingredientes: ProductoIngredienteInput[]
 }
 
@@ -40,9 +45,9 @@ export interface ProductoUpdateInput {
   descripcion?: string
   precio?: number
   stock_cantidad?: number
-  categoria_id?: number
   codigo?: string
   disponible?: boolean
+  categorias?: ProductoCategoriaInput[]
   ingredientes?: ProductoIngredienteInput[]
 }
 

@@ -54,19 +54,25 @@ export interface ProductoIngredienteConfig {
   ingrediente: Ingrediente
 }
 
+export interface ProductoCategoriaConfig {
+  categoria_id: number
+  es_principal: boolean
+  categoria: Categoria
+}
+
 export interface Producto {
   id: number
   nombre: string
   descripcion?: string
   precio: number
   stock_cantidad: number
-  categoria_id: number
+  categoria_principal_id?: number | null
   codigo: string
   disponible: boolean
   deleted_at?: string | null
   created_at: string
   updated_at: string
-  categoria?: Categoria
+  categorias?: ProductoCategoriaConfig[]
   ingredientes?: ProductoIngredienteConfig[]
 }
 

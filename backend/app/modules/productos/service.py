@@ -5,12 +5,50 @@ from fastapi import HTTPException
 from openpyxl import Workbook
 from sqlmodel import select
 
-from app.db.models import Producto, Ingrediente, ProductoIngrediente
+from app.db.models import Categoria, Producto, ProductoCategoria, Ingrediente, ProductoIngrediente
 from app.db.unit_of_work import SqlModelUnitOfWork
-from app.modules.productos.schemas import ProductoCreate, ProductoIngredientePayload, ProductoUpdate
+from app.modules.productos.schemas import (
+    ProductoCategoriaPayload,
+    ProductoCreate,
+    ProductoIngredientePayload,
+    ProductoUpdate,
+)
 
 
 class ProductoService:
+
+    @staticmethod
+    def _validar_categorias(
+        categorias_payload: list[ProductoCategoriaPayload],
+        uow: SqlModelUnitOfWork,
+    ) -> list[ProductoCategoriaPayload]:
+        session = uow.session
+        categoria_ids = [item.categoria_id for item in categorias_payload]
+
+        if len(categoria_ids) != len(set(categoria_ids)):
+            raise HTTPException(status_code=400, detail="No se permiten categorías duplicadas")
+
+        categorias = session.exec(select(Categoria).where(Categoria.id.in_(categoria_ids))).all()
+        if len(categorias) != len(categoria_ids):
+            found_ids = {categoria.id for categoria in categorias}
+            missing = [item_id for item_id in categoria_ids if item_id not in found_ids]
+            raise HTTPException(status_code=404, detail=f"Categorías no encontradas: {missing}")
+
+        principales = [item for item in categorias_payload if item.es_principal]
+        if len(principales) > 1:
+            raise HTTPException(status_code=400, detail="Solo una categoría puede ser principal")
+
+        if not principales and categorias_payload:
+            primera = categorias_payload[0]
+            categorias_payload = [
+                ProductoCategoriaPayload(
+                    categoria_id=item.categoria_id,
+                    es_principal=item.categoria_id == primera.categoria_id,
+                )
+                for item in categorias_payload
+            ]
+
+        return categorias_payload
 
     @staticmethod
     def _validar_ingredientes(
@@ -53,28 +91,31 @@ class ProductoService:
                 detail=f"Ya existe un producto activo con el codigo '{data.codigo}'",
             )
 
-        # Validar que la categoría existe
-        from app.db.models import Categoria
-        categoria = session.exec(
-            select(Categoria).where(Categoria.id == data.categoria_id)
-        ).first()
-        if not categoria:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Categoría con id {data.categoria_id} no encontrada",
-            )
-
+        categorias_payload = ProductoService._validar_categorias(data.categorias, uow)
         ingredientes_payload = ProductoService._validar_ingredientes(data.ingredientes, uow)
 
         now = datetime.now(timezone.utc)
-        producto_data = data.model_dump(exclude={"ingredientes"})
+        categoria_principal_id = next(
+            item.categoria_id for item in categorias_payload if item.es_principal
+        )
+        producto_data = data.model_dump(exclude={"categorias", "ingredientes"})
         producto = Producto(
             **producto_data,
+            categoria_id=categoria_principal_id,
             created_at=now,
             updated_at=now,
         )
         session.add(producto)
         uow.flush()
+
+        for categoria_data in categorias_payload:
+            session.add(
+                ProductoCategoria(
+                    producto_id=producto.id,
+                    categoria_id=categoria_data.categoria_id,
+                    es_principal=categoria_data.es_principal,
+                )
+            )
 
         # Crear las relaciones producto-ingrediente
         for ingrediente_data in ingredientes_payload:
@@ -120,17 +161,28 @@ class ProductoService:
                     detail=f"Ya existe un producto activo con el codigo '{data.codigo}'",
                 )
 
-        # Validar categoría si se actualiza
-        if data.categoria_id is not None:
-            from app.db.models import Categoria
-            categoria = session.exec(
-                select(Categoria).where(Categoria.id == data.categoria_id)
-            ).first()
-            if not categoria:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Categoría con id {data.categoria_id} no encontrada",
+        categorias_payload: list[ProductoCategoriaPayload] | None = None
+        if data.categorias is not None:
+            categorias_payload = ProductoService._validar_categorias(data.categorias, uow)
+
+            existing_category_relations = session.exec(
+                select(ProductoCategoria).where(ProductoCategoria.producto_id == producto_id)
+            ).all()
+            for rel in existing_category_relations:
+                session.delete(rel)
+
+            for categoria_data in categorias_payload:
+                session.add(
+                    ProductoCategoria(
+                        producto_id=producto_id,
+                        categoria_id=categoria_data.categoria_id,
+                        es_principal=categoria_data.es_principal,
+                    )
                 )
+
+            producto.categoria_id = next(
+                item.categoria_id for item in categorias_payload if item.es_principal
+            )
 
         # Actualizar ingredientes si se proporcionan
         if data.ingredientes is not None:
@@ -156,7 +208,7 @@ class ProductoService:
                 session.add(pi)
 
         # Actualizar campos del producto (excluyendo ingredientes)
-        update_data = data.model_dump(exclude_unset=True, exclude={"ingredientes"})
+        update_data = data.model_dump(exclude_unset=True, exclude={"categorias", "ingredientes"})
         for field, value in update_data.items():
             setattr(producto, field, value)
         producto.updated_at = datetime.now(timezone.utc)
@@ -233,7 +285,13 @@ class ProductoService:
 
         for prod in productos:
             estado = "Baja" if prod.deleted_at else "Activo"
-            categoria_nombre = prod.categoria.nombre if prod.categoria else "Sin categoría"
+            categorias_nombres = ", ".join(
+                [
+                    f"{pc.categoria.nombre}{' *' if pc.es_principal else ''}"
+                    for pc in prod.producto_categorias
+                    if pc.categoria
+                ]
+            ) or "Sin categoría"
             ingredientes_nombres = ", ".join(
                 [
                     f"{pi.ingrediente.nombre}"
@@ -252,7 +310,7 @@ class ProductoService:
                     prod.precio,
                     prod.stock_cantidad,
                     "Sí" if prod.disponible else "No",
-                    categoria_nombre,
+                    categorias_nombres,
                     ingredientes_nombres,
                     estado,
                     prod.created_at.strftime("%Y-%m-%d %H:%M:%S"),

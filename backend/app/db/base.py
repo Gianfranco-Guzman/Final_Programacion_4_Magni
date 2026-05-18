@@ -19,6 +19,7 @@ def create_all_tables() -> None:
     SQLModel.metadata.create_all(engine)
     _ensure_identity_schema()
     _ensure_product_schema()
+    _backfill_producto_categoria()
 
 
 def _ensure_identity_schema() -> None:
@@ -42,6 +43,23 @@ def _ensure_product_schema() -> None:
     with engine.begin() as connection:
         for statement in statements:
             connection.execute(text(statement))
+
+
+def _backfill_producto_categoria() -> None:
+    statement = """
+    INSERT INTO producto_categoria (producto_id, categoria_id, es_principal)
+    SELECT p.id, p.categoria_id, TRUE
+    FROM producto p
+    WHERE p.categoria_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM producto_categoria pc
+        WHERE pc.producto_id = p.id AND pc.categoria_id = p.categoria_id
+      )
+    """
+
+    with engine.begin() as connection:
+        connection.execute(text(statement))
 
 
 def get_session() -> Session:

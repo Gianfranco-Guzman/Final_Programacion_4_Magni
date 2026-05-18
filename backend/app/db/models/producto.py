@@ -53,7 +53,7 @@ class Producto(SQLModel, table=True):
         description="Fecha de última actualización"
     )
 
-    categoria: Optional["Categoria"] = Relationship(back_populates="productos")
+    producto_categorias: list["ProductoCategoria"] = Relationship(back_populates="producto")
     ingredientes: list["ProductoIngrediente"] = Relationship(back_populates="producto")
 
     def __repr__(self) -> str:

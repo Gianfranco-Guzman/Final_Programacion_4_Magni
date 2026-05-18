@@ -34,6 +34,19 @@ class IngredienteRead(IngredienteBase):
     model_config = {"from_attributes": True}
 
 
+class ProductoCategoriaPayload(BaseModel):
+    categoria_id: int = Field(..., ge=1)
+    es_principal: bool = Field(default=False)
+
+
+class ProductoCategoriaRead(BaseModel):
+    categoria_id: int
+    es_principal: bool
+    categoria: CategoriaRead
+
+    model_config = {"from_attributes": True}
+
+
 class ProductoIngredientePayload(BaseModel):
     ingrediente_id: int = Field(..., ge=1)
     es_removible: bool = Field(default=True)
@@ -54,12 +67,12 @@ class ProductoBase(BaseModel):
     descripcion: Optional[str] = Field(default=None, max_length=500)
     precio: float = Field(..., gt=0)
     stock_cantidad: int = Field(default=0, ge=0)
-    categoria_id: int
     codigo: str = Field(..., min_length=1, max_length=50)
     disponible: bool = Field(default=True)
 
 
 class ProductoCreate(ProductoBase):
+    categorias: list[ProductoCategoriaPayload] = Field(..., min_length=1, description="Clasificación del producto en categorías")
     ingredientes: list[ProductoIngredientePayload] = Field(..., min_length=1, description="Configuración de ingredientes del producto")
 
 
@@ -68,9 +81,9 @@ class ProductoUpdate(BaseModel):
     descripcion: Optional[str] = Field(None, max_length=500)
     precio: Optional[float] = Field(None, gt=0)
     stock_cantidad: Optional[int] = Field(None, ge=0)
-    categoria_id: Optional[int] = None
     codigo: Optional[str] = Field(None, min_length=1, max_length=50)
     disponible: Optional[bool] = None
+    categorias: Optional[list[ProductoCategoriaPayload]] = None
     ingredientes: Optional[list[ProductoIngredientePayload]] = None
 
 
@@ -79,7 +92,8 @@ class ProductoRead(ProductoBase):
     deleted_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-    categoria: Optional[CategoriaRead] = None
+    categoria_principal_id: Optional[int] = None
+    categorias: list[ProductoCategoriaRead] = Field(default_factory=list)
     ingredientes: list[ProductoIngredienteRead] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}

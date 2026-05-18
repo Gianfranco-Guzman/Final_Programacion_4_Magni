@@ -11,6 +11,8 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja, onReactivar }) => {
   const isDeleted = producto.deleted_at != null
   const isOperationallyAvailable = producto.disponible && producto.stock_cantidad > 0
+  const categoriaPrincipal = producto.categorias?.find((item) => item.es_principal)?.categoria
+  const categoriasSecundarias = producto.categorias?.filter((item) => !item.es_principal).map((item) => item.categoria.nombre) || []
   const stockDisplay = !producto.disponible
     ? 'No disponible'
     : producto.stock_cantidad > 0
@@ -47,9 +49,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
           </p>
         )}
 
-        {producto.categoria && (
-          <p className="text-xs text-gray-500 mb-2">
-            {producto.categoria.nombre}
+        {categoriaPrincipal && (
+          <p className="text-xs text-gray-500 mb-1">
+            {categoriaPrincipal.nombre}
+          </p>
+        )}
+
+        {categoriasSecundarias.length > 0 && (
+          <p className="text-xs text-gray-400 mb-2">
+            También en: {categoriasSecundarias.join(', ')}
           </p>
         )}
 

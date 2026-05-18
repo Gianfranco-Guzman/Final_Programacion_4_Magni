@@ -12,11 +12,12 @@ from app.core.dependencies import (
     user_has_any_role,
 )
 from app.db.base import get_session
-from app.db.models import Categoria, Producto, ProductoIngrediente
+from app.db.models import Categoria, Producto, ProductoCategoria, ProductoIngrediente
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.productos.schemas import (
     CategoriaRead,
+    ProductoCategoriaRead,
     PaginatedResponse,
     ProductoCreate,
     ProductoIngredienteRead,
@@ -30,6 +31,21 @@ router = APIRouter(tags=["productos"])
 
 def _build_producto_read(producto: Producto) -> ProductoRead:
     """Build ProductoRead with ingredientes from ProductoIngrediente relations."""
+    categorias = []
+    categoria_principal_id = None
+    if producto.producto_categorias:
+        for pc in producto.producto_categorias:
+            if pc.categoria:
+                categorias.append(
+                    ProductoCategoriaRead(
+                        categoria_id=pc.categoria_id,
+                        es_principal=pc.es_principal,
+                        categoria=pc.categoria,
+                    )
+                )
+                if pc.es_principal:
+                    categoria_principal_id = pc.categoria_id
+
     ingredientes = []
     if producto.ingredientes:
         for pi in producto.ingredientes:
@@ -48,13 +64,13 @@ def _build_producto_read(producto: Producto) -> ProductoRead:
         descripcion=producto.descripcion,
         precio=producto.precio,
         stock_cantidad=producto.stock_cantidad,
-        categoria_id=producto.categoria_id,
+        categoria_principal_id=categoria_principal_id,
         codigo=producto.codigo,
         disponible=producto.disponible,
         deleted_at=producto.deleted_at,
         created_at=producto.created_at,
         updated_at=producto.updated_at,
-        categoria=producto.categoria,
+        categorias=categorias,
         ingredientes=ingredientes,
     )
 
@@ -75,7 +91,7 @@ def listar_productos(
     current_user: Usuario | None = Depends(get_optional_current_user),
 ):
     query = select(Producto).options(
-        selectinload(Producto.categoria),
+        selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
         selectinload(Producto.ingredientes).selectinload(
             ProductoIngrediente.ingrediente),
     )
@@ -92,8 +108,12 @@ def listar_productos(
         count_query = count_query.where(Producto.deleted_at.is_(None))
 
     if categoria_id is not None:
-        query = query.where(Producto.categoria_id == categoria_id)
-        count_query = count_query.where(Producto.categoria_id == categoria_id)
+        query = query.join(ProductoCategoria, ProductoCategoria.producto_id == Producto.id).where(
+            ProductoCategoria.categoria_id == categoria_id
+        )
+        count_query = count_query.join(ProductoCategoria, ProductoCategoria.producto_id == Producto.id).where(
+            ProductoCategoria.categoria_id == categoria_id
+        )
 
     if search:
         term = f"%{search.lower()}%"
@@ -136,7 +156,7 @@ def exportar_productos(
     query = (
         select(Producto)
         .options(
-            selectinload(Producto.categoria),
+            selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
             selectinload(Producto.ingredientes).selectinload(
                 ProductoIngrediente.ingrediente),
         )
@@ -181,7 +201,7 @@ def obtener_producto(producto_id: int, session: Session = Depends(get_session)):
     producto = session.exec(
         select(Producto)
         .options(
-            selectinload(Producto.categoria),
+            selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
             selectinload(Producto.ingredientes).selectinload(
                 ProductoIngrediente.ingrediente),
         )

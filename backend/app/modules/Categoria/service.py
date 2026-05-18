@@ -76,10 +76,12 @@ class CategoriaService:
             raise HTTPException(status_code=404, detail="Categoría no encontrada")
 
         # Verificar si tiene productos asociados
-        from app.db.models import Producto
+        from app.db.models import Producto, ProductoCategoria
         productos = session.exec(
-            select(Producto).where(
-                (Producto.categoria_id == categoria_id) & (Producto.deleted_at.is_(None))
+            select(Producto)
+            .join(ProductoCategoria, ProductoCategoria.producto_id == Producto.id)
+            .where(
+                (ProductoCategoria.categoria_id == categoria_id) & (Producto.deleted_at.is_(None))
             )
         ).all()
         if productos:

@@ -7,10 +7,37 @@ from sqlmodel import select
 
 from app.db.models import Producto, Ingrediente, ProductoIngrediente
 from app.db.unit_of_work import SqlModelUnitOfWork
-from app.modules.productos.schemas import ProductoCreate, ProductoUpdate
+from app.modules.productos.schemas import ProductoCreate, ProductoIngredientePayload, ProductoUpdate
 
 
 class ProductoService:
+
+    @staticmethod
+    def _validar_ingredientes(
+        ingredientes_payload: list[ProductoIngredientePayload],
+        uow: SqlModelUnitOfWork,
+    ) -> list[ProductoIngredientePayload]:
+        session = uow.session
+        ingrediente_ids = [item.ingrediente_id for item in ingredientes_payload]
+
+        if len(ingrediente_ids) != len(set(ingrediente_ids)):
+            raise HTTPException(
+                status_code=400,
+                detail="No se permiten ingredientes duplicados",
+            )
+
+        ingredientes = session.exec(
+            select(Ingrediente).where(Ingrediente.id.in_(ingrediente_ids))
+        ).all()
+        if len(ingredientes) != len(ingrediente_ids):
+            found_ids = {i.id for i in ingredientes}
+            missing = [item_id for item_id in ingrediente_ids if item_id not in found_ids]
+            raise HTTPException(
+                status_code=404,
+                detail=f"Ingredientes no encontrados: {missing}",
+            )
+
+        return ingredientes_payload
 
     @staticmethod
     def crear_producto(data: ProductoCreate, uow: SqlModelUnitOfWork) -> Producto:
@@ -37,27 +64,10 @@ class ProductoService:
                 detail=f"Categoría con id {data.categoria_id} no encontrada",
             )
 
-        # Validar que los ingredientes existen
-        ingredientes = session.exec(
-            select(Ingrediente).where(Ingrediente.id.in_(data.ingredientes_ids))
-        ).all()
-        if len(ingredientes) != len(data.ingredientes_ids):
-            found_ids = {i.id for i in ingredientes}
-            missing = [id for id in data.ingredientes_ids if id not in found_ids]
-            raise HTTPException(
-                status_code=404,
-                detail=f"Ingredientes no encontrados: {missing}",
-            )
-
-        # Validar ingredientes duplicados en la request
-        if len(data.ingredientes_ids) != len(set(data.ingredientes_ids)):
-            raise HTTPException(
-                status_code=400,
-                detail="No se permiten ingredientes duplicados",
-            )
+        ingredientes_payload = ProductoService._validar_ingredientes(data.ingredientes, uow)
 
         now = datetime.now(timezone.utc)
-        producto_data = data.model_dump(exclude={"ingredientes_ids"})
+        producto_data = data.model_dump(exclude={"ingredientes"})
         producto = Producto(
             **producto_data,
             created_at=now,
@@ -67,10 +77,12 @@ class ProductoService:
         uow.flush()
 
         # Crear las relaciones producto-ingrediente
-        for ingrediente_id in data.ingredientes_ids:
+        for ingrediente_data in ingredientes_payload:
             pi = ProductoIngrediente(
                 producto_id=producto.id,
-                ingrediente_id=ingrediente_id,
+                ingrediente_id=ingrediente_data.ingrediente_id,
+                es_removible=ingrediente_data.es_removible,
+                es_opcional=ingrediente_data.es_opcional,
             )
             session.add(pi)
         uow.flush()
@@ -121,25 +133,8 @@ class ProductoService:
                 )
 
         # Actualizar ingredientes si se proporcionan
-        if data.ingredientes_ids is not None:
-            # Validar ingredientes duplicados
-            if len(data.ingredientes_ids) != len(set(data.ingredientes_ids)):
-                raise HTTPException(
-                    status_code=400,
-                    detail="No se permiten ingredientes duplicados",
-                )
-
-            # Validar que los ingredientes existen
-            ingredientes = session.exec(
-                select(Ingrediente).where(Ingrediente.id.in_(data.ingredientes_ids))
-            ).all()
-            if len(ingredientes) != len(data.ingredientes_ids):
-                found_ids = {i.id for i in ingredientes}
-                missing = [id for id in data.ingredientes_ids if id not in found_ids]
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Ingredientes no encontrados: {missing}",
-                )
+        if data.ingredientes is not None:
+            ingredientes_payload = ProductoService._validar_ingredientes(data.ingredientes, uow)
 
             # Eliminar relaciones existentes
             existing_relations = session.exec(
@@ -151,15 +146,17 @@ class ProductoService:
                 session.delete(rel)
 
             # Crear nuevas relaciones
-            for ingrediente_id in data.ingredientes_ids:
+            for ingrediente_data in ingredientes_payload:
                 pi = ProductoIngrediente(
                     producto_id=producto_id,
-                    ingrediente_id=ingrediente_id,
+                    ingrediente_id=ingrediente_data.ingrediente_id,
+                    es_removible=ingrediente_data.es_removible,
+                    es_opcional=ingrediente_data.es_opcional,
                 )
                 session.add(pi)
 
-        # Actualizar campos del producto (excluyendo ingredientes_ids)
-        update_data = data.model_dump(exclude_unset=True, exclude={"ingredientes_ids"})
+        # Actualizar campos del producto (excluyendo ingredientes)
+        update_data = data.model_dump(exclude_unset=True, exclude={"ingredientes"})
         for field, value in update_data.items():
             setattr(producto, field, value)
         producto.updated_at = datetime.now(timezone.utc)
@@ -225,6 +222,7 @@ class ProductoService:
             "Descripción",
             "Precio",
             "Stock",
+            "Disponible",
             "Categoría",
             "Ingredientes",
             "Estado",
@@ -237,7 +235,13 @@ class ProductoService:
             estado = "Baja" if prod.deleted_at else "Activo"
             categoria_nombre = prod.categoria.nombre if prod.categoria else "Sin categoría"
             ingredientes_nombres = ", ".join(
-                [pi.ingrediente.nombre for pi in prod.ingredientes] if prod.ingredientes else []
+                [
+                    f"{pi.ingrediente.nombre}"
+                    f" ({'opcional' if pi.es_opcional else 'base'}"
+                    f" / {'removible' if pi.es_removible else 'fijo'})"
+                    for pi in prod.ingredientes
+                    if pi.ingrediente
+                ] if prod.ingredientes else []
             )
             ws.append(
                 [
@@ -247,6 +251,7 @@ class ProductoService:
                     prod.descripcion or "",
                     prod.precio,
                     prod.stock_cantidad,
+                    "Sí" if prod.disponible else "No",
                     categoria_nombre,
                     ingredientes_nombres,
                     estado,

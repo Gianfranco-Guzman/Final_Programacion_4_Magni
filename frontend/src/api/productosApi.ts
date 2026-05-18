@@ -1,6 +1,12 @@
 import axiosClient from './axiosClient'
 import { Producto } from '@models/index'
 
+export interface ProductoIngredienteInput {
+  ingrediente_id: number
+  es_removible: boolean
+  es_opcional: boolean
+}
+
 interface PaginatedResponse<T> {
   items: T[]
   total: number
@@ -25,7 +31,8 @@ export interface ProductoCreateInput {
   stock_cantidad: number
   categoria_id: number
   codigo: string
-  ingredientes_ids: number[]
+  disponible: boolean
+  ingredientes: ProductoIngredienteInput[]
 }
 
 export interface ProductoUpdateInput {
@@ -35,7 +42,8 @@ export interface ProductoUpdateInput {
   stock_cantidad?: number
   categoria_id?: number
   codigo?: string
-  ingredientes_ids?: number[]
+  disponible?: boolean
+  ingredientes?: ProductoIngredienteInput[]
 }
 
 export const productosApi = {

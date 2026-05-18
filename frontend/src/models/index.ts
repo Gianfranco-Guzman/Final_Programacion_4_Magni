@@ -47,6 +47,13 @@ export interface Ingrediente {
   updated_at: string
 }
 
+export interface ProductoIngredienteConfig {
+  ingrediente_id: number
+  es_removible: boolean
+  es_opcional: boolean
+  ingrediente: Ingrediente
+}
+
 export interface Producto {
   id: number
   nombre: string
@@ -55,11 +62,12 @@ export interface Producto {
   stock_cantidad: number
   categoria_id: number
   codigo: string
+  disponible: boolean
   deleted_at?: string | null
   created_at: string
   updated_at: string
   categoria?: Categoria
-  ingredientes?: Ingrediente[]
+  ingredientes?: ProductoIngredienteConfig[]
 }
 
 export interface LoginRequest {

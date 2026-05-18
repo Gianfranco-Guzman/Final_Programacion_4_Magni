@@ -35,6 +35,10 @@ class Producto(SQLModel, table=True):
         max_length=50,
         description="Código único entre productos activos (SKU). Unicidad validada a nivel servicio."
     )
+    disponible: bool = Field(
+        default=True,
+        description="Disponibilidad lógica del producto en catálogo"
+    )
     deleted_at: Optional[datetime] = Field(
         default=None,
         index=True,

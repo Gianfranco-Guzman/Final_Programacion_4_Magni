@@ -19,6 +19,7 @@ from app.modules.productos.schemas import (
     CategoriaRead,
     PaginatedResponse,
     ProductoCreate,
+    ProductoIngredienteRead,
     ProductoRead,
     ProductoUpdate,
 )
@@ -33,7 +34,14 @@ def _build_producto_read(producto: Producto) -> ProductoRead:
     if producto.ingredientes:
         for pi in producto.ingredientes:
             if pi.ingrediente:
-                ingredientes.append(pi.ingrediente)
+                ingredientes.append(
+                    ProductoIngredienteRead(
+                        ingrediente_id=pi.ingrediente_id,
+                        es_removible=pi.es_removible,
+                        es_opcional=pi.es_opcional,
+                        ingrediente=pi.ingrediente,
+                    )
+                )
     return ProductoRead(
         id=producto.id,
         nombre=producto.nombre,
@@ -42,6 +50,7 @@ def _build_producto_read(producto: Producto) -> ProductoRead:
         stock_cantidad=producto.stock_cantidad,
         categoria_id=producto.categoria_id,
         codigo=producto.codigo,
+        disponible=producto.disponible,
         deleted_at=producto.deleted_at,
         created_at=producto.created_at,
         updated_at=producto.updated_at,
@@ -96,11 +105,11 @@ def listar_productos(
         )
 
     if disponible is True:
-        query = query.where(Producto.stock_cantidad > 0)
-        count_query = count_query.where(Producto.stock_cantidad > 0)
+        query = query.where(Producto.disponible.is_(True))
+        count_query = count_query.where(Producto.disponible.is_(True))
     elif disponible is False:
-        query = query.where(Producto.stock_cantidad == 0)
-        count_query = count_query.where(Producto.stock_cantidad == 0)
+        query = query.where(Producto.disponible.is_(False))
+        count_query = count_query.where(Producto.disponible.is_(False))
 
     total = session.exec(count_query).one()
     pages = (total + size - 1) // size

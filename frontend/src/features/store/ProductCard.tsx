@@ -10,8 +10,13 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja, onReactivar }) => {
   const isDeleted = producto.deleted_at != null
-  const stockDisplay = producto.stock_cantidad > 0 ? `${producto.stock_cantidad} en stock` : 'Sin stock'
-  const stockColor = producto.stock_cantidad > 0 ? 'text-green-600' : 'text-red-600'
+  const isOperationallyAvailable = producto.disponible && producto.stock_cantidad > 0
+  const stockDisplay = !producto.disponible
+    ? 'No disponible'
+    : producto.stock_cantidad > 0
+      ? `${producto.stock_cantidad} en stock`
+      : 'Sin stock'
+  const stockColor = isOperationallyAvailable ? 'text-green-600' : 'text-red-600'
 
   return (
     <Card className={`h-full flex flex-col ${isDeleted ? 'bg-red-50 border-red-300' : ''}`}>
@@ -50,16 +55,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
 
         {producto.ingredientes && producto.ingredientes.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
-            {producto.ingredientes.slice(0, 3).map((ing) => (
+            {producto.ingredientes.slice(0, 3).map((item) => (
               <span
-                key={ing.id}
+                key={item.ingrediente_id}
                 className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                  ing.es_alergeno
+                  item.ingrediente.es_alergeno
                     ? 'bg-red-100 text-red-800'
                     : 'bg-gray-100 text-gray-700'
                 }`}
               >
-                {ing.nombre}
+                {item.ingrediente.nombre}
               </span>
             ))}
             {producto.ingredientes.length > 3 && (
@@ -80,6 +85,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
             <p className={`text-xs ${stockColor} font-medium`}>
               {stockDisplay}
             </p>
+            {!producto.disponible && (
+              <p className="text-xs text-amber-600 font-medium mt-1">
+                Oculto del flujo de compra
+              </p>
+            )}
           </div>
         </div>
 

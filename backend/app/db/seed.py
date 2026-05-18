@@ -166,22 +166,22 @@ def populate_seed_data() -> None:
         quesos = session.exec(select(Ingrediente).where(Ingrediente.nombre == "Quesos Importados")).first()
 
         productos_data = [
-            Producto(nombre="Pizza Clasica", descripcion="Pizza con salsa, queso y oregano", precio=299.99, stock_cantidad=50, categoria_id=pizzas.id, codigo="PIZZA-001"),
-            Producto(nombre="Pizza Pepperoni", descripcion="Pizza con queso mozzarella y pepperoni", precio=349.99, stock_cantidad=45, categoria_id=pizzas.id, codigo="PIZZA-002"),
-            Producto(nombre="Pizza Vegetariana", descripcion="Pizza con verduras frescas: tomate, cebolla, morron", precio=329.99, stock_cantidad=40, categoria_id=pizzas.id, codigo="PIZZA-003"),
-            Producto(nombre="Pizza BBQ", descripcion="Pizza con pollo, salsa BBQ y cebolla", precio=379.99, stock_cantidad=30, categoria_id=pizzas.id, codigo="PIZZA-004"),
-            Producto(nombre="Pizza 4 Quesos", descripcion="Pizza con mozzarella, brie, parmesano y roquefort", precio=399.99, stock_cantidad=25, categoria_id=pizzas.id, codigo="PIZZA-005"),
-            Producto(nombre="Coca Cola 2L", descripcion="Bebida gaseosa, botella de 2 litros", precio=89.99, stock_cantidad=120, categoria_id=bebidas.id, codigo="BEB-001"),
-            Producto(nombre="Agua Mineral", descripcion="Agua mineral sin gas, 1.5L", precio=49.99, stock_cantidad=200, categoria_id=bebidas.id, codigo="BEB-002"),
-            Producto(nombre="Cerveza Artesanal", descripcion="Cerveza artesanal premium, 355ml", precio=129.99, stock_cantidad=80, categoria_id=bebidas.id, codigo="BEB-003"),
-            Producto(nombre="Jugo de Naranja", descripcion="Jugo natural exprimido, 500ml", precio=79.99, stock_cantidad=60, categoria_id=bebidas.id, codigo="BEB-004"),
-            Producto(nombre="Tiramisu", descripcion="Postre italiano clasico con mascarpone", precio=149.99, stock_cantidad=25, categoria_id=postres.id, codigo="POST-001"),
-            Producto(nombre="Helado Vainilla", descripcion="Helado de vainilla artesanal, 500ml", precio=99.99, stock_cantidad=35, categoria_id=postres.id, codigo="POST-002"),
-            Producto(nombre="Brownie de Chocolate", descripcion="Brownie casero con nueces", precio=79.99, stock_cantidad=50, categoria_id=postres.id, codigo="POST-003"),
-            Producto(nombre="Cheesecake", descripcion="Cheesecake de frutos rojos", precio=169.99, stock_cantidad=20, categoria_id=postres.id, codigo="POST-004"),
-            Producto(nombre="Empanadas x6", descripcion="Empanadas de carne cortada a cuchillo", precio=199.99, stock_cantidad=40, categoria_id=entradas.id, codigo="ENT-001"),
-            Producto(nombre="Papas Fritas", descripcion="Papas fritas crocantes con ketchup y mayo", precio=89.99, stock_cantidad=70, categoria_id=entradas.id, codigo="ENT-002"),
-            Producto(nombre="Tabla de Fiambres", descripcion="Seleccion de fiambres y quesos importados", precio=349.99, stock_cantidad=15, categoria_id=entradas.id, codigo="ENT-003"),
+            Producto(nombre="Pizza Clasica", descripcion="Pizza con salsa, queso y oregano", precio=299.99, stock_cantidad=50, categoria_id=pizzas.id, codigo="PIZZA-001", disponible=True),
+            Producto(nombre="Pizza Pepperoni", descripcion="Pizza con queso mozzarella y pepperoni", precio=349.99, stock_cantidad=45, categoria_id=pizzas.id, codigo="PIZZA-002", disponible=True),
+            Producto(nombre="Pizza Vegetariana", descripcion="Pizza con verduras frescas: tomate, cebolla, morron", precio=329.99, stock_cantidad=40, categoria_id=pizzas.id, codigo="PIZZA-003", disponible=True),
+            Producto(nombre="Pizza BBQ", descripcion="Pizza con pollo, salsa BBQ y cebolla", precio=379.99, stock_cantidad=30, categoria_id=pizzas.id, codigo="PIZZA-004", disponible=True),
+            Producto(nombre="Pizza 4 Quesos", descripcion="Pizza con mozzarella, brie, parmesano y roquefort", precio=399.99, stock_cantidad=25, categoria_id=pizzas.id, codigo="PIZZA-005", disponible=True),
+            Producto(nombre="Coca Cola 2L", descripcion="Bebida gaseosa, botella de 2 litros", precio=89.99, stock_cantidad=120, categoria_id=bebidas.id, codigo="BEB-001", disponible=True),
+            Producto(nombre="Agua Mineral", descripcion="Agua mineral sin gas, 1.5L", precio=49.99, stock_cantidad=200, categoria_id=bebidas.id, codigo="BEB-002", disponible=True),
+            Producto(nombre="Cerveza Artesanal", descripcion="Cerveza artesanal premium, 355ml", precio=129.99, stock_cantidad=80, categoria_id=bebidas.id, codigo="BEB-003", disponible=True),
+            Producto(nombre="Jugo de Naranja", descripcion="Jugo natural exprimido, 500ml", precio=79.99, stock_cantidad=60, categoria_id=bebidas.id, codigo="BEB-004", disponible=False),
+            Producto(nombre="Tiramisu", descripcion="Postre italiano clasico con mascarpone", precio=149.99, stock_cantidad=25, categoria_id=postres.id, codigo="POST-001", disponible=True),
+            Producto(nombre="Helado Vainilla", descripcion="Helado de vainilla artesanal, 500ml", precio=99.99, stock_cantidad=35, categoria_id=postres.id, codigo="POST-002", disponible=True),
+            Producto(nombre="Brownie de Chocolate", descripcion="Brownie casero con nueces", precio=79.99, stock_cantidad=50, categoria_id=postres.id, codigo="POST-003", disponible=True),
+            Producto(nombre="Cheesecake", descripcion="Cheesecake de frutos rojos", precio=169.99, stock_cantidad=20, categoria_id=postres.id, codigo="POST-004", disponible=True),
+            Producto(nombre="Empanadas x6", descripcion="Empanadas de carne cortada a cuchillo", precio=199.99, stock_cantidad=40, categoria_id=entradas.id, codigo="ENT-001", disponible=True),
+            Producto(nombre="Papas Fritas", descripcion="Papas fritas crocantes con ketchup y mayo", precio=89.99, stock_cantidad=70, categoria_id=entradas.id, codigo="ENT-002", disponible=True),
+            Producto(nombre="Tabla de Fiambres", descripcion="Seleccion de fiambres y quesos importados", precio=349.99, stock_cantidad=15, categoria_id=entradas.id, codigo="ENT-003", disponible=False),
         ]
         for p in productos_data:
             session.add(p)
@@ -190,48 +190,48 @@ def populate_seed_data() -> None:
         # Asignar ingredientes a productos
         producto_ingrediente_data = [
             # Pizza Clasica: salsa, queso, oregano
-            ProductoIngrediente(producto_id=productos_data[0].id, ingrediente_id=salsa_tomate.id),
-            ProductoIngrediente(producto_id=productos_data[0].id, ingrediente_id=queso.id),
-            ProductoIngrediente(producto_id=productos_data[0].id, ingrediente_id=oregano.id),
+            ProductoIngrediente(producto_id=productos_data[0].id, ingrediente_id=salsa_tomate.id, es_removible=False, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[0].id, ingrediente_id=queso.id, es_removible=True, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[0].id, ingrediente_id=oregano.id, es_removible=True, es_opcional=True),
             # Pizza Pepperoni: queso, pepperoni
-            ProductoIngrediente(producto_id=productos_data[1].id, ingrediente_id=queso.id),
-            ProductoIngrediente(producto_id=productos_data[1].id, ingrediente_id=pepperoni.id),
+            ProductoIngrediente(producto_id=productos_data[1].id, ingrediente_id=queso.id, es_removible=True, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[1].id, ingrediente_id=pepperoni.id, es_removible=True, es_opcional=False),
             # Pizza Vegetariana: salsa, queso, tomate, cebolla, morron
-            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=salsa_tomate.id),
-            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=queso.id),
-            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=tomate.id),
-            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=cebolla.id),
-            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=morron.id),
+            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=salsa_tomate.id, es_removible=False, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=queso.id, es_removible=True, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=tomate.id, es_removible=True, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=cebolla.id, es_removible=True, es_opcional=True),
+            ProductoIngrediente(producto_id=productos_data[2].id, ingrediente_id=morron.id, es_removible=True, es_opcional=True),
             # Pizza BBQ: pollo, salsa bbq, cebolla, queso
-            ProductoIngrediente(producto_id=productos_data[3].id, ingrediente_id=pollo.id),
-            ProductoIngrediente(producto_id=productos_data[3].id, ingrediente_id=salsa_bbq.id),
-            ProductoIngrediente(producto_id=productos_data[3].id, ingrediente_id=cebolla.id),
-            ProductoIngrediente(producto_id=productos_data[3].id, ingrediente_id=queso.id),
+            ProductoIngrediente(producto_id=productos_data[3].id, ingrediente_id=pollo.id, es_removible=True, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[3].id, ingrediente_id=salsa_bbq.id, es_removible=False, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[3].id, ingrediente_id=cebolla.id, es_removible=True, es_opcional=True),
+            ProductoIngrediente(producto_id=productos_data[3].id, ingrediente_id=queso.id, es_removible=True, es_opcional=False),
             # Pizza 4 Quesos: mozzarella, brie, parmesano, roquefort
-            ProductoIngrediente(producto_id=productos_data[4].id, ingrediente_id=queso.id),
-            ProductoIngrediente(producto_id=productos_data[4].id, ingrediente_id=brie.id),
-            ProductoIngrediente(producto_id=productos_data[4].id, ingrediente_id=parmesano.id),
-            ProductoIngrediente(producto_id=productos_data[4].id, ingrediente_id=roquefort.id),
+            ProductoIngrediente(producto_id=productos_data[4].id, ingrediente_id=queso.id, es_removible=True, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[4].id, ingrediente_id=brie.id, es_removible=True, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[4].id, ingrediente_id=parmesano.id, es_removible=True, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[4].id, ingrediente_id=roquefort.id, es_removible=True, es_opcional=False),
             # Tiramisu: mascarpone, cafe
-            ProductoIngrediente(producto_id=productos_data[9].id, ingrediente_id=mascarpone.id),
-            ProductoIngrediente(producto_id=productos_data[9].id, ingrediente_id=cafe.id),
+            ProductoIngrediente(producto_id=productos_data[9].id, ingrediente_id=mascarpone.id, es_removible=False, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[9].id, ingrediente_id=cafe.id, es_removible=False, es_opcional=False),
             # Helado Vainilla: vainilla
-            ProductoIngrediente(producto_id=productos_data[10].id, ingrediente_id=vainilla.id),
+            ProductoIngrediente(producto_id=productos_data[10].id, ingrediente_id=vainilla.id, es_removible=False, es_opcional=False),
             # Brownie: chocolate, nueces
-            ProductoIngrediente(producto_id=productos_data[11].id, ingrediente_id=chocolate.id),
-            ProductoIngrediente(producto_id=productos_data[11].id, ingrediente_id=nueces.id),
+            ProductoIngrediente(producto_id=productos_data[11].id, ingrediente_id=chocolate.id, es_removible=False, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[11].id, ingrediente_id=nueces.id, es_removible=True, es_opcional=True),
             # Cheesecake: frutos rojos
-            ProductoIngrediente(producto_id=productos_data[12].id, ingrediente_id=frutos_rojos.id),
+            ProductoIngrediente(producto_id=productos_data[12].id, ingrediente_id=frutos_rojos.id, es_removible=True, es_opcional=False),
             # Empanadas: carne, masa
-            ProductoIngrediente(producto_id=productos_data[13].id, ingrediente_id=carne.id),
-            ProductoIngrediente(producto_id=productos_data[13].id, ingrediente_id=masa.id),
+            ProductoIngrediente(producto_id=productos_data[13].id, ingrediente_id=carne.id, es_removible=False, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[13].id, ingrediente_id=masa.id, es_removible=False, es_opcional=False),
             # Papas Fritas: papa, ketchup, mayonesa
-            ProductoIngrediente(producto_id=productos_data[14].id, ingrediente_id=papa.id),
-            ProductoIngrediente(producto_id=productos_data[14].id, ingrediente_id=ketchup.id),
-            ProductoIngrediente(producto_id=productos_data[14].id, ingrediente_id=mayonesa.id),
+            ProductoIngrediente(producto_id=productos_data[14].id, ingrediente_id=papa.id, es_removible=False, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[14].id, ingrediente_id=ketchup.id, es_removible=True, es_opcional=True),
+            ProductoIngrediente(producto_id=productos_data[14].id, ingrediente_id=mayonesa.id, es_removible=True, es_opcional=True),
             # Tabla de Fiambres: fiambres, quesos
-            ProductoIngrediente(producto_id=productos_data[15].id, ingrediente_id=fiambres.id),
-            ProductoIngrediente(producto_id=productos_data[15].id, ingrediente_id=quesos.id),
+            ProductoIngrediente(producto_id=productos_data[15].id, ingrediente_id=fiambres.id, es_removible=True, es_opcional=False),
+            ProductoIngrediente(producto_id=productos_data[15].id, ingrediente_id=quesos.id, es_removible=True, es_opcional=False),
         ]
         for pi in producto_ingrediente_data:
             session.add(pi)

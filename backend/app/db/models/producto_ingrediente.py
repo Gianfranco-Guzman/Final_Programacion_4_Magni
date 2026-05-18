@@ -16,6 +16,14 @@ class ProductoIngrediente(SQLModel, table=True):
         primary_key=True,
         description="ID del ingrediente"
     )
+    es_removible: bool = Field(
+        default=True,
+        description="Indica si el ingrediente puede removerse en una personalización"
+    )
+    es_opcional: bool = Field(
+        default=False,
+        description="Indica si el ingrediente es opcional en la composición base"
+    )
 
     producto: Optional["Producto"] = Relationship(back_populates="ingredientes")
     ingrediente: Optional["Ingrediente"] = Relationship(back_populates="productos")

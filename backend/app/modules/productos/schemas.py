@@ -34,6 +34,21 @@ class IngredienteRead(IngredienteBase):
     model_config = {"from_attributes": True}
 
 
+class ProductoIngredientePayload(BaseModel):
+    ingrediente_id: int = Field(..., ge=1)
+    es_removible: bool = Field(default=True)
+    es_opcional: bool = Field(default=False)
+
+
+class ProductoIngredienteRead(BaseModel):
+    ingrediente_id: int
+    es_removible: bool
+    es_opcional: bool
+    ingrediente: IngredienteRead
+
+    model_config = {"from_attributes": True}
+
+
 class ProductoBase(BaseModel):
     nombre: str = Field(..., min_length=1, max_length=150)
     descripcion: Optional[str] = Field(default=None, max_length=500)
@@ -41,10 +56,11 @@ class ProductoBase(BaseModel):
     stock_cantidad: int = Field(default=0, ge=0)
     categoria_id: int
     codigo: str = Field(..., min_length=1, max_length=50)
+    disponible: bool = Field(default=True)
 
 
 class ProductoCreate(ProductoBase):
-    ingredientes_ids: list[int] = Field(..., min_length=1, description="Lista de IDs de ingredientes")
+    ingredientes: list[ProductoIngredientePayload] = Field(..., min_length=1, description="Configuración de ingredientes del producto")
 
 
 class ProductoUpdate(BaseModel):
@@ -54,7 +70,8 @@ class ProductoUpdate(BaseModel):
     stock_cantidad: Optional[int] = Field(None, ge=0)
     categoria_id: Optional[int] = None
     codigo: Optional[str] = Field(None, min_length=1, max_length=50)
-    ingredientes_ids: Optional[list[int]] = None
+    disponible: Optional[bool] = None
+    ingredientes: Optional[list[ProductoIngredientePayload]] = None
 
 
 class ProductoRead(ProductoBase):
@@ -63,7 +80,7 @@ class ProductoRead(ProductoBase):
     created_at: datetime
     updated_at: datetime
     categoria: Optional[CategoriaRead] = None
-    ingredientes: list[IngredienteRead] = Field(default_factory=list)
+    ingredientes: list[ProductoIngredienteRead] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 

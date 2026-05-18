@@ -18,12 +18,25 @@ engine = create_engine(
 def create_all_tables() -> None:
     SQLModel.metadata.create_all(engine)
     _ensure_identity_schema()
+    _ensure_product_schema()
 
 
 def _ensure_identity_schema() -> None:
     statements = [
         "ALTER TABLE usuario ADD COLUMN IF NOT EXISTS apellido VARCHAR(80) NOT NULL DEFAULT ''",
         "ALTER TABLE usuario ADD COLUMN IF NOT EXISTS celular VARCHAR(20)",
+    ]
+
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
+def _ensure_product_schema() -> None:
+    statements = [
+        "ALTER TABLE producto ADD COLUMN IF NOT EXISTS disponible BOOLEAN NOT NULL DEFAULT true",
+        "ALTER TABLE producto_ingrediente ADD COLUMN IF NOT EXISTS es_removible BOOLEAN NOT NULL DEFAULT true",
+        "ALTER TABLE producto_ingrediente ADD COLUMN IF NOT EXISTS es_opcional BOOLEAN NOT NULL DEFAULT false",
     ]
 
     with engine.begin() as connection:

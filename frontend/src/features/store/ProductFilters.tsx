@@ -63,7 +63,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           >
             <option value="">Todos</option>
             <option value="available">Disponibles</option>
-            <option value="unavailable">Sin stock</option>
+            <option value="unavailable">No disponibles</option>
           </select>
         </div>
       </div>

@@ -40,8 +40,28 @@ def populate_seed_data() -> None:
         session.commit()
         session.refresh(admin_user)
 
-        if admin_rol:
-            session.add(UsuarioRol(usuario_id=admin_user.id, rol_id=admin_rol.id))
+        stock_rol = session.exec(select(Rol).where(Rol.nombre == "STOCK")).first()
+        pedidos_rol = session.exec(select(Rol).where(Rol.nombre == "PEDIDOS")).first()
+
+        roles_admin = [r for r in [admin_rol, stock_rol, pedidos_rol] if r]
+        for rol in roles_admin:
+            session.add(UsuarioRol(usuario_id=admin_user.id, rol_id=rol.id))
+        session.commit()
+
+        # Usuario de prueba con rol CLIENT
+        client_rol = session.exec(select(Rol).where(Rol.nombre == "CLIENT")).first()
+        client_user = Usuario(
+            email="juan@example.com",
+            password_hash=hash_password("Juan1234!"),
+            nombre="Juan Pérez",
+            is_active=True,
+        )
+        session.add(client_user)
+        session.commit()
+        session.refresh(client_user)
+
+        if client_rol:
+            session.add(UsuarioRol(usuario_id=client_user.id, rol_id=client_rol.id))
             session.commit()
 
         categorias_data = [
@@ -192,7 +212,7 @@ def populate_seed_data() -> None:
             session.add(pi)
         session.commit()
 
-        print("Seed data poblado: 4 roles, admin@foodstore.local, 4 categorias, 26 ingredientes, 16 productos con ingredientes")
+        print("Seed data poblado: 4 roles, admin@foodstore.com, juan@example.com, 4 categorias, 26 ingredientes, 16 productos con ingredientes")
 
     except Exception as e:
         session.rollback()

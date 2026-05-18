@@ -16,9 +16,14 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
 
     print("Iniciando Food Store API...")
-    create_all_tables()
-    print("Tablas creadas")
-    populate_seed_data()
+    try:
+        create_all_tables()
+        print("Tablas creadas")
+        populate_seed_data()
+        print("Seed data poblado")
+    except Exception as e:
+        print(f"[AVISO] BD no disponible: {e}")
+        print("La app arranca igual — algunos endpoints fallarán hasta que PostgreSQL esté corriendo.")
     
     yield
     

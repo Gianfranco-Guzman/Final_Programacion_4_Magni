@@ -1,5 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field
+from datetime import datetime
 from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginRequest(BaseModel):
@@ -25,6 +27,31 @@ class RolResponse(BaseModel):
 
 
 class UsuarioResponse(BaseModel):
+    id: int
+    email: str
+    nombre: str
+    is_active: bool
+    roles: list[RolResponse] = []
+
+    model_config = {"from_attributes": True}
+
+
+class AdminUserDetailResponse(BaseModel):
+    """Respuesta detallada para endpoints de administración."""
+    id: int
+    email: str
+    nombre: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime] = None
+    roles: list[RolResponse] = []
+
+    model_config = {"from_attributes": True}
+
+
+class AdminActionResponse(BaseModel):
+    """Respuesta tras una acción de admin (desactivar/activar)."""
     id: int
     email: str
     nombre: str

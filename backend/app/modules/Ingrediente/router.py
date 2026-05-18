@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_role
 from app.db.base import get_session
 from app.db.models import Ingrediente
 from app.db.models.usuario import Usuario
@@ -49,7 +49,7 @@ def obtener_ingrediente(ingrediente_id: int, session: Session = Depends(get_sess
 def crear_ingrediente(
     data: IngredienteCreate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     ingrediente = IngredienteService.crear_ingrediente(data, uow)
     return IngredienteRead.model_validate(ingrediente)
@@ -64,7 +64,7 @@ def actualizar_ingrediente(
     ingrediente_id: int,
     data: IngredienteUpdate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     ingrediente = IngredienteService.actualizar_ingrediente(ingrediente_id, data, uow)
     return IngredienteRead.model_validate(ingrediente)
@@ -78,7 +78,7 @@ def actualizar_ingrediente(
 def eliminar_ingrediente(
     ingrediente_id: int,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     ingrediente = IngredienteService.eliminar_ingrediente(ingrediente_id, uow)
     return IngredienteRead.model_validate(ingrediente)

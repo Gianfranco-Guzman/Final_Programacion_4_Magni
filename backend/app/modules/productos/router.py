@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from sqlmodel import Session, func, select
 from sqlalchemy.orm import selectinload
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_role
 from app.db.base import get_session
 from app.db.models import Categoria, Producto, ProductoIngrediente
 from app.db.models.usuario import Usuario
@@ -184,7 +184,7 @@ def obtener_producto(producto_id: int, session: Session = Depends(get_session)):
 def crear_producto(
     data: ProductoCreate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.crear_producto(data, uow)
     return _build_producto_read(producto)
@@ -199,7 +199,7 @@ def actualizar_producto(
     producto_id: int,
     data: ProductoUpdate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.actualizar_producto(producto_id, data, uow)
     return _build_producto_read(producto)
@@ -213,7 +213,7 @@ def actualizar_producto(
 def dar_de_baja(
     producto_id: int,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.dar_de_baja(producto_id, uow)
     return _build_producto_read(producto)
@@ -227,7 +227,7 @@ def dar_de_baja(
 def reactivar_producto(
     producto_id: int,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.reactivar_producto(producto_id, uow)
     return _build_producto_read(producto)

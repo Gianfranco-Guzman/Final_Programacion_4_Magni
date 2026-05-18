@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_role
 from app.db.base import get_session
 from app.db.models import Categoria
 from app.db.models.usuario import Usuario
@@ -49,7 +49,7 @@ def obtener_categoria(categoria_id: int, session: Session = Depends(get_session)
 def crear_categoria(
     data: CategoriaCreate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _admin: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     categoria = CategoriaService.crear_categoria(data, uow)
     return CategoriaRead.model_validate(categoria)
@@ -64,7 +64,7 @@ def actualizar_categoria(
     categoria_id: int,
     data: CategoriaUpdate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _admin: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     categoria = CategoriaService.actualizar_categoria(categoria_id, data, uow)
     return CategoriaRead.model_validate(categoria)
@@ -78,7 +78,7 @@ def actualizar_categoria(
 def eliminar_categoria(
     categoria_id: int,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _admin: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     categoria = CategoriaService.eliminar_categoria(categoria_id, uow)
     return CategoriaRead.model_validate(categoria)

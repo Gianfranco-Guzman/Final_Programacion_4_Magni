@@ -4,11 +4,13 @@ from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.config import get_settings
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_role
 from app.core.security import create_access_token
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.auth.schemas import (
+    AdminActionResponse,
+    AdminUserDetailResponse,
     LoginRequest,
     RegisterRequest,
     TokenResponse,
@@ -84,15 +86,7 @@ async def register(
     request: RegisterRequest,
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> UsuarioResponse:
-    usuario = AuthService.crear_usuario(request, uow)
-
-    return UsuarioResponse(
-        id=usuario.id,
-        email=usuario.email,
-        nombre=usuario.nombre,
-        is_active=usuario.is_active,
-        roles=[],
-    )
+    return AuthService.crear_usuario(request, uow)
 
 
 @router.get(
@@ -110,3 +104,61 @@ async def get_me(
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> UsuarioResponse:
     return AuthService.obtener_usuario_con_roles(current_user.id, uow)
+
+
+# ─── Rutas de administración (RBAC: solo ADMIN) ───────────────────────────
+
+
+@router.get(
+    "/admin/usuarios",
+    response_model=list[AdminUserDetailResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Listar todos los usuarios (solo admin)",
+    responses={
+        200: {"description": "Lista de usuarios con roles"},
+        403: {"description": "No autorizado — se requiere rol ADMIN"},
+    },
+)
+async def admin_listar_usuarios(
+    _admin: Usuario = Depends(require_role(["ADMIN"])),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+) -> list[AdminUserDetailResponse]:
+    return AuthService.listar_usuarios(uow)
+
+
+@router.patch(
+    "/admin/usuarios/{usuario_id}/desactivar",
+    response_model=AdminActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Desactivar usuario (solo admin)",
+    responses={
+        200: {"description": "Usuario desactivado"},
+        403: {"description": "No autorizado — se requiere rol ADMIN"},
+        404: {"description": "Usuario no encontrado"},
+    },
+)
+async def admin_desactivar_usuario(
+    usuario_id: int,
+    _admin: Usuario = Depends(require_role(["ADMIN"])),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+) -> AdminActionResponse:
+    return AuthService.toggle_usuario_activo(usuario_id, activo=False, uow=uow)
+
+
+@router.patch(
+    "/admin/usuarios/{usuario_id}/activar",
+    response_model=AdminActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reactivar usuario (solo admin)",
+    responses={
+        200: {"description": "Usuario reactivado"},
+        403: {"description": "No autorizado — se requiere rol ADMIN"},
+        404: {"description": "Usuario no encontrado"},
+    },
+)
+async def admin_activar_usuario(
+    usuario_id: int,
+    _admin: Usuario = Depends(require_role(["ADMIN"])),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+) -> AdminActionResponse:
+    return AuthService.toggle_usuario_activo(usuario_id, activo=True, uow=uow)

@@ -5,7 +5,9 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
 
 from app.db.base import get_session
-from app.db.models.usuario import Usuario
+from app.db.models.rol import Rol
+from app.db.models.usuario import Usuario, UsuarioRol
+from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.core.security import decode_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
@@ -50,18 +52,31 @@ async def get_current_user(
 
 
 def require_role(allowed_roles: list[str]):
+    """
+    Factory de dependencias para control de acceso basado en roles (RBAC).
+
+    Obtiene el usuario autenticado via get_current_user y consulta los roles
+    desde la BD via UnitOfWork, garantizando que reflejan el estado actual
+    del usuario (no el del JWT, que podría estar desactualizado).
+
+    Uso:
+        @router.get("/admin/...", dependencies=[Depends(require_role(["ADMIN"]))])
+        # o como parámetro:
+        _admin: Usuario = Depends(require_role(["ADMIN"]))
+    """
 
     async def role_checker(
-        token: Annotated[str, Depends(oauth2_scheme)],
+        current_user: Usuario = Depends(get_current_user),
+        uow: SqlModelUnitOfWork = Depends(get_uow),
     ) -> Usuario:
-        payload = decode_access_token(token)
-        if payload is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token inválido o expirado",
-            )
+        session = uow.session
+        statement = (
+            select(Rol.nombre)
+            .join(UsuarioRol, UsuarioRol.rol_id == Rol.id)
+            .where(UsuarioRol.usuario_id == current_user.id)
+        )
+        user_roles: list[str] = list(session.exec(statement).all())
 
-        user_roles: list[str] = payload.get("roles", [])
         if not any(role in allowed_roles for role in user_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -71,7 +86,6 @@ def require_role(allowed_roles: list[str]):
                 ),
             )
 
-        user_id = payload.get("sub")
-        return Usuario(id=int(user_id))
+        return current_user
 
     return role_checker

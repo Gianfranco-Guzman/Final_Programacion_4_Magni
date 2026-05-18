@@ -17,8 +17,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
   const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate('/login')
   }
 
@@ -113,7 +113,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
             <p className="text-xs text-gray-500 mb-2">Sesión: {usuario.nombre}</p>
             <button
-              onClick={() => { closeSidebar(); handleLogout() }}
+              onClick={() => { closeSidebar(); void handleLogout() }}
               className="w-full text-left px-3 py-2 rounded text-red-600 hover:bg-red-50 font-medium text-sm"
             >
               Cerrar sesión

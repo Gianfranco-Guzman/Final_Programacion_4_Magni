@@ -1,95 +1,103 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { Usuario } from '@models/index'
 import { authApi } from '@api/authApi'
 
 interface AuthState {
-  accessToken: string | null
   usuario: Usuario | null
   isAuthenticated: boolean
+  initialized: boolean
   loading: boolean
   error: string | null
 
   login: (email: string, password: string) => Promise<void>
   logout: () => void
-  setToken: (token: string) => void
   setUser: (user: Usuario) => void
   setLoading: (loading: boolean) => void
   clearError: () => void
   fetchMe: () => Promise<void>
+  initializeSession: () => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      accessToken: null,
+export const useAuthStore = create<AuthState>()((set) => ({
+  usuario: null,
+  isAuthenticated: false,
+  initialized: false,
+  loading: false,
+  error: null,
+
+  login: async (email: string, password: string) => {
+    set({ loading: true, error: null })
+    try {
+      await authApi.login({ email, password })
+      const user = await authApi.me()
+      set({
+        usuario: user,
+        isAuthenticated: true,
+        initialized: true,
+        loading: false,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error en login'
+      set({
+        usuario: null,
+        isAuthenticated: false,
+        initialized: true,
+        error: message,
+        loading: false,
+      })
+      throw err
+    }
+  },
+
+  logout: () => {
+    set({
       usuario: null,
       isAuthenticated: false,
+      initialized: true,
       loading: false,
       error: null,
+    })
+  },
 
-      login: async (email: string, password: string) => {
-        set({ loading: true, error: null })
-        try {
-          const response = await authApi.login({ email, password })
-          set({
-            accessToken: response.access_token,
-            isAuthenticated: true,
-            loading: false,
-          })
+  setUser: (user: Usuario) => {
+    set({ usuario: user, isAuthenticated: true, initialized: true })
+  },
 
-          const user = await authApi.me()
-          set({ usuario: user })
-        } catch (err) {
-          const message = err instanceof Error ? err.message : 'Error en login'
-          set({ error: message, loading: false })
-          throw err
-        }
-      },
+  setLoading: (loading: boolean) => {
+    set({ loading })
+  },
 
-      logout: () => {
-        set({
-          accessToken: null,
-          usuario: null,
-          isAuthenticated: false,
-          error: null,
-        })
-      },
+  clearError: () => {
+    set({ error: null })
+  },
 
-      setToken: (token: string) => {
-        set({
-          accessToken: token,
-          isAuthenticated: true,
-        })
-      },
-
-      setUser: (user: Usuario) => {
-        set({ usuario: user, isAuthenticated: true })
-      },
-
-      setLoading: (loading: boolean) => {
-        set({ loading })
-      },
-
-      clearError: () => {
-        set({ error: null })
-      },
-
-      fetchMe: async () => {
-        try {
-          const user = await authApi.me()
-          set({ usuario: user, isAuthenticated: true })
-        } catch (err) {
-          set({ isAuthenticated: false })
-          throw err
-        }
-      },
-    }),
-    {
-      name: 'auth-store',
-      partialize: (state) => ({
-        accessToken: state.accessToken,
-      }),
+  fetchMe: async () => {
+    try {
+      const user = await authApi.me()
+      set({ usuario: user, isAuthenticated: true, initialized: true })
+    } catch (err) {
+      set({ usuario: null, isAuthenticated: false, initialized: true })
+      throw err
     }
-  )
-)
+  },
+
+  initializeSession: async () => {
+    set({ loading: true, error: null })
+    try {
+      const user = await authApi.me()
+      set({
+        usuario: user,
+        isAuthenticated: true,
+        initialized: true,
+        loading: false,
+      })
+    } catch {
+      set({
+        usuario: null,
+        isAuthenticated: false,
+        initialized: true,
+        loading: false,
+      })
+    }
+  },
+}))

@@ -26,6 +26,14 @@ export const useAuth = () => {
     },
   })
 
+  const logout = async () => {
+    try {
+      await authApi.logout()
+    } finally {
+      storeLogout()
+    }
+  }
+
   return {
     login: loginMutation.mutate,
     loginLoading: loginMutation.isPending,
@@ -33,6 +41,6 @@ export const useAuth = () => {
     register: registerMutation.mutate,
     registerLoading: registerMutation.isPending,
     registerError: registerMutation.error,
-    logout: storeLogout,
+    logout,
   }
 }

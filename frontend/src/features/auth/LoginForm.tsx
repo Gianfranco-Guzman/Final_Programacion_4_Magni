@@ -101,7 +101,7 @@ export const LoginForm: React.FC = () => {
         <div className="mt-6 text-center text-sm text-gray-600">
           <p>Usuario de prueba:</p>
           <p className="font-mono text-xs mt-2">
-            admin@foodstore.com / admin123
+            admin@foodstore.com / admin1234
           </p>
         </div>
       </Card>

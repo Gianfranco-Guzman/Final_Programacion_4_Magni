@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@store/authStore'
@@ -17,28 +17,20 @@ const MANAGEMENT_ROLES = ['ADMIN', 'STOCK']
 const queryClient = new QueryClient()
 
 function App() {
-  const accessToken = useAuthStore((state) => state.accessToken)
-  const setToken = useAuthStore((state) => state.setToken)
-  const fetchMe = useAuthStore((state) => state.fetchMe)
-  const setLoading = useAuthStore((state) => state.setLoading)
+  const initializeSession = useAuthStore((state) => state.initializeSession)
+  const initializedRef = useRef(false)
 
   useEffect(() => {
-    const restoreSession = async () => {
-      if (!accessToken) return
-
-      setLoading(true)
-      try {
-        setToken(accessToken)
-        await fetchMe()
-      } catch (error) {
-        console.error('Error restaurando sesión:', error)
-      } finally {
-        setLoading(false)
-      }
+    if (initializedRef.current) {
+      return
     }
 
-    restoreSession()
-  }, [accessToken, setToken, fetchMe, setLoading])
+    initializedRef.current = true
+
+    initializeSession().catch((error) => {
+      console.error('Error restaurando sesión:', error)
+    })
+  }, [initializeSession])
 
   return (
     <QueryClientProvider client={queryClient}>

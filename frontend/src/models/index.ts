@@ -5,8 +5,6 @@ export interface Usuario {
   email: string
   nombre: string
   is_active: boolean
-  created_at: string
-  updated_at: string
   roles: RoleInfo[]
 }
 
@@ -52,9 +50,8 @@ export interface LoginRequest {
   password: string
 }
 
-export interface LoginResponse {
-  access_token: string
-  token_type: string
+export interface SessionResponse {
+  message: string
 }
 
 export interface RegisterRequest {

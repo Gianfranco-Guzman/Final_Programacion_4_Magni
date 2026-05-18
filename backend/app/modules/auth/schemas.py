@@ -21,6 +21,10 @@ class TokenResponse(BaseModel):
     expires_in: int = Field(..., description="Segundos hasta expiración")
 
 
+class SessionResponse(BaseModel):
+    message: str = Field(..., description="Mensaje informativo de sesión")
+
+
 class RolResponse(BaseModel):
     id: int
     nombre: str

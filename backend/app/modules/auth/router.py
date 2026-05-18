@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.config import get_settings
@@ -13,7 +13,7 @@ from app.modules.auth.schemas import (
     AdminUserDetailResponse,
     LoginRequest,
     RegisterRequest,
-    TokenResponse,
+    SessionResponse,
     UsuarioResponse,
 )
 from app.modules.auth.service import AuthService
@@ -22,11 +22,31 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
 
+def _set_auth_cookie(response: Response, access_token: str) -> None:
+    response.set_cookie(
+        key=settings.auth_cookie_name,
+        value=access_token,
+        httponly=True,
+        max_age=settings.access_token_expire_minutes * 60,
+        samesite=settings.auth_cookie_samesite,
+        secure=settings.auth_cookie_secure,
+    )
+
+
+def _clear_auth_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=settings.auth_cookie_name,
+        httponly=True,
+        samesite=settings.auth_cookie_samesite,
+        secure=settings.auth_cookie_secure,
+    )
+
+
 @router.post(
     "/login",
-    response_model=TokenResponse,
+    response_model=SessionResponse,
     status_code=status.HTTP_200_OK,
-    summary="Login de usuario (JSON)",
+    summary="Login de usuario con cookie HttpOnly",
     responses={
         200: {"description": "Login exitoso"},
         401: {"description": "Credenciales inválidas"},
@@ -34,24 +54,22 @@ settings = get_settings()
 )
 async def login(
     request: LoginRequest,
+    response: Response,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-) -> TokenResponse:
+) -> SessionResponse:
     user, roles = AuthService.autenticar(request.email, request.password, uow)
     access_token = create_access_token({"sub": str(user.id), "roles": roles})
     print(f"Usuario {user.email} autenticado con roles: {roles}")
+    _set_auth_cookie(response, access_token)
 
-    return TokenResponse(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=settings.access_token_expire_minutes * 60,
-    )
+    return SessionResponse(message="Login exitoso. Sesión iniciada.")
 
 
 @router.post(
     "/token",
-    response_model=TokenResponse,
+    response_model=SessionResponse,
     status_code=status.HTTP_200_OK,
-    summary="Login OAuth2 - para Swagger UI",
+    summary="Login OAuth2 con cookie HttpOnly",
     responses={
         200: {"description": "Login exitoso"},
         401: {"description": "Credenciales inválidas"},
@@ -59,17 +77,26 @@ async def login(
 )
 async def login_oauth2(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    response: Response,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-) -> TokenResponse:
+) -> SessionResponse:
     user, roles = AuthService.autenticar(
         form_data.username, form_data.password, uow)
     access_token = create_access_token({"sub": str(user.id), "roles": roles})
+    _set_auth_cookie(response, access_token)
 
-    return TokenResponse(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=settings.access_token_expire_minutes * 60,
-    )
+    return SessionResponse(message="Login exitoso. Sesión iniciada.")
+
+
+@router.post(
+    "/logout",
+    response_model=SessionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cerrar sesión y limpiar cookie",
+)
+async def logout(response: Response) -> SessionResponse:
+    _clear_auth_cookie(response)
+    return SessionResponse(message="Sesión cerrada exitosamente")
 
 
 @router.post(

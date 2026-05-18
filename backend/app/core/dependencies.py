@@ -1,29 +1,48 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
 
+from app.core.config import get_settings
 from app.db.base import get_session
 from app.db.models.rol import Rol
 from app.db.models.usuario import Usuario, UsuarioRol
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.core.security import decode_access_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
-optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=False)
+
+class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
+    async def __call__(self, request: Request) -> str | None:
+        settings = get_settings()
+        token = request.cookies.get(settings.auth_cookie_name)
+
+        if not token:
+            if self.auto_error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="No autenticado",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            return None
+
+        return token
 
 
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    session: Annotated[Session, Depends(get_session)],
-) -> Usuario:
+oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/v1/auth/token")
+optional_oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/v1/auth/token", auto_error=False)
 
-    credentials_exception = HTTPException(
+
+def _credentials_exception() -> HTTPException:
+    return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Credenciales inválidas o token expirado",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+
+def _resolve_user_from_token(session: Session, token: str) -> Usuario:
+    credentials_exception = _credentials_exception()
 
     payload = decode_access_token(token)
     if payload is None:
@@ -34,11 +53,11 @@ async def get_current_user(
         raise credentials_exception
 
     try:
-        user_id = int(user_id)
+        user_id_int = int(user_id)
     except (TypeError, ValueError):
         raise credentials_exception
 
-    user = session.exec(select(Usuario).where(Usuario.id == user_id)).first()
+    user = session.exec(select(Usuario).where(Usuario.id == user_id_int)).first()
 
     if user is None:
         raise credentials_exception
@@ -50,6 +69,13 @@ async def get_current_user(
         )
 
     return user
+
+
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    session: Annotated[Session, Depends(get_session)],
+) -> Usuario:
+    return _resolve_user_from_token(session, token)
 
 
 async def get_optional_current_user(
@@ -60,47 +86,7 @@ async def get_optional_current_user(
     if token is None:
         return None
 
-    payload = decode_access_token(token)
-    if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas o token expirado",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user_id: str | None = payload.get("sub")
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas o token expirado",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    try:
-        user_id_int = int(user_id)
-    except (TypeError, ValueError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas o token expirado",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user = session.exec(select(Usuario).where(Usuario.id == user_id_int)).first()
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas o token expirado",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cuenta de usuario desactivada",
-        )
-
-    return user
+    return _resolve_user_from_token(session, token)
 
 
 def user_has_any_role(user: Usuario | None, roles: list[str], session: Session) -> bool:

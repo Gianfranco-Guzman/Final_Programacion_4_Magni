@@ -8,17 +8,6 @@ interface ProtectedRouteProps {
   allowedRoles?: string[]
 }
 
-function hasStoredToken(): boolean {
-  try {
-    const raw = localStorage.getItem('auth-store')
-    if (!raw) return false
-    const parsed = JSON.parse(raw)
-    return !!parsed?.state?.accessToken
-  } catch {
-    return false
-  }
-}
-
 function FullScreenSpinner() {
   return (
     <div className="flex items-center justify-center h-screen">
@@ -29,14 +18,15 @@ function FullScreenSpinner() {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const initialized = useAuthStore((state) => state.initialized)
   const loading = useAuthStore((state) => state.loading)
   const usuario = useAuthStore((state) => state.usuario)
 
-  if (loading) {
+  if (loading || !initialized) {
     return <FullScreenSpinner />
   }
 
-  if (!isAuthenticated && !hasStoredToken()) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 

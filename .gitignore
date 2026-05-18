@@ -76,3 +76,7 @@ Thumbs.db
 # Project-specific
 ROADMAP.LOCAL.md
 *.local.md
+
+skills-lock.json
+
+.agents/

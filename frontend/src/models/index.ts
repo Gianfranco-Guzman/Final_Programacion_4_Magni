@@ -4,8 +4,25 @@ export interface Usuario {
   id: number
   email: string
   nombre: string
+  apellido: string
+  celular?: string | null
   is_active: boolean
   roles: RoleInfo[]
+}
+
+export interface DireccionEntrega {
+  id: number
+  usuario_id: number
+  etiqueta?: string | null
+  linea1: string
+  linea2?: string | null
+  ciudad: string
+  latitud?: number | null
+  longitud?: number | null
+  es_principal: boolean
+  created_at: string
+  updated_at: string
+  deleted_at?: string | null
 }
 
 export interface CartItem {
@@ -58,11 +75,15 @@ export interface RegisterRequest {
   email: string
   password: string
   nombre: string
+  apellido: string
+  celular?: string | null
 }
 
 export interface RegisterResponse {
   id: number
   email: string
   nombre: string
+  apellido: string
+  celular?: string | null
   is_active: boolean
 }

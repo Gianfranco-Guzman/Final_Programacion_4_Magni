@@ -2,6 +2,7 @@ from sqlmodel import Session, select
 from app.db.base import engine
 from app.db.models.rol import Rol
 from app.db.models.usuario import Usuario, UsuarioRol
+from app.db.models.direccion_entrega import DireccionEntrega
 from app.db.models.categoria import Categoria
 from app.db.models.producto import Producto
 from app.db.models.ingrediente import Ingrediente
@@ -34,6 +35,8 @@ def populate_seed_data() -> None:
             email="admin@foodstore.com",
             password_hash=hash_password("admin1234"),
             nombre="Administrador",
+            apellido="FoodStore",
+            celular="3510000000",
             is_active=True,
         )
         session.add(admin_user)
@@ -54,6 +57,8 @@ def populate_seed_data() -> None:
             email="juan@example.com",
             password_hash=hash_password("Juan1234!"),
             nombre="Juan Pérez",
+            apellido="Cliente",
+            celular="3511111111",
             is_active=True,
         )
         session.add(client_user)
@@ -63,6 +68,26 @@ def populate_seed_data() -> None:
         if client_rol:
             session.add(UsuarioRol(usuario_id=client_user.id, rol_id=client_rol.id))
             session.commit()
+
+        direcciones_seed = [
+            DireccionEntrega(
+                usuario_id=admin_user.id,
+                etiqueta="Oficina",
+                linea1="Av. Central 123",
+                ciudad="Córdoba",
+                es_principal=True,
+            ),
+            DireccionEntrega(
+                usuario_id=client_user.id,
+                etiqueta="Casa",
+                linea1="San Martín 456",
+                ciudad="Córdoba",
+                es_principal=True,
+            ),
+        ]
+        for direccion in direcciones_seed:
+            session.add(direccion)
+        session.commit()
 
         categorias_data = [
             Categoria(nombre="Pizzas", descripcion="Pizzas tradicionales y especiales"),

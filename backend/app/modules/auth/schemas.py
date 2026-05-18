@@ -12,7 +12,9 @@ class LoginRequest(BaseModel):
 class RegisterRequest(BaseModel):
     email: EmailStr = Field(..., description="Email del usuario")
     password: str = Field(..., min_length=8, max_length=255, description="Contraseña")
-    nombre: str = Field(..., min_length=2, max_length=100, description="Nombre completo")
+    nombre: str = Field(..., min_length=2, max_length=100, description="Nombre")
+    apellido: str = Field(..., min_length=2, max_length=80, description="Apellido")
+    celular: Optional[str] = Field(default=None, max_length=20, description="Celular")
 
 
 class TokenResponse(BaseModel):
@@ -34,6 +36,8 @@ class UsuarioResponse(BaseModel):
     id: int
     email: str
     nombre: str
+    apellido: str
+    celular: Optional[str] = None
     is_active: bool
     roles: list[RolResponse] = []
 
@@ -45,6 +49,8 @@ class AdminUserDetailResponse(BaseModel):
     id: int
     email: str
     nombre: str
+    apellido: str
+    celular: Optional[str] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -59,6 +65,8 @@ class AdminActionResponse(BaseModel):
     id: int
     email: str
     nombre: str
+    apellido: str
+    celular: Optional[str] = None
     is_active: bool
     roles: list[RolResponse] = []
 

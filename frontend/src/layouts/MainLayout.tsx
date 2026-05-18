@@ -16,6 +16,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { logout } = useAuth()
   const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
   const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
+  const displayName = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ')
 
   const handleLogout = async () => {
     await logout()
@@ -42,7 +43,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
             <div className="flex items-center gap-4">
               {usuario && (
-                <span className="text-sm text-gray-700 font-medium">{usuario.nombre}</span>
+                <span className="text-sm text-gray-700 font-medium">{displayName}</span>
               )}
               <Button variant="secondary" size="sm" onClick={handleLogout}>
                 Salir
@@ -75,6 +76,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
 
         <nav className="p-4 flex flex-col gap-2">
+          <Link
+            to="/direcciones"
+            onClick={closeSidebar}
+            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+          >
+            Direcciones
+          </Link>
           <Link
             to="/catalogo"
             onClick={closeSidebar}
@@ -111,7 +119,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
         {usuario && (
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500 mb-2">Sesión: {usuario.nombre}</p>
+            <p className="text-xs text-gray-500 mb-2">Sesión: {displayName}</p>
             <button
               onClick={() => { closeSidebar(); void handleLogout() }}
               className="w-full text-left px-3 py-2 rounded text-red-600 hover:bg-red-50 font-medium text-sm"

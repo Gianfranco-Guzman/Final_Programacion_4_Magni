@@ -9,6 +9,7 @@ import { ListaPage } from '@pages/ListaPage'
 import { NuevoProductoPage } from '@pages/NuevoProductoPage'
 import { EditarProductoPage } from '@pages/EditarProductoPage'
 import { CategoriasPage } from '@pages/CategoriasPage'
+import { DireccionesPage } from '@pages/DireccionesPage'
 import { IngredientesPage } from '@pages/IngredientesPage'
 import { MainLayout } from '@layouts/MainLayout'
 
@@ -80,6 +81,16 @@ function App() {
               <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
                 <MainLayout>
                   <CategoriasPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/direcciones"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DireccionesPage />
                 </MainLayout>
               </ProtectedRoute>
             }

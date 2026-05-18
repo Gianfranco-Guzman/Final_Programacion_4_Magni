@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from typing import Optional
+
 from sqlmodel import SQLModel, Field, Relationship
 
 
@@ -30,6 +33,16 @@ class Usuario(SQLModel, table=True):
         max_length=100,
         description="Nombre completo del usuario"
     )
+    apellido: str = Field(
+        default="",
+        max_length=80,
+        description="Apellido del usuario"
+    )
+    celular: Optional[str] = Field(
+        default=None,
+        max_length=20,
+        description="Celular de contacto del usuario"
+    )
     is_active: bool = Field(
         default=True,
         description="Estado activo/inactivo del usuario"
@@ -46,6 +59,8 @@ class Usuario(SQLModel, table=True):
         default=None,
         description="Fecha de eliminación lógica (soft delete)"
     )
+
+    direcciones: list["DireccionEntrega"] = Relationship(back_populates="usuario")
 
     def __repr__(self) -> str:
         return f"<Usuario id={self.id} email={self.email} nombre={self.nombre}>"

@@ -34,6 +34,8 @@ class AuthService:
             id=usuario.id,
             email=usuario.email,
             nombre=usuario.nombre,
+            apellido=usuario.apellido,
+            celular=usuario.celular,
             is_active=usuario.is_active,
             roles=roles,
         )
@@ -77,6 +79,8 @@ class AuthService:
             email=request.email,
             password_hash=hash_password(request.password),
             nombre=request.nombre,
+            apellido=request.apellido,
+            celular=request.celular,
             is_active=True,
         )
 
@@ -122,6 +126,8 @@ class AuthService:
                 id=user.id,
                 email=user.email,
                 nombre=user.nombre,
+                apellido=user.apellido,
+                celular=user.celular,
                 is_active=user.is_active,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
@@ -155,6 +161,8 @@ class AuthService:
             id=usuario.id,
             email=usuario.email,
             nombre=usuario.nombre,
+            apellido=usuario.apellido,
+            celular=usuario.celular,
             is_active=usuario.is_active,
             roles=roles,
         )

@@ -1,3 +1,5 @@
+import { RoleInfo } from '@/auth/permissions'
+
 export interface Usuario {
   id: number
   email: string
@@ -5,6 +7,7 @@ export interface Usuario {
   is_active: boolean
   created_at: string
   updated_at: string
+  roles: RoleInfo[]
 }
 
 export interface CartItem {

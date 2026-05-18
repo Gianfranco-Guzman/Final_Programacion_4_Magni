@@ -5,7 +5,12 @@ from fastapi.responses import StreamingResponse
 from sqlmodel import Session, func, select
 from sqlalchemy.orm import selectinload
 
-from app.core.dependencies import get_current_user, require_role
+from app.core.dependencies import (
+    get_current_user,
+    get_optional_current_user,
+    require_role,
+    user_has_any_role,
+)
 from app.db.base import get_session
 from app.db.models import Categoria, Producto, ProductoIngrediente
 from app.db.models.usuario import Usuario
@@ -58,6 +63,7 @@ def listar_productos(
     disponible: Optional[bool] = Query(None),
     incluir_baja: bool = Query(False, description="Incluir productos dados de baja"),
     session: Session = Depends(get_session),
+    current_user: Usuario | None = Depends(get_optional_current_user),
 ):
     query = select(Producto).options(
         selectinload(Producto.categoria),
@@ -65,6 +71,12 @@ def listar_productos(
             ProductoIngrediente.ingrediente),
     )
     count_query = select(func.count()).select_from(Producto)
+
+    if incluir_baja and not user_has_any_role(current_user, ["ADMIN", "STOCK"], session):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo usuarios ADMIN o STOCK pueden incluir productos dados de baja",
+        )
 
     if not incluir_baja:
         query = query.where(Producto.deleted_at.is_(None))

@@ -12,6 +12,8 @@ import { CategoriasPage } from '@pages/CategoriasPage'
 import { IngredientesPage } from '@pages/IngredientesPage'
 import { MainLayout } from '@layouts/MainLayout'
 
+const MANAGEMENT_ROLES = ['ADMIN', 'STOCK']
+
 const queryClient = new QueryClient()
 
 function App() {
@@ -59,7 +61,7 @@ function App() {
           <Route
             path="/productos/nuevo"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
                 <ProductosProvider>
                   <MainLayout>
                     <NuevoProductoPage />
@@ -71,7 +73,7 @@ function App() {
           <Route
             path="/productos/editar/:id"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
                 <ProductosProvider>
                   <MainLayout>
                     <EditarProductoPage />
@@ -83,7 +85,7 @@ function App() {
           <Route
             path="/categorias"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
                 <MainLayout>
                   <CategoriasPage />
                 </MainLayout>
@@ -93,7 +95,7 @@ function App() {
           <Route
             path="/ingredientes"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
                 <MainLayout>
                   <IngredientesPage />
                 </MainLayout>

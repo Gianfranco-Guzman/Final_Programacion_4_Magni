@@ -11,6 +11,7 @@ from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.core.security import decode_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=False)
 
 
 async def get_current_user(
@@ -49,6 +50,71 @@ async def get_current_user(
         )
 
     return user
+
+
+async def get_optional_current_user(
+    token: Annotated[str | None, Depends(optional_oauth2_scheme)],
+    session: Annotated[Session, Depends(get_session)],
+) -> Usuario | None:
+
+    if token is None:
+        return None
+
+    payload = decode_access_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales inválidas o token expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id: str | None = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales inválidas o token expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    try:
+        user_id_int = int(user_id)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales inválidas o token expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = session.exec(select(Usuario).where(Usuario.id == user_id_int)).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales inválidas o token expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cuenta de usuario desactivada",
+        )
+
+    return user
+
+
+def user_has_any_role(user: Usuario | None, roles: list[str], session: Session) -> bool:
+    if user is None:
+        return False
+
+    statement = (
+        select(Rol.nombre)
+        .join(UsuarioRol, UsuarioRol.rol_id == Rol.id)
+        .where(UsuarioRol.usuario_id == user.id)
+    )
+    user_roles: list[str] = list(session.exec(statement).all())
+
+    return any(role in roles for role in user_roles)
 
 
 def require_role(allowed_roles: list[str]):

@@ -4,6 +4,7 @@ import { useAuthStore } from '@store/authStore'
 import { useUIStore } from '@store/uiStore'
 import { useAuth } from '@hooks/useAuth'
 import { Button } from '@components/Button'
+import { hasAnyRole } from '@/auth/permissions'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -14,6 +15,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const usuario = useAuthStore((state) => state.usuario)
   const { logout } = useAuth()
   const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
+  const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
 
   const handleLogout = () => {
     logout()
@@ -80,27 +82,31 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           >
             Catálogo
           </Link>
-          <Link
-            to="/productos/nuevo"
-            onClick={closeSidebar}
-            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-          >
-            Nuevo Producto
-          </Link>
-          <Link
-            to="/categorias"
-            onClick={closeSidebar}
-            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-          >
-            Categorías
-          </Link>
-          <Link
-            to="/ingredientes"
-            onClick={closeSidebar}
-            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-          >
-            Ingredientes
-          </Link>
+          {canManageCatalog && (
+            <>
+              <Link
+                to="/productos/nuevo"
+                onClick={closeSidebar}
+                className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+              >
+                Nuevo Producto
+              </Link>
+              <Link
+                to="/categorias"
+                onClick={closeSidebar}
+                className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+              >
+                Categorías
+              </Link>
+              <Link
+                to="/ingredientes"
+                onClick={closeSidebar}
+                className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+              >
+                Ingredientes
+              </Link>
+            </>
+          )}
         </nav>
 
         {usuario && (

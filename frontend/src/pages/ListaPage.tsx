@@ -6,9 +6,13 @@ import { ProductGrid } from '@features/store/ProductGrid'
 import { ProductFilters } from '@features/store/ProductFilters'
 import { Spinner } from '@components/Spinner'
 import { Button } from '@components/Button'
+import { useAuthStore } from '@store/authStore'
+import { hasAnyRole } from '@/auth/permissions'
 
 export const ListaPage: React.FC = () => {
   const { state, dispatch } = useProductosContext()
+  const usuario = useAuthStore((currentState) => currentState.usuario)
+  const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
 
   const { data: productosData, isLoading, error } = useProductos({
     page: state.page,
@@ -16,7 +20,7 @@ export const ListaPage: React.FC = () => {
     search: state.search || undefined,
     categoria_id: state.categoriaId || undefined,
     disponible: state.disponible ?? undefined,
-    incluir_baja: state.showDeleted,
+    incluir_baja: canManageCatalog ? state.showDeleted : false,
   })
 
   const { data: categorias = [] } = useCategorias()
@@ -87,9 +91,11 @@ export const ListaPage: React.FC = () => {
           <Button onClick={handleExportar} disabled={exportarMutation.isPending}>
             {exportarMutation.isPending ? 'Exportando...' : 'Exportar a Excel'}
           </Button>
-          <Link to="/productos/nuevo">
-            <Button>+ Nuevo Producto</Button>
-          </Link>
+          {canManageCatalog && (
+            <Link to="/productos/nuevo">
+              <Button>+ Nuevo Producto</Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -104,18 +110,20 @@ export const ListaPage: React.FC = () => {
         onResetFilters={handleResetFilters}
       />
 
-      <div className="flex items-center gap-2 mb-4">
-        <input
-          type="checkbox"
-          id="show-deleted"
-          checked={state.showDeleted}
-          onChange={(e) => dispatch({ type: 'SET_SHOW_DELETED', payload: e.target.checked })}
-          className="w-4 h-4 rounded accent-red-500"
-        />
-        <label htmlFor="show-deleted" className="text-sm text-gray-600 cursor-pointer">
-          Mostrar dados de baja
-        </label>
-      </div>
+      {canManageCatalog && (
+        <div className="flex items-center gap-2 mb-4">
+          <input
+            type="checkbox"
+            id="show-deleted"
+            checked={state.showDeleted}
+            onChange={(e) => dispatch({ type: 'SET_SHOW_DELETED', payload: e.target.checked })}
+            className="w-4 h-4 rounded accent-red-500"
+          />
+          <label htmlFor="show-deleted" className="text-sm text-gray-600 cursor-pointer">
+            Mostrar dados de baja
+          </label>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="py-12"><Spinner /></div>
@@ -124,8 +132,8 @@ export const ListaPage: React.FC = () => {
           {productosData && (
             <ProductGrid
               productos={productosData.items}
-              onDarDeBaja={handleDarDeBaja}
-              onReactivar={handleReactivar}
+              onDarDeBaja={canManageCatalog ? handleDarDeBaja : undefined}
+              onReactivar={canManageCatalog ? handleReactivar : undefined}
             />
           )}
 

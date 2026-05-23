@@ -1,10 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { categoriasApi, CategoriaUpdateInput } from '@api/categoriasApi'
+import { categoriasApi, CategoriaUpdateInput, CategoriasListParams } from '@api/categoriasApi'
 
-export const useCategoriasList = () => {
+export const useCategoriasList = (params?: CategoriasListParams) => {
   return useQuery({
-    queryKey: ['categorias'],
-    queryFn: categoriasApi.getCategorias,
+    queryKey: ['categorias', params],
+    queryFn: () => categoriasApi.getCategorias(params),
+    select: (data) => data.items,
+    staleTime: 1000 * 60 * 30,
+  })
+}
+
+export const useCategoriasTree = () => {
+  return useQuery({
+    queryKey: ['categorias', 'tree'],
+    queryFn: categoriasApi.getCategoriasTree,
     staleTime: 1000 * 60 * 30,
   })
 }
@@ -34,10 +43,20 @@ export const useUpdateCategoria = () => {
   })
 }
 
-export const useDeleteCategoria = () => {
+export const useBajaCategoria = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: categoriasApi.deleteCategoria,
+    mutationFn: categoriasApi.bajaCategoria,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categorias'] }),
   })
 }
+
+export const useReactivarCategoria = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: categoriasApi.reactivarCategoria,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['categorias'] }),
+  })
+}
+
+export const useDeleteCategoria = useBajaCategoria

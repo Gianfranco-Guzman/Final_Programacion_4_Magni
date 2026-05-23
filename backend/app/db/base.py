@@ -17,6 +17,7 @@ engine = create_engine(
 def create_all_tables() -> None:
     SQLModel.metadata.create_all(engine)
     _ensure_identity_schema()
+    _ensure_category_schema()
     _ensure_product_schema()
     _backfill_producto_categoria()
 
@@ -25,6 +26,19 @@ def _ensure_identity_schema() -> None:
     statements = [
         "ALTER TABLE usuario ADD COLUMN IF NOT EXISTS apellido VARCHAR(80) NOT NULL DEFAULT ''",
         "ALTER TABLE usuario ADD COLUMN IF NOT EXISTS celular VARCHAR(20)",
+    ]
+
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
+def _ensure_category_schema() -> None:
+    statements = [
+        "ALTER TABLE categoria ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES categoria(id)",
+        "ALTER TABLE categoria ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE",
+        "CREATE INDEX IF NOT EXISTS ix_categoria_parent_id ON categoria(parent_id)",
+        "CREATE INDEX IF NOT EXISTS ix_categoria_deleted_at ON categoria(deleted_at)",
     ]
 
     with engine.begin() as connection:

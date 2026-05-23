@@ -19,6 +19,17 @@ class Categoria(SQLModel, table=True):
         max_length=500,
         description="Descripción de la categoría"
     )
+    parent_id: Optional[int] = Field(
+        default=None,
+        foreign_key="categoria.id",
+        index=True,
+        description="ID de la categoría padre para jerarquías"
+    )
+    deleted_at: Optional[datetime] = Field(
+        default=None,
+        index=True,
+        description="Fecha de eliminación lógica (soft delete)"
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de creación"
@@ -29,6 +40,11 @@ class Categoria(SQLModel, table=True):
     )
 
     producto_categorias: list["ProductoCategoria"] = Relationship(back_populates="categoria")
+    parent: Optional["Categoria"] = Relationship(
+        back_populates="subcategorias",
+        sa_relationship_kwargs={"remote_side": "Categoria.id"},
+    )
+    subcategorias: list["Categoria"] = Relationship(back_populates="parent")
 
     def __repr__(self) -> str:
         return f"<Categoria id={self.id} nombre={self.nombre}>"

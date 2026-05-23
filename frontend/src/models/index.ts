@@ -34,8 +34,11 @@ export interface Categoria {
   id: number
   nombre: string
   descripcion?: string
+  parent_id?: number | null
+  deleted_at?: string | null
   created_at: string
   updated_at: string
+  subcategorias?: Categoria[]
 }
 
 export interface Ingrediente {

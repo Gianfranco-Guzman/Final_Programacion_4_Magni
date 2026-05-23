@@ -90,13 +90,13 @@ def populate_seed_data() -> None:
             session.add(direccion)
         session.commit()
 
-        categorias_data = [
+        categorias_padre = [
             Categoria(nombre="Pizzas", descripcion="Pizzas tradicionales y especiales"),
             Categoria(nombre="Bebidas", descripcion="Bebidas frias y calientes"),
             Categoria(nombre="Postres", descripcion="Postres y dulces"),
             Categoria(nombre="Entradas", descripcion="Entradas y snacks"),
         ]
-        for cat in categorias_data:
+        for cat in categorias_padre:
             session.add(cat)
         session.commit()
 
@@ -104,6 +104,16 @@ def populate_seed_data() -> None:
         bebidas = session.exec(select(Categoria).where(Categoria.nombre == "Bebidas")).first()
         postres = session.exec(select(Categoria).where(Categoria.nombre == "Postres")).first()
         entradas = session.exec(select(Categoria).where(Categoria.nombre == "Entradas")).first()
+
+        subcategorias_data = [
+            Categoria(nombre="Pizzas Clásicas", descripcion="Pizzas tradicionales", parent_id=pizzas.id),
+            Categoria(nombre="Pizzas Especiales", descripcion="Pizzas con combinaciones especiales", parent_id=pizzas.id),
+            Categoria(nombre="Bebidas Frías", descripcion="Gaseosas, aguas y jugos", parent_id=bebidas.id),
+            Categoria(nombre="Postres Fríos", descripcion="Postres refrigerados y helados", parent_id=postres.id),
+        ]
+        for subcategoria in subcategorias_data:
+            session.add(subcategoria)
+        session.commit()
 
         # Crear ingredientes
         ingredientes_data = [

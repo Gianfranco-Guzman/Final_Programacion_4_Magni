@@ -1,10 +1,9 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import Session, func, select
+from sqlmodel import func, select
 
 from app.core.dependencies import get_current_user
-from app.db.base import get_session
 from app.db.models import Categoria, Producto
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
@@ -32,8 +31,9 @@ def listar_productos(
     search: Optional[str] = Query(None),
     disponible: Optional[bool] = Query(None),
     incluir_baja: bool = Query(False, description="Incluir productos dados de baja"),
-    session: Session = Depends(get_session),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
 ):
+    session = uow.session
     query = select(Producto)
     count_query = select(func.count()).select_from(Producto)
 
@@ -80,7 +80,8 @@ def listar_productos(
     response_model=list[CategoriaRead],
     summary="Listar todas las categorías",
 )
-def listar_categorias(session: Session = Depends(get_session)):
+def listar_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)):
+    session = uow.session
     categorias = session.exec(select(Categoria)).all()
     return [CategoriaRead.from_orm(c) for c in categorias]
 
@@ -90,7 +91,8 @@ def listar_categorias(session: Session = Depends(get_session)):
     response_model=ProductoRead,
     summary="Obtener producto por ID",
 )
-def obtener_producto(producto_id: int, session: Session = Depends(get_session)):
+def obtener_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
+    session = uow.session
     producto = session.exec(
         select(Producto).where(
             (Producto.id == producto_id) & (Producto.deleted_at.is_(None))

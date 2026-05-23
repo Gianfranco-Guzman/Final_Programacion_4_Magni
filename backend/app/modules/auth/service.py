@@ -76,5 +76,5 @@ class AuthService:
             email=usuario.email,
             nombre=usuario.nombre,
             is_active=usuario.is_active,
-            roles=[],
+            roles=[r.nombre for r in usuario.roles],
         )

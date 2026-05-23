@@ -47,5 +47,8 @@ class Usuario(SQLModel, table=True):
         description="Fecha de eliminación lógica (soft delete)"
     )
 
+    # Relaciones
+    roles: List["Rol"] = Relationship(back_populates="usuarios", link_model=UsuarioRol)
+
     def __repr__(self) -> str:
         return f"<Usuario id={self.id} email={self.email} nombre={self.nombre}>"

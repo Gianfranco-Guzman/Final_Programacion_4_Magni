@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Optional
-from sqlmodel import SQLModel, Field
+from typing import Optional, List
+from sqlmodel import SQLModel, Field, Relationship
 
 
 class Rol(SQLModel, table=True):
@@ -27,6 +27,9 @@ class Rol(SQLModel, table=True):
         default_factory=datetime.utcnow,
         description="Fecha de ultima actualización"
     )
+
+    # Relaciones
+    usuarios: List["Usuario"] = Relationship(back_populates="roles", link_model="UsuarioRol")
 
     def __repr__(self) -> str:
         return f"<Rol id={self.id} nombre={self.nombre}>"

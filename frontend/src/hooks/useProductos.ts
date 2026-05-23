@@ -50,6 +50,14 @@ export const useReactivar = () => {
   })
 }
 
+export const useToggleDisponibilidad = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: productosApi.toggleDisponibilidad,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['productos'] }),
+  })
+}
+
 export const useExportarProductos = () => {
   return useMutation({
     mutationFn: (search?: string) => productosApi.exportarProductos(search),

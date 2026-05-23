@@ -1,10 +1,19 @@
 from logging.config import fileConfig
+import os
+import sys
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
-from app.core.config import get_settings
-from app.db.models import Rol, Usuario, UsuarioRol
 from sqlmodel import SQLModel
+
+# Asegurar import de app.* al ejecutar Alembic desde /backend
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
+from app.core.config import get_settings
+from app.db import models  # noqa: F401  # importar modelos para registrar metadata
 
 # this is the Alembic Config object, which provides
 # the values of the [alembic] section of the .ini

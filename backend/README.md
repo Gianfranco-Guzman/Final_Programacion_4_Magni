@@ -66,7 +66,10 @@ cp .env.example .env
 ### 4. Crear base de datos y seed
 
 ```bash
-# Crear tablas desde SQLModel
+# Aplicar migraciones Alembic (incluye cambios de schema nuevos)
+python -m alembic upgrade head
+
+# Crear tablas desde SQLModel (solo si no usás Alembic)
 python -c "from app.db.base import create_all_tables; create_all_tables(); print('✓ Tablas creadas')"
 
 # Poblar datos iniciales (roles + usuario admin)

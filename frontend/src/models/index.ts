@@ -46,6 +46,7 @@ export interface Ingrediente {
   nombre: string
   descripcion?: string
   es_alergeno: boolean
+  deleted_at?: string | null
   created_at: string
   updated_at: string
 }

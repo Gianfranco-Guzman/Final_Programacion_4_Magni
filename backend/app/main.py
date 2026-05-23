@@ -8,7 +8,7 @@ from app.modules.auth import router as auth_router
 from app.modules.direcciones import router as direcciones_router
 from app.modules.productos import router as productos_router
 from app.modules.Categoria import router as categoria_router
-from app.modules.Ingrediente import router as ingrediente_router
+from app.modules.ingredientes import router as ingrediente_router
 
 settings = get_settings()
 

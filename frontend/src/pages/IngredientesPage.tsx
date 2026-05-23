@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useIngredientes, useCreateIngrediente, useUpdateIngrediente, useDeleteIngrediente } from '@hooks/useIngredientes'
+import { useIngredientes, useCreateIngrediente, useUpdateIngrediente, useBajaIngrediente, useReactivarIngrediente } from '@hooks/useIngredientes'
 import { Ingrediente } from '@models/index'
 import { IngredienteCreateInput, IngredienteUpdateInput } from '@api/ingredientesApi'
 import { Spinner } from '@components/Spinner'
@@ -9,7 +9,8 @@ export const IngredientesPage: React.FC = () => {
   const { data: ingredientes = [], isLoading, error } = useIngredientes()
   const createMutation = useCreateIngrediente()
   const updateMutation = useUpdateIngrediente()
-  const deleteMutation = useDeleteIngrediente()
+  const bajaMutation = useBajaIngrediente()
+  const reactivarMutation = useReactivarIngrediente()
 
   const [showForm, setShowForm] = useState(false)
   const [editingIngrediente, setEditingIngrediente] = useState<Ingrediente | null>(null)
@@ -33,11 +34,20 @@ export const IngredientesPage: React.FC = () => {
     setShowForm(true)
   }
 
-  const handleDelete = (ingrediente: Ingrediente) => {
-    if (!window.confirm(`¿Eliminar el ingrediente "${ingrediente.nombre}"?`)) return
-    deleteMutation.mutate(ingrediente.id, {
+  const handleBaja = (ingrediente: Ingrediente) => {
+    if (!window.confirm(`¿Dar de baja el ingrediente "${ingrediente.nombre}"?`)) return
+    bajaMutation.mutate(ingrediente.id, {
       onError: (err: unknown) => {
-        alert(err instanceof Error ? err.message : 'No se pudo eliminar el ingrediente')
+        alert(err instanceof Error ? err.message : 'No se pudo dar de baja el ingrediente')
+      },
+    })
+  }
+
+  const handleReactivar = (ingrediente: Ingrediente) => {
+    if (!window.confirm(`¿Reactivar el ingrediente "${ingrediente.nombre}"?`)) return
+    reactivarMutation.mutate(ingrediente.id, {
+      onError: (err: unknown) => {
+        alert(err instanceof Error ? err.message : 'No se pudo reactivar el ingrediente')
       },
     })
   }
@@ -168,6 +178,9 @@ export const IngredientesPage: React.FC = () => {
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Nombre
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -186,6 +199,17 @@ export const IngredientesPage: React.FC = () => {
                 <tr key={ingrediente.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {ingrediente.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {ingrediente.deleted_at ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Baja
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Activo
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {ingrediente.nombre}
@@ -211,12 +235,21 @@ export const IngredientesPage: React.FC = () => {
                     >
                       Editar
                     </button>
-                    <button
-                      onClick={() => handleDelete(ingrediente)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Eliminar
-                    </button>
+                    {ingrediente.deleted_at ? (
+                      <button
+                        onClick={() => handleReactivar(ingrediente)}
+                        className="text-emerald-600 hover:text-emerald-900"
+                      >
+                        Reactivar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleBaja(ingrediente)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Dar de baja
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

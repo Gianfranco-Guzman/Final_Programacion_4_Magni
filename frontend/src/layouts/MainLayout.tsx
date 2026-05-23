@@ -16,6 +16,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { logout } = useAuth()
   const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
   const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
+  const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
   const displayName = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ')
 
   const handleLogout = async () => {
@@ -92,13 +93,24 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </Link>
           {canManageCatalog && (
             <>
-              <Link
-                to="/productos/nuevo"
-                onClick={closeSidebar}
-                className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-              >
-                Nuevo Producto
-              </Link>
+              {isAdmin && (
+                <>
+                  <Link
+                    to="/admin/productos"
+                    onClick={closeSidebar}
+                    className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+                  >
+                    Productos
+                  </Link>
+                  <Link
+                    to="/productos/nuevo"
+                    onClick={closeSidebar}
+                    className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+                  >
+                    Nuevo Producto
+                  </Link>
+                </>
+              )}
               <Link
                 to="/categorias"
                 onClick={closeSidebar}

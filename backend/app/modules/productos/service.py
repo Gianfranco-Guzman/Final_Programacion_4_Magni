@@ -262,6 +262,19 @@ class ProductoService:
         return producto
 
     @staticmethod
+    def toggle_disponible(producto_id: int, uow: SqlModelUnitOfWork) -> Producto:
+        session = uow.session
+        producto = session.exec(select(Producto).where(Producto.id == producto_id)).first()
+        if not producto:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+        producto.disponible = not producto.disponible
+        producto.updated_at = datetime.now(timezone.utc)
+        session.add(producto)
+        uow.flush()
+        return producto
+
+    @staticmethod
     def exportar_a_excel(productos: list[Producto]) -> BytesIO:
         wb = Workbook()
         ws = wb.active

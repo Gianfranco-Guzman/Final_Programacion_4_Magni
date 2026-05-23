@@ -90,6 +90,11 @@ export const productosApi = {
     return response.data
   },
 
+  toggleDisponibilidad: async (id: number): Promise<Producto> => {
+    const response = await axiosClient.patch<Producto>(`/productos/${id}/disponibilidad`)
+    return response.data
+  },
+
   exportarProductos: async (search?: string): Promise<Blob> => {
     const params: Record<string, string> = {}
     if (search) {

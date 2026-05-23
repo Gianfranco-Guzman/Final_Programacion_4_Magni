@@ -21,6 +21,7 @@ class IngredienteUpdate(BaseModel):
 
 class IngredienteRead(IngredienteBase):
     id: int
+    deleted_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 

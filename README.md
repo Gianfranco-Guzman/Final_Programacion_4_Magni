@@ -30,6 +30,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+# Aplicar migraciones (incluye columnas nuevas como deleted_at)
 python -m alembic upgrade head
 uvicorn app.main:app --reload
 

@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
 import jwt
 import bcrypt
 from app.core.config import get_settings
@@ -21,8 +22,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(
-    subject: Dict[str, Any],
-    expires_delta: Optional[timedelta] = None
+    subject: dict[str, Any],
+    expires_delta: timedelta | None = None
 ) -> str:
 
     settings = get_settings()
@@ -31,8 +32,8 @@ def create_access_token(
         expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
     
     to_encode = subject.copy()
-    expire = datetime.utcnow() + expires_delta
-    to_encode.update({"exp": expire})
+    expire = datetime.now(timezone.utc) + expires_delta
+    to_encode.update({"type": "access", "exp": expire})
     
     encoded_jwt = jwt.encode(
         to_encode,
@@ -42,7 +43,7 @@ def create_access_token(
     return encoded_jwt
 
 
-def decode_token(token: str) -> Optional[Dict[str, Any]]:
+def decode_access_token(token: str) -> dict[str, Any] | None:
 
     settings = get_settings()
     
@@ -52,6 +53,8 @@ def decode_token(token: str) -> Optional[Dict[str, Any]]:
             settings.secret_key,
             algorithms=[settings.algorithm]
         )
+        if payload.get("type") != "access":
+            return None
         return payload
     except jwt.InvalidTokenError:
         return None

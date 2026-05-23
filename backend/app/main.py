@@ -5,7 +5,10 @@ from app.core.config import get_settings
 from app.db.base import create_all_tables
 from app.db.seed import populate_seed_data
 from app.modules.auth import router as auth_router
+from app.modules.direcciones import router as direcciones_router
 from app.modules.productos import router as productos_router
+from app.modules.Categoria import router as categoria_router
+from app.modules.Ingrediente import router as ingrediente_router
 
 settings = get_settings()
 
@@ -14,9 +17,14 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
 
     print("Iniciando Food Store API...")
-    create_all_tables()
-    print("Tablas creadas")
-    populate_seed_data()
+    try:
+        create_all_tables()
+        print("Tablas creadas")
+        populate_seed_data()
+        print("Seed data poblado")
+    except Exception as e:
+        print(f"[AVISO] BD no disponible: {e}")
+        print("La app arranca igual — algunos endpoints fallarán hasta que PostgreSQL esté corriendo.")
     
     yield
     
@@ -39,7 +47,10 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix=settings.api_prefix)
+app.include_router(direcciones_router, prefix=settings.api_prefix)
 app.include_router(productos_router, prefix=f"{settings.api_prefix}/productos")
+app.include_router(categoria_router, prefix=f"{settings.api_prefix}/categorias")
+app.include_router(ingrediente_router, prefix=f"{settings.api_prefix}/ingredientes")
 
 
 @app.get("/", tags=["root"])

@@ -1,9 +1,14 @@
 import axiosClient from './axiosClient'
-import { LoginRequest, LoginResponse, Usuario, RegisterRequest, RegisterResponse } from '@types/index'
+import { LoginRequest, SessionResponse, Usuario, RegisterRequest, RegisterResponse } from '@models/index'
 
 export const authApi = {
-  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const response = await axiosClient.post<LoginResponse>('/auth/login', credentials)
+  login: async (credentials: LoginRequest): Promise<SessionResponse> => {
+    const response = await axiosClient.post<SessionResponse>('/auth/login', credentials)
+    return response.data
+  },
+
+  logout: async (): Promise<SessionResponse> => {
+    const response = await axiosClient.post<SessionResponse>('/auth/logout')
     return response.data
   },
 

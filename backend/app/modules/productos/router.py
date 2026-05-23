@@ -1,22 +1,79 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import func, select
+from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import selectinload
+from sqlmodel import Session, func, select
 
-from app.core.dependencies import get_current_user
-from app.db.models import Categoria, Producto
+from app.core.dependencies import (
+    get_optional_current_user,
+    require_role,
+    user_has_any_role,
+)
+from app.db.base import get_session
+from app.db.models import Categoria, Producto, ProductoCategoria, ProductoIngrediente
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.productos.schemas import (
     CategoriaRead,
     PaginatedResponse,
+    ProductoCategoriaRead,
     ProductoCreate,
+    ProductoIngredienteRead,
     ProductoRead,
     ProductoUpdate,
 )
 from app.modules.productos.service import ProductoService
 
 router = APIRouter(tags=["productos"])
+
+
+def _build_producto_read(producto: Producto) -> ProductoRead:
+    """Build ProductoRead with categorias and ingredientes relations."""
+    categorias = []
+    categoria_principal_id = None
+
+    if producto.producto_categorias:
+        for pc in producto.producto_categorias:
+            if pc.categoria:
+                categorias.append(
+                    ProductoCategoriaRead(
+                        categoria_id=pc.categoria_id,
+                        es_principal=pc.es_principal,
+                        categoria=pc.categoria,
+                    )
+                )
+                if pc.es_principal:
+                    categoria_principal_id = pc.categoria_id
+
+    ingredientes = []
+    if producto.ingredientes:
+        for pi in producto.ingredientes:
+            if pi.ingrediente:
+                ingredientes.append(
+                    ProductoIngredienteRead(
+                        ingrediente_id=pi.ingrediente_id,
+                        es_removible=pi.es_removible,
+                        es_opcional=pi.es_opcional,
+                        ingrediente=pi.ingrediente,
+                    )
+                )
+
+    return ProductoRead(
+        id=producto.id,
+        nombre=producto.nombre,
+        descripcion=producto.descripcion,
+        precio=producto.precio,
+        stock_cantidad=producto.stock_cantidad,
+        categoria_principal_id=categoria_principal_id,
+        codigo=producto.codigo,
+        disponible=producto.disponible,
+        deleted_at=producto.deleted_at,
+        created_at=producto.created_at,
+        updated_at=producto.updated_at,
+        categorias=categorias,
+        ingredientes=ingredientes,
+    )
 
 
 @router.get(
@@ -31,19 +88,34 @@ def listar_productos(
     search: Optional[str] = Query(None),
     disponible: Optional[bool] = Query(None),
     incluir_baja: bool = Query(False, description="Incluir productos dados de baja"),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    session: Session = Depends(get_session),
+    current_user: Usuario | None = Depends(get_optional_current_user),
 ):
-    session = uow.session
-    query = select(Producto)
+    query = select(Producto).options(
+        selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
+        selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente),
+    )
     count_query = select(func.count()).select_from(Producto)
+
+    if incluir_baja and not user_has_any_role(current_user, ["ADMIN", "STOCK"], session):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo usuarios ADMIN o STOCK pueden incluir productos dados de baja",
+        )
 
     if not incluir_baja:
         query = query.where(Producto.deleted_at.is_(None))
         count_query = count_query.where(Producto.deleted_at.is_(None))
 
     if categoria_id is not None:
-        query = query.where(Producto.categoria_id == categoria_id)
-        count_query = count_query.where(Producto.categoria_id == categoria_id)
+        query = query.join(
+            ProductoCategoria,
+            ProductoCategoria.producto_id == Producto.id,
+        ).where(ProductoCategoria.categoria_id == categoria_id)
+        count_query = count_query.join(
+            ProductoCategoria,
+            ProductoCategoria.producto_id == Producto.id,
+        ).where(ProductoCategoria.categoria_id == categoria_id)
 
     if search:
         term = f"%{search.lower()}%"
@@ -55,23 +127,58 @@ def listar_productos(
         )
 
     if disponible is True:
-        query = query.where(Producto.stock_cantidad > 0)
-        count_query = count_query.where(Producto.stock_cantidad > 0)
+        query = query.where(Producto.disponible.is_(True))
+        count_query = count_query.where(Producto.disponible.is_(True))
     elif disponible is False:
-        query = query.where(Producto.stock_cantidad == 0)
-        count_query = count_query.where(Producto.stock_cantidad == 0)
+        query = query.where(Producto.disponible.is_(False))
+        count_query = count_query.where(Producto.disponible.is_(False))
 
     total = session.exec(count_query).one()
     pages = (total + size - 1) // size
     query = query.offset((page - 1) * size).limit(size)
-    productos = session.exec(query).all()
+    productos = session.exec(query).unique().all()
 
     return PaginatedResponse(
-        items=[ProductoRead.from_orm(p) for p in productos],
+        items=[_build_producto_read(p) for p in productos],
         total=total,
         page=page,
         size=size,
         pages=pages,
+    )
+
+
+@router.get(
+    "/exportar",
+    summary="Exportar productos a Excel",
+)
+def exportar_productos(
+    search: Optional[str] = Query(default=None),
+    session: Session = Depends(get_session),
+):
+    query = (
+        select(Producto)
+        .options(
+            selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
+            selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente),
+        )
+        .order_by(Producto.created_at.desc())
+    )
+    query = query.where(Producto.deleted_at.is_(None))
+
+    if search:
+        term = f"%{search.lower()}%"
+        query = query.where(
+            (Producto.nombre.ilike(term)) | (Producto.codigo.ilike(term))
+        )
+
+    query = query.limit(1000)
+    productos = session.exec(query).unique().all()
+    excel_file = ProductoService.exportar_a_excel(productos)
+
+    return StreamingResponse(
+        excel_file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=productos.xlsx"},
     )
 
 
@@ -83,7 +190,7 @@ def listar_productos(
 def listar_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)):
     session = uow.session
     categorias = session.exec(select(Categoria)).all()
-    return [CategoriaRead.from_orm(c) for c in categorias]
+    return [CategoriaRead.model_validate(c) for c in categorias]
 
 
 @router.get(
@@ -94,15 +201,18 @@ def listar_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)):
 def obtener_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
     session = uow.session
     producto = session.exec(
-        select(Producto).where(
-            (Producto.id == producto_id) & (Producto.deleted_at.is_(None))
+        select(Producto)
+        .options(
+            selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
+            selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente),
         )
+        .where((Producto.id == producto_id) & (Producto.deleted_at.is_(None)))
     ).first()
 
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
-    return ProductoRead.from_orm(producto)
+    return _build_producto_read(producto)
 
 
 @router.post(
@@ -114,10 +224,10 @@ def obtener_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow
 def crear_producto(
     data: ProductoCreate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.crear_producto(data, uow)
-    return ProductoRead.from_orm(producto)
+    return _build_producto_read(producto)
 
 
 @router.put(
@@ -129,10 +239,10 @@ def actualizar_producto(
     producto_id: int,
     data: ProductoUpdate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.actualizar_producto(producto_id, data, uow)
-    return ProductoRead.from_orm(producto)
+    return _build_producto_read(producto)
 
 
 @router.patch(
@@ -143,10 +253,10 @@ def actualizar_producto(
 def dar_de_baja(
     producto_id: int,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.dar_de_baja(producto_id, uow)
-    return ProductoRead.from_orm(producto)
+    return _build_producto_read(producto)
 
 
 @router.patch(
@@ -157,7 +267,7 @@ def dar_de_baja(
 def reactivar_producto(
     producto_id: int,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    current_user: Usuario = Depends(get_current_user),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.reactivar_producto(producto_id, uow)
-    return ProductoRead.from_orm(producto)
+    return _build_producto_read(producto)

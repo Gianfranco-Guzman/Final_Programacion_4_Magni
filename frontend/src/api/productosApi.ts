@@ -1,5 +1,16 @@
 import axiosClient from './axiosClient'
-import { Producto } from '@types/index'
+import { Producto } from '@models/index'
+
+export interface ProductoIngredienteInput {
+  ingrediente_id: number
+  es_removible: boolean
+  es_opcional: boolean
+}
+
+export interface ProductoCategoriaInput {
+  categoria_id: number
+  es_principal: boolean
+}
 
 interface PaginatedResponse<T> {
   items: T[]
@@ -23,11 +34,22 @@ export interface ProductoCreateInput {
   descripcion?: string
   precio: number
   stock_cantidad: number
-  categoria_id: number
   codigo: string
+  disponible: boolean
+  categorias: ProductoCategoriaInput[]
+  ingredientes: ProductoIngredienteInput[]
 }
 
-export type ProductoUpdateInput = Partial<ProductoCreateInput>
+export interface ProductoUpdateInput {
+  nombre?: string
+  descripcion?: string
+  precio?: number
+  stock_cantidad?: number
+  codigo?: string
+  disponible?: boolean
+  categorias?: ProductoCategoriaInput[]
+  ingredientes?: ProductoIngredienteInput[]
+}
 
 export const productosApi = {
   getProductos: async (params?: GetProductosParams): Promise<PaginatedResponse<Producto>> => {
@@ -65,6 +87,18 @@ export const productosApi = {
 
   reactivarProducto: async (id: number): Promise<Producto> => {
     const response = await axiosClient.patch<Producto>(`/productos/${id}/reactivar`)
+    return response.data
+  },
+
+  exportarProductos: async (search?: string): Promise<Blob> => {
+    const params: Record<string, string> = {}
+    if (search) {
+      params.search = search
+    }
+    const response = await axiosClient.get('/productos/exportar', {
+      params,
+      responseType: 'blob',
+    })
     return response.data
   },
 }

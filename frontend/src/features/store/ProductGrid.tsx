@@ -1,15 +1,13 @@
-import React from 'react'
 import { ProductCard } from './ProductCard'
-import { Producto } from '@types/index'
+import { Producto } from '@models/index'
 
 interface ProductGridProps {
   productos: Producto[]
-  onEdit?: (producto: Producto) => void
   onDarDeBaja?: (id: number) => void
   onReactivar?: (id: number) => void
 }
 
-export const ProductGrid: React.FC<ProductGridProps> = ({ productos, onEdit, onDarDeBaja, onReactivar }) => {
+export const ProductGrid: React.FC<ProductGridProps> = ({ productos, onDarDeBaja, onReactivar }) => {
   if (productos.length === 0) {
     return (
       <div className="text-center py-12">
@@ -24,7 +22,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ productos, onEdit, onD
         <ProductCard
           key={producto.id}
           producto={producto}
-          onEdit={onEdit}
           onDarDeBaja={onDarDeBaja}
           onReactivar={onReactivar}
         />

@@ -22,11 +22,13 @@ class SqlModelUnitOfWork:
 
 
 def get_uow():
-    with Session(engine) as session:
-        uow = SqlModelUnitOfWork(session)
-        try:
-            yield uow
-            uow.commit()
-        except Exception:
-            uow.rollback()
-            raise
+    session = Session(engine)
+    uow = SqlModelUnitOfWork(session)
+    try:
+        yield uow
+        uow.commit()
+    except Exception:
+        uow.rollback()
+        raise
+    finally:
+        session.close()

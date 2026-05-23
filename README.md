@@ -141,12 +141,44 @@ npm run dev
 
 ---
 
+## 🔐 Roles y Permisos (RBAC)
+
+El sistema tiene **4 roles** con distintos niveles de acceso:
+
+| Rol | Acceso |
+|-----|--------|
+| **ADMIN** | Gestión completa: usuarios, productos, categorías, ingredientes |
+| **STOCK** | Gestión de productos, categorías e ingredientes (sin admin de usuarios) |
+| **CLIENT** | Solo lectura: ver productos, categorías e ingredientes |
+| **PEDIDOS** | (Reservado para futura gestión de pedidos) |
+
+### Endpoints protegidos por rol
+
+| Método | Ruta | Roles requeridos |
+|--------|------|------------------|
+| POST/PUT/DELETE | `/api/v1/categorias/...` | ADMIN, STOCK |
+| POST/PUT/PATCH | `/api/v1/productos/...` | ADMIN, STOCK |
+| POST/PUT/DELETE | `/api/v1/ingredientes/...` | ADMIN, STOCK |
+| GET/PATCH | `/api/v1/auth/admin/...` | ADMIN |
+| GET | `/api/v1/auth/me` | Cualquier usuario autenticado |
+
+### Usuarios pre-cargados (seed)
+
+| Email | Contraseña | Roles |
+|-------|-----------|-------|
+| `admin@foodstore.com` | `admin1234` | ADMIN, STOCK, PEDIDOS |
+| `juan@example.com` | `Juan1234!` | CLIENT |
+
+> Al registrarse, los nuevos usuarios obtienen automáticamente el rol **CLIENT**.
+
+---
+
 ## 🧪 Testing Manual
 
 ### Backend (Postman / Curl)
 
 ```bash
-# 1. Registrar usuario
+# 1. Registrar usuario (obtiene rol CLIENT automáticamente)
 curl -X POST http://localhost:8000/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123","nombre":"Test User"}'
@@ -159,6 +191,14 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 # 3. Get current user (reemplazar TOKEN)
 curl -X GET http://localhost:8000/api/v1/auth/me \
   -H "Authorization: Bearer TOKEN"
+
+# 4. [Admin] Listar usuarios
+curl -X GET http://localhost:8000/api/v1/auth/admin/usuarios \
+  -H "Authorization: Bearer TOKEN_ADMIN"
+
+# 5. [Admin] Desactivar/activar usuario
+curl -X PATCH http://localhost:8000/api/v1/auth/admin/usuarios/2/desactivar \
+  -H "Authorization: Bearer TOKEN_ADMIN"
 
 # Ver OpenAPI Swagger
 # http://localhost:8000/docs
@@ -195,7 +235,8 @@ git commit -m "implemento CRUD insumos"
 - [ ] Login funciona (register → login → me)
 - [ ] Grilla productos muestra ítems paginados
 - [ ] Filtros funcionan (categoría, búsqueda, disponible)
-- [ ] CRUD productos completo (crear, editar, eliminar)
+- [ ] CRUD productos completo (crear, editar, eliminar) — requiere ADMIN o STOCK
+- [ ] Solo ADMIN puede listar/desactivar/activar usuarios via `/api/v1/auth/admin/usuarios`
 - [ ] Soft delete muestra fondo rojo
 - [ ] Menú hamburguesa abre/cierra
 - [ ] Todo responsive en mobile

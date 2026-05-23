@@ -1,0 +1,29 @@
+from typing import Optional
+from sqlmodel import SQLModel, Field, Relationship
+
+
+class ProductoIngrediente(SQLModel, table=True):
+
+    __tablename__ = "producto_ingrediente"
+
+    producto_id: int = Field(
+        foreign_key="producto.id",
+        primary_key=True,
+        description="ID del producto"
+    )
+    ingrediente_id: int = Field(
+        foreign_key="ingrediente.id",
+        primary_key=True,
+        description="ID del ingrediente"
+    )
+    es_removible: bool = Field(
+        default=True,
+        description="Indica si el ingrediente puede removerse en una personalización"
+    )
+    es_opcional: bool = Field(
+        default=False,
+        description="Indica si el ingrediente es opcional en la composición base"
+    )
+
+    producto: Optional["Producto"] = Relationship(back_populates="ingredientes")
+    ingrediente: Optional["Ingrediente"] = Relationship(back_populates="productos")

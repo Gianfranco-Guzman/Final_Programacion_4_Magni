@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { authApi } from '@api/authApi'
-import { LoginRequest, RegisterRequest } from '@types/index'
+import { LoginRequest, RegisterRequest } from '@models/index'
 
 export const useAuth = () => {
   const navigate = useNavigate()
@@ -26,6 +26,14 @@ export const useAuth = () => {
     },
   })
 
+  const logout = async () => {
+    try {
+      await authApi.logout()
+    } finally {
+      storeLogout()
+    }
+  }
+
   return {
     login: loginMutation.mutate,
     loginLoading: loginMutation.isPending,
@@ -33,6 +41,6 @@ export const useAuth = () => {
     register: registerMutation.mutate,
     registerLoading: registerMutation.isPending,
     registerError: registerMutation.error,
-    logout: storeLogout,
+    logout,
   }
 }

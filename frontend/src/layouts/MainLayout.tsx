@@ -4,6 +4,7 @@ import { useAuthStore } from '@store/authStore'
 import { useUIStore } from '@store/uiStore'
 import { useAuth } from '@hooks/useAuth'
 import { Button } from '@components/Button'
+import { hasAnyRole } from '@/auth/permissions'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -14,19 +15,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const usuario = useAuthStore((state) => state.usuario)
   const { logout } = useAuth()
   const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
+  const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
+  const displayName = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ')
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate('/login')
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Navbar */}
       <nav className="bg-white shadow-sm border-b border-gray-200 z-30 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Hamburger + Logo */}
             <div className="flex items-center gap-4">
               <button
                 onClick={toggleSidebar}
@@ -40,10 +41,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <h1 className="text-xl font-bold text-blue-600">Food Store</h1>
             </div>
 
-            {/* Right — User & Logout */}
             <div className="flex items-center gap-4">
               {usuario && (
-                <span className="text-sm text-gray-700 font-medium">{usuario.nombre}</span>
+                <span className="text-sm text-gray-700 font-medium">{displayName}</span>
               )}
               <Button variant="secondary" size="sm" onClick={handleLogout}>
                 Salir
@@ -53,7 +53,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       </nav>
 
-      {/* Sidebar overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-30 z-40"
@@ -61,7 +60,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         />
       )}
 
-      {/* Sidebar panel */}
       <aside
         className={`fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform transition-transform duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -79,19 +77,51 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
         <nav className="p-4 flex flex-col gap-2">
           <Link
+            to="/direcciones"
+            onClick={closeSidebar}
+            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+          >
+            Direcciones
+          </Link>
+          <Link
             to="/catalogo"
             onClick={closeSidebar}
             className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
           >
             Catálogo
           </Link>
+          {canManageCatalog && (
+            <>
+              <Link
+                to="/productos/nuevo"
+                onClick={closeSidebar}
+                className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+              >
+                Nuevo Producto
+              </Link>
+              <Link
+                to="/categorias"
+                onClick={closeSidebar}
+                className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+              >
+                Categorías
+              </Link>
+              <Link
+                to="/ingredientes"
+                onClick={closeSidebar}
+                className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
+              >
+                Ingredientes
+              </Link>
+            </>
+          )}
         </nav>
 
         {usuario && (
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500 mb-2">Sesión: {usuario.nombre}</p>
+            <p className="text-xs text-gray-500 mb-2">Sesión: {displayName}</p>
             <button
-              onClick={() => { closeSidebar(); handleLogout() }}
+              onClick={() => { closeSidebar(); void handleLogout() }}
               className="w-full text-left px-3 py-2 rounded text-red-600 hover:bg-red-50 font-medium text-sm"
             >
               Cerrar sesión
@@ -100,12 +130,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         )}
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
 
-      {/* Footer */}
       <footer className="bg-gray-100 border-t border-gray-200 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600 text-sm">
           <p>&copy; 2026 Food Store. Todos los derechos reservados.</p>

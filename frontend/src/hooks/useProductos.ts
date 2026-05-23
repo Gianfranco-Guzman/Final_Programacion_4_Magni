@@ -49,3 +49,9 @@ export const useReactivar = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['productos'] }),
   })
 }
+
+export const useExportarProductos = () => {
+  return useMutation({
+    mutationFn: (search?: string) => productosApi.exportarProductos(search),
+  })
+}

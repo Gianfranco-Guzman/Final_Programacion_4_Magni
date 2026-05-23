@@ -1,6 +1,9 @@
-from datetime import datetime
-from typing import Optional, List
-from sqlmodel import SQLModel, Field, Relationship
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Optional
+
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class UsuarioRol(SQLModel, table=True):
@@ -30,16 +33,26 @@ class Usuario(SQLModel, table=True):
         max_length=100,
         description="Nombre completo del usuario"
     )
+    apellido: str = Field(
+        default="",
+        max_length=80,
+        description="Apellido del usuario"
+    )
+    celular: Optional[str] = Field(
+        default=None,
+        max_length=20,
+        description="Celular de contacto del usuario"
+    )
     is_active: bool = Field(
         default=True,
         description="Estado activo/inactivo del usuario"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de creación"
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de última actualización"
     )
     deleted_at: Optional[datetime] = Field(
@@ -47,8 +60,11 @@ class Usuario(SQLModel, table=True):
         description="Fecha de eliminación lógica (soft delete)"
     )
 
-    # Relaciones
-    roles: List["Rol"] = Relationship(back_populates="usuarios", link_model=UsuarioRol)
+    roles: list["Rol"] = Relationship(
+        back_populates="usuarios",
+        link_model=UsuarioRol,
+    )
+    direcciones: list["DireccionEntrega"] = Relationship(back_populates="usuario")
 
     def __repr__(self) -> str:
         return f"<Usuario id={self.id} email={self.email} nombre={self.nombre}>"

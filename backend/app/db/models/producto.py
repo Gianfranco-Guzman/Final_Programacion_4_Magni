@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlmodel import SQLModel, Field, Relationship
 
@@ -35,21 +35,26 @@ class Producto(SQLModel, table=True):
         max_length=50,
         description="Código único entre productos activos (SKU). Unicidad validada a nivel servicio."
     )
+    disponible: bool = Field(
+        default=True,
+        description="Disponibilidad lógica del producto en catálogo"
+    )
     deleted_at: Optional[datetime] = Field(
         default=None,
         index=True,
         description="Fecha de eliminación lógica (soft delete)"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de creación"
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de última actualización"
     )
 
-    categoria: Optional["Categoria"] = Relationship(back_populates="productos")
+    producto_categorias: list["ProductoCategoria"] = Relationship(back_populates="producto")
+    ingredientes: list["ProductoIngrediente"] = Relationship(back_populates="producto")
 
     def __repr__(self) -> str:
         return f"<Producto id={self.id} nombre={self.nombre} precio={self.precio}>"

@@ -1,6 +1,9 @@
-from datetime import datetime
-from typing import Optional, List
-from sqlmodel import SQLModel, Field, Relationship
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Optional
+
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class Rol(SQLModel, table=True):
@@ -20,16 +23,18 @@ class Rol(SQLModel, table=True):
         description="Descripcion del rol"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de creacion"
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de ultima actualización"
     )
 
-    # Relaciones
-    usuarios: List["Usuario"] = Relationship(back_populates="roles", link_model="UsuarioRol")
+    usuarios: list["Usuario"] = Relationship(
+        back_populates="roles",
+        link_model="UsuarioRol",
+    )
 
     def __repr__(self) -> str:
         return f"<Rol id={self.id} nombre={self.nombre}>"

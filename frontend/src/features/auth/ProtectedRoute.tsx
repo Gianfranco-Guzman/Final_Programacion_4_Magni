@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { Spinner } from '@components/Spinner'
 import { hasAnyRole } from '@/auth/permissions'
 
 interface ProtectedRouteProps {
-  children: React.ReactNode
+  children: ReactNode
   allowedRoles?: string[]
 }
 
@@ -16,7 +17,7 @@ function FullScreenSpinner() {
   )
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const initialized = useAuthStore((state) => state.initialized)
   const loading = useAuthStore((state) => state.loading)

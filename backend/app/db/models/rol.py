@@ -5,6 +5,8 @@ from typing import Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.db.models.usuario import UsuarioRol
+
 
 class Rol(SQLModel, table=True):
 
@@ -33,7 +35,7 @@ class Rol(SQLModel, table=True):
 
     usuarios: list["Usuario"] = Relationship(
         back_populates="roles",
-        link_model="UsuarioRol",
+        link_model=UsuarioRol,
     )
 
     def __repr__(self) -> str:

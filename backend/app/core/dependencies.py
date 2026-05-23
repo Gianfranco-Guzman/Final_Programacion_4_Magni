@@ -18,6 +18,11 @@ class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
         token = request.cookies.get(settings.auth_cookie_name)
 
         if not token:
+            authorization = request.headers.get("Authorization")
+            if authorization and authorization.startswith("Bearer "):
+                token = authorization.removeprefix("Bearer ").strip()
+
+        if not token:
             if self.auto_error:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -105,7 +110,14 @@ def user_has_any_role(user: Usuario | None, roles: list[str], session: Session) 
     return any(role in roles for role in user_roles)
 
 
-def require_role(allowed_roles: list[str]):
+def _normalize_allowed_roles(allowed_roles: tuple[str | list[str] | tuple[str, ...], ...]) -> list[str]:
+    if len(allowed_roles) == 1 and isinstance(allowed_roles[0], (list, tuple)):
+        return list(allowed_roles[0])
+
+    return [role for role in allowed_roles if isinstance(role, str)]
+
+
+def require_role(*allowed_roles: str | list[str] | tuple[str, ...]):
     """
     Factory de dependencias para control de acceso basado en roles (RBAC).
 
@@ -114,14 +126,19 @@ def require_role(allowed_roles: list[str]):
     del usuario.
 
     Uso:
-        @router.get("/admin/...", dependencies=[Depends(require_role(["ADMIN"]))])
-        _admin: Usuario = Depends(require_role(["ADMIN"]))
+        @router.get("/admin/...", dependencies=[Depends(require_role("ADMIN"))])
+        _admin: Usuario = Depends(require_role("ADMIN"))
     """
+
+    normalized_roles = _normalize_allowed_roles(allowed_roles)
 
     async def role_checker(
         current_user: Usuario = Depends(get_current_user),
         uow: SqlModelUnitOfWork = Depends(get_uow),
     ) -> Usuario:
+        if not normalized_roles:
+            return current_user
+
         session = uow.session
         statement = (
             select(Rol.nombre)
@@ -130,12 +147,12 @@ def require_role(allowed_roles: list[str]):
         )
         user_roles: list[str] = list(session.exec(statement).all())
 
-        if not any(role in allowed_roles for role in user_roles):
+        if not any(role in normalized_roles for role in user_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=(
                     f"Permisos insuficientes. Tus roles: {user_roles}. "
-                    f"Se requiere uno de: {allowed_roles}"
+                    f"Se requiere uno de: {normalized_roles}"
                 ),
             )
 

@@ -30,6 +30,7 @@ def _set_auth_cookie(response: Response, access_token: str) -> None:
         max_age=settings.access_token_expire_minutes * 60,
         samesite=settings.auth_cookie_samesite,
         secure=settings.auth_cookie_secure,
+        path="/",
     )
 
 
@@ -39,6 +40,7 @@ def _clear_auth_cookie(response: Response) -> None:
         httponly=True,
         samesite=settings.auth_cookie_samesite,
         secure=settings.auth_cookie_secure,
+        path="/",
     )
 
 
@@ -59,7 +61,6 @@ async def login(
 ) -> SessionResponse:
     user, roles = AuthService.autenticar(request.email, request.password, uow)
     access_token = create_access_token({"sub": str(user.id), "roles": roles})
-    print(f"Usuario {user.email} autenticado con roles: {roles}")
     _set_auth_cookie(response, access_token)
 
     return SessionResponse(message="Login exitoso. Sesión iniciada.")
@@ -147,7 +148,7 @@ async def get_me(
     },
 )
 async def admin_listar_usuarios(
-    _admin: Usuario = Depends(require_role(["ADMIN"])),
+    _admin: Usuario = Depends(require_role("ADMIN")),
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> list[AdminUserDetailResponse]:
     return AuthService.listar_usuarios(uow)
@@ -166,7 +167,7 @@ async def admin_listar_usuarios(
 )
 async def admin_desactivar_usuario(
     usuario_id: int,
-    _admin: Usuario = Depends(require_role(["ADMIN"])),
+    _admin: Usuario = Depends(require_role("ADMIN")),
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> AdminActionResponse:
     return AuthService.toggle_usuario_activo(usuario_id, activo=False, uow=uow)
@@ -185,7 +186,7 @@ async def admin_desactivar_usuario(
 )
 async def admin_activar_usuario(
     usuario_id: int,
-    _admin: Usuario = Depends(require_role(["ADMIN"])),
+    _admin: Usuario = Depends(require_role("ADMIN")),
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> AdminActionResponse:
     return AuthService.toggle_usuario_activo(usuario_id, activo=True, uow=uow)

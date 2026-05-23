@@ -53,7 +53,7 @@ class AuthService:
                 detail="Email o contraseña inválidos",
             )
 
-        if not user.is_active:
+        if not user.is_active or user.deleted_at is not None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Usuario inactivo",

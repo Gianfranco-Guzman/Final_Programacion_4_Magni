@@ -14,14 +14,14 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     // Extraer mensaje amigable del backend
-    const message = 
-      error.response?.data?.detail || 
+    const message =
+      error.response?.data?.detail ||
       error.response?.data?.message ||
       error.message ||
       'Error desconocido'
-    
+
     const cleanError = new Error(message)
-    
+
     if (error.response?.status === 401) {
       if (window.location.pathname !== '/login') {
         import('@store/authStore').then(({ useAuthStore }) => {
@@ -30,7 +30,7 @@ axiosClient.interceptors.response.use(
         window.location.href = '/login'
       }
     }
-    
+
     return Promise.reject(cleanError)
   }
 )

@@ -1,20 +1,3 @@
-"""
-Unit of Work — gestión de transacción.
-
-Abre la sesión de BD, provee acceso a todos los repositorios,
-hace commit() automático al salir sin excepciones o rollback() si ocurre error.
-
-Capa: UoW
-Conoce a: Repository, Session
-NO conoce a: Service, Router
-
-Uso en Service:
-    with uow:
-        user = uow.usuarios.get_by_username("admin")
-        uow.categorias.add(nueva_categoria)
-    # commit automático al salir del with, rollback si hay excepción
-"""
-
 from sqlmodel import Session
 
 from app.core.database import engine
@@ -23,13 +6,6 @@ from app.modules.categorias.repository import CategoriaRepository
 
 
 class UnitOfWork:
-    """
-    Context manager que encapsula una transacción de BD.
-
-    Atributos:
-        usuarios:    UsuarioRepository
-        categorias:  CategoriaRepository
-    """
 
     def __init__(self):
         self.session: Session | None = None
@@ -48,14 +24,13 @@ class UnitOfWork:
         self.session.close()
 
     def commit(self):
-        """Commit explícito (para casos donde se necesita antes de salir del with)."""
+
         self.session.commit()
 
     def rollback(self):
-        """Rollback explícito."""
+
         self.session.rollback()
 
 
 def get_uow() -> UnitOfWork:
-    """Dependencia FastAPI: provee un UnitOfWork por request."""
     return UnitOfWork()

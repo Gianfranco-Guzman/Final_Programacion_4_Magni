@@ -75,8 +75,10 @@ Thumbs.db
 
 # Project-specific
 ROADMAP.LOCAL.md
+ROADMAP.md
 *.local.md
 
 skills-lock.json
 
 .agents/
+.engram/

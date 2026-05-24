@@ -2,9 +2,11 @@ import React from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { useUIStore } from '@store/uiStore'
+import { useCartStore, selectCartItemCount } from '@store/cartStore'
 import { useAuth } from '@hooks/useAuth'
 import { Button } from '@components/Button'
 import { hasAnyRole } from '@/auth/permissions'
+import { CartDrawer } from '@features/store/cart/CartDrawer'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -15,8 +17,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const usuario = useAuthStore((state) => state.usuario)
   const { logout } = useAuth()
   const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
+  const toggleCart = useCartStore((state) => state.toggleCart)
+  const cartCount = useCartStore(selectCartItemCount)
   const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
   const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
+  const isCajero = hasAnyRole(usuario?.roles, ['PEDIDOS'])
   const displayName = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ')
 
   const handleLogout = async () => {
@@ -42,10 +47,22 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <h1 className="text-xl font-bold text-blue-600">Food Store</h1>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {usuario && (
-                <span className="text-sm text-gray-700 font-medium">{displayName}</span>
+                <span className="text-sm text-gray-700 font-medium hidden sm:inline">{displayName}</span>
               )}
+              <button
+                onClick={toggleCart}
+                className="relative flex items-center justify-center w-10 h-10 rounded hover:bg-gray-100"
+                aria-label="Carrito"
+              >
+                <span className="text-xl">🛒</span>
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                )}
+              </button>
               <Button variant="secondary" size="sm" onClick={handleLogout}>
                 Salir
               </Button>
@@ -77,52 +94,38 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
 
         <nav className="p-4 flex flex-col gap-2">
-          <Link
-            to="/direcciones"
-            onClick={closeSidebar}
-            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-          >
-            Direcciones
-          </Link>
-          <Link
-            to="/catalogo"
-            onClick={closeSidebar}
-            className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-          >
+          <Link to="/catalogo" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
             Catálogo
           </Link>
+          <Link to="/pedidos" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+            Mis pedidos
+          </Link>
+          <Link to="/direcciones" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+            Direcciones
+          </Link>
+
+          {(isAdmin || isCajero) && (
+            <Link to="/cajero" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+              Panel cajero
+            </Link>
+          )}
+
           {canManageCatalog && (
             <>
               {isAdmin && (
                 <>
-                  <Link
-                    to="/admin/productos"
-                    onClick={closeSidebar}
-                    className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-                  >
-                    Productos
+                  <Link to="/admin/productos" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+                    Admin productos
                   </Link>
-                  <Link
-                    to="/productos/nuevo"
-                    onClick={closeSidebar}
-                    className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-                  >
-                    Nuevo Producto
+                  <Link to="/admin/usuarios" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+                    Admin usuarios
                   </Link>
                 </>
               )}
-              <Link
-                to="/categorias"
-                onClick={closeSidebar}
-                className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-              >
+              <Link to="/categorias" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
                 Categorías
               </Link>
-              <Link
-                to="/ingredientes"
-                onClick={closeSidebar}
-                className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium"
-              >
+              <Link to="/ingredientes" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
                 Ingredientes
               </Link>
             </>
@@ -141,6 +144,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </div>
         )}
       </aside>
+
+      <CartDrawer />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         {children}

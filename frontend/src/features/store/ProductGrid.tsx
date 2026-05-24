@@ -5,9 +5,10 @@ interface ProductGridProps {
   productos: Producto[]
   onDarDeBaja?: (id: number) => void
   onReactivar?: (id: number) => void
+  onAgregarAlCarrito?: (producto: Producto) => void
 }
 
-export const ProductGrid: React.FC<ProductGridProps> = ({ productos, onDarDeBaja, onReactivar }) => {
+export const ProductGrid: React.FC<ProductGridProps> = ({ productos, onDarDeBaja, onReactivar, onAgregarAlCarrito }) => {
   if (productos.length === 0) {
     return (
       <div className="text-center py-12">
@@ -24,6 +25,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ productos, onDarDeBaja
           producto={producto}
           onDarDeBaja={onDarDeBaja}
           onReactivar={onReactivar}
+          onAgregarAlCarrito={onAgregarAlCarrito}
         />
       ))}
     </div>

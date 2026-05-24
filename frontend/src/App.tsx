@@ -12,10 +12,15 @@ import { CategoriasPage } from '@pages/CategoriasPage'
 import { DireccionesPage } from '@pages/DireccionesPage'
 import { IngredientesPage } from '@pages/IngredientesPage'
 import { AdminProductosPage } from '@pages/AdminProductosPage'
+import { MisPedidosPage } from '@pages/MisPedidosPage'
+import { PedidoDetallePage } from '@pages/PedidoDetallePage'
+import { CajeroPage } from '@pages/CajeroPage'
+import { CheckoutPage } from '@features/store/checkout/CheckoutPage'
 import { MainLayout } from '@layouts/MainLayout'
 
 const MANAGEMENT_ROLES = ['ADMIN', 'STOCK']
 const ADMIN_ROLES = ['ADMIN']
+const CAJERO_ROLES = ['ADMIN', 'PEDIDOS']
 
 const queryClient = new QueryClient()
 
@@ -113,6 +118,48 @@ function App() {
               <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                 <MainLayout>
                   <AdminProductosPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/pedidos"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <MisPedidosPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pedidos/:pedidoId"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <PedidoDetallePage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cajero"
+            element={
+              <ProtectedRoute allowedRoles={CAJERO_ROLES}>
+                <MainLayout>
+                  <CajeroPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <CheckoutPage />
                 </MainLayout>
               </ProtectedRoute>
             }

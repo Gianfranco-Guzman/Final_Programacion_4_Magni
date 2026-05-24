@@ -9,6 +9,8 @@ from app.modules.direcciones import router as direcciones_router
 from app.modules.productos import router as productos_router
 from app.modules.Categoria import router as categoria_router
 from app.modules.ingredientes import router as ingrediente_router
+from app.modules.formas_pago import router as formas_pago_router
+from app.modules.pedidos import router as pedidos_router
 
 settings = get_settings()
 
@@ -51,6 +53,8 @@ app.include_router(direcciones_router, prefix=settings.api_prefix)
 app.include_router(productos_router, prefix=f"{settings.api_prefix}/productos")
 app.include_router(categoria_router, prefix=f"{settings.api_prefix}/categorias")
 app.include_router(ingrediente_router, prefix=f"{settings.api_prefix}/ingredientes")
+app.include_router(formas_pago_router, prefix=f"{settings.api_prefix}/formas-pago")
+app.include_router(pedidos_router, prefix=f"{settings.api_prefix}/pedidos")
 
 
 @app.get("/", tags=["root"])

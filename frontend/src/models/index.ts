@@ -80,6 +80,58 @@ export interface Producto {
   ingredientes?: ProductoIngredienteConfig[]
 }
 
+export interface DetallePedido {
+  id: number
+  pedido_id: number
+  producto_id: number
+  cantidad: number
+  precio_unitario_snapshot: number
+  nombre_producto_snapshot: string
+  subtotal: number
+}
+
+export interface HistorialEstadoPedido {
+  id: number
+  pedido_id: number
+  estado_anterior: string | null
+  estado_nuevo: string
+  fecha: string
+  usuario_id: number
+  observacion: string | null
+}
+
+export interface Pedido {
+  id: number
+  usuario_id: number
+  direccion_entrega_id: number
+  forma_pago_id: number
+  estado_actual: string
+  total: number
+  notas: string | null
+  created_at: string
+  updated_at: string
+  detalles?: DetallePedido[]
+  historial?: HistorialEstadoPedido[]
+}
+
+export interface FormaPago {
+  id: number
+  nombre: string
+  descripcion?: string | null
+  activo: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface EstadoPedido {
+  id: number
+  nombre: string
+  descripcion?: string | null
+  orden: number
+  created_at: string
+  updated_at: string
+}
+
 export interface LoginRequest {
   email: string
   password: string

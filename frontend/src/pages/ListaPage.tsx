@@ -7,12 +7,19 @@ import { ProductFilters } from '@features/store/ProductFilters'
 import { Spinner } from '@components/Spinner'
 import { Button } from '@components/Button'
 import { useAuthStore } from '@store/authStore'
+import { useCartStore } from '@store/cartStore'
 import { hasAnyRole } from '@/auth/permissions'
+import { Producto } from '@models/index'
 
 export const ListaPage: React.FC = () => {
   const { state, dispatch } = useProductosContext()
   const usuario = useAuthStore((currentState) => currentState.usuario)
+  const addItem = useCartStore((state) => state.addItem)
   const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
+
+  const handleAgregarAlCarrito = (producto: Producto) => {
+    addItem(producto)
+  }
 
   const { data: productosData, isLoading, error } = useProductos({
     page: state.page,
@@ -134,6 +141,7 @@ export const ListaPage: React.FC = () => {
               productos={productosData.items}
               onDarDeBaja={canManageCatalog ? handleDarDeBaja : undefined}
               onReactivar={canManageCatalog ? handleReactivar : undefined}
+              onAgregarAlCarrito={!canManageCatalog ? handleAgregarAlCarrito : undefined}
             />
           )}
 

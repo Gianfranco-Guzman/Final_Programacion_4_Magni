@@ -8,6 +8,8 @@ from app.db.models.producto import Producto
 from app.db.models.producto_categoria import ProductoCategoria
 from app.db.models.ingrediente import Ingrediente
 from app.db.models.producto_ingrediente import ProductoIngrediente
+from app.db.models.forma_pago import FormaPago
+from app.db.models.estado_pedido import EstadoPedido
 from app.core.security import hash_password
 
 
@@ -256,7 +258,28 @@ def populate_seed_data() -> None:
             session.add(pi)
         session.commit()
 
-        print("Seed data poblado: 4 roles, admin@foodstore.com, juan@example.com, 4 categorias, 26 ingredientes, 16 productos con ingredientes")
+        formas_pago_data = [
+            FormaPago(nombre="EFECTIVO", descripcion="Pago en efectivo al recibir el pedido"),
+            FormaPago(nombre="TARJETA", descripcion="Pago con tarjeta de débito o crédito"),
+            FormaPago(nombre="TRANSFERENCIA", descripcion="Transferencia bancaria o Mercado Pago"),
+        ]
+        for fp in formas_pago_data:
+            session.add(fp)
+        session.commit()
+
+        estados_pedido_data = [
+            EstadoPedido(nombre="PENDIENTE", descripcion="Pedido recibido, pendiente de confirmación", orden=1),
+            EstadoPedido(nombre="CONFIRMADO", descripcion="Pedido confirmado, en espera de preparación", orden=2),
+            EstadoPedido(nombre="EN_PREP", descripcion="Pedido en preparación", orden=3),
+            EstadoPedido(nombre="EN_CAMINO", descripcion="Pedido en camino al cliente", orden=4),
+            EstadoPedido(nombre="ENTREGADO", descripcion="Pedido entregado al cliente", orden=5),
+            EstadoPedido(nombre="CANCELADO", descripcion="Pedido cancelado", orden=6),
+        ]
+        for ep in estados_pedido_data:
+            session.add(ep)
+        session.commit()
+
+        print("Seed data poblado: 4 roles, admin@foodstore.com, juan@example.com, 4 categorias, 26 ingredientes, 16 productos con ingredientes, 3 formas de pago, 6 estados de pedido")
 
     except Exception as e:
         session.rollback()

@@ -224,7 +224,7 @@ def obtener_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow
 def crear_producto(
     data: ProductoCreate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+    _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.crear_producto(data, uow)
     return _build_producto_read(producto)
@@ -239,7 +239,7 @@ def actualizar_producto(
     producto_id: int,
     data: ProductoUpdate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+    _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.actualizar_producto(producto_id, data, uow)
     return _build_producto_read(producto)
@@ -253,7 +253,7 @@ def actualizar_producto(
 def dar_de_baja(
     producto_id: int,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+    _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.dar_de_baja(producto_id, uow)
     return _build_producto_read(producto)
@@ -267,7 +267,21 @@ def dar_de_baja(
 def reactivar_producto(
     producto_id: int,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+    _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.reactivar_producto(producto_id, uow)
+    return _build_producto_read(producto)
+
+
+@router.patch(
+    "/{producto_id}/disponibilidad",
+    response_model=ProductoRead,
+    summary="Alternar disponibilidad de producto",
+)
+def alternar_disponibilidad(
+    producto_id: int,
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+):
+    producto = ProductoService.toggle_disponible(producto_id, uow)
     return _build_producto_read(producto)

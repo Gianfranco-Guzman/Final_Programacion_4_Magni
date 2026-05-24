@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
-from app.core.dependencies import get_current_user, require_role
+from app.core.dependencies import require_role
 from app.db.base import get_session
 from app.db.models import Ingrediente
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
-from app.modules.Ingrediente.schemas import (
+from app.modules.ingredientes.schemas import (
     IngredienteCreate,
     IngredienteRead,
     IngredienteUpdate,
 )
-from app.modules.Ingrediente.service import IngredienteService
+from app.modules.ingredientes.service import IngredienteService
 
 router = APIRouter(tags=["ingredientes"])
 
@@ -33,7 +33,9 @@ def listar_ingredientes(session: Session = Depends(get_session)):
 )
 def obtener_ingrediente(ingrediente_id: int, session: Session = Depends(get_session)):
     ingrediente = session.exec(
-        select(Ingrediente).where(Ingrediente.id == ingrediente_id)
+        select(Ingrediente).where(
+            (Ingrediente.id == ingrediente_id) & (Ingrediente.deleted_at.is_(None))
+        )
     ).first()
     if not ingrediente:
         raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
@@ -49,7 +51,7 @@ def obtener_ingrediente(ingrediente_id: int, session: Session = Depends(get_sess
 def crear_ingrediente(
     data: IngredienteCreate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+    _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     ingrediente = IngredienteService.crear_ingrediente(data, uow)
     return IngredienteRead.model_validate(ingrediente)
@@ -64,21 +66,35 @@ def actualizar_ingrediente(
     ingrediente_id: int,
     data: IngredienteUpdate,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+    _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     ingrediente = IngredienteService.actualizar_ingrediente(ingrediente_id, data, uow)
     return IngredienteRead.model_validate(ingrediente)
 
 
-@router.delete(
-    "/{ingrediente_id}",
+@router.patch(
+    "/{ingrediente_id}/baja",
     response_model=IngredienteRead,
-    summary="Eliminar ingrediente",
+    summary="Dar de baja ingrediente (soft delete)",
 )
-def eliminar_ingrediente(
+def dar_de_baja_ingrediente(
     ingrediente_id: int,
     uow: SqlModelUnitOfWork = Depends(get_uow),
-    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+    _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
-    ingrediente = IngredienteService.eliminar_ingrediente(ingrediente_id, uow)
+    ingrediente = IngredienteService.dar_de_baja(ingrediente_id, uow)
+    return IngredienteRead.model_validate(ingrediente)
+
+
+@router.patch(
+    "/{ingrediente_id}/reactivar",
+    response_model=IngredienteRead,
+    summary="Reactivar ingrediente dado de baja",
+)
+def reactivar_ingrediente(
+    ingrediente_id: int,
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+    _user: Usuario = Depends(require_role(["ADMIN"])),
+):
+    ingrediente = IngredienteService.reactivar(ingrediente_id, uow)
     return IngredienteRead.model_validate(ingrediente)

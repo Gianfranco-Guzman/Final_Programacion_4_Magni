@@ -23,6 +23,11 @@ class Ingrediente(SQLModel, table=True):
         default=False,
         description="Indica si el ingrediente es un alérgeno común"
     )
+    deleted_at: Optional[datetime] = Field(
+        default=None,
+        index=True,
+        description="Fecha de eliminación lógica (soft delete)"
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="Fecha de creación"

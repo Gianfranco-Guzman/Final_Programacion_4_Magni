@@ -6,6 +6,11 @@ from app.db.models.producto import Producto
 from app.db.models.producto_categoria import ProductoCategoria
 from app.db.models.ingrediente import Ingrediente
 from app.db.models.producto_ingrediente import ProductoIngrediente
+from app.db.models.forma_pago import FormaPago
+from app.db.models.estado_pedido import EstadoPedido
+from app.db.models.pedido import Pedido
+from app.db.models.detalle_pedido import DetallePedido
+from app.db.models.historial_estado_pedido import HistorialEstadoPedido
 
 __all__ = [
     "Rol",
@@ -17,4 +22,9 @@ __all__ = [
     "ProductoCategoria",
     "Ingrediente",
     "ProductoIngrediente",
+    "FormaPago",
+    "EstadoPedido",
+    "Pedido",
+    "DetallePedido",
+    "HistorialEstadoPedido",
 ]

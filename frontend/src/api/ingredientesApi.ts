@@ -30,8 +30,13 @@ export const ingredientesApi = {
     return response.data
   },
 
-  deleteIngrediente: async (id: number): Promise<Ingrediente> => {
-    const response = await axiosClient.delete<Ingrediente>(`/ingredientes/${id}`)
+  bajaIngrediente: async (id: number): Promise<Ingrediente> => {
+    const response = await axiosClient.patch<Ingrediente>(`/ingredientes/${id}/baja`)
+    return response.data
+  },
+
+  reactivarIngrediente: async (id: number): Promise<Ingrediente> => {
+    const response = await axiosClient.patch<Ingrediente>(`/ingredientes/${id}/reactivar`)
     return response.data
   },
 }

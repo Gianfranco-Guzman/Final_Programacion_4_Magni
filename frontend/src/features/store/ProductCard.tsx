@@ -6,9 +6,10 @@ interface ProductCardProps {
   producto: Producto
   onDarDeBaja?: (id: number) => void
   onReactivar?: (id: number) => void
+  onAgregarAlCarrito?: (producto: Producto) => void
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja, onReactivar }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja, onReactivar, onAgregarAlCarrito }) => {
   const isDeleted = producto.deleted_at != null
   const isOperationallyAvailable = producto.disponible && producto.stock_cantidad > 0
   const categoriaPrincipal = producto.categorias?.find((item) => item.es_principal)?.categoria
@@ -105,7 +106,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
           Código: {producto.codigo}
         </div>
 
-        {!isDeleted && (onDarDeBaja) && (
+        {!isDeleted && onAgregarAlCarrito && isOperationallyAvailable && (
+          <button
+            onClick={() => onAgregarAlCarrito(producto)}
+            className="w-full mt-3 bg-blue-600 text-white text-sm font-semibold py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Agregar al carrito
+          </button>
+        )}
+
+        {!isDeleted && onDarDeBaja && (
           <div className="flex gap-2 mt-3">
             <Link
               to={`/productos/editar/${producto.id}`}
@@ -113,14 +123,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
             >
               Editar
             </Link>
-            {onDarDeBaja && (
-              <button
-                onClick={() => onDarDeBaja(producto.id)}
-                className="flex-1 text-xs bg-red-50 text-red-600 border border-red-200 rounded px-2 py-1 hover:bg-red-100"
-              >
-                Dar de baja
-              </button>
-            )}
+            <button
+              onClick={() => onDarDeBaja(producto.id)}
+              className="flex-1 text-xs bg-red-50 text-red-600 border border-red-200 rounded px-2 py-1 hover:bg-red-100"
+            >
+              Dar de baja
+            </button>
           </div>
         )}
       </div>

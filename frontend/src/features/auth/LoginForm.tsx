@@ -98,11 +98,24 @@ export const LoginForm: React.FC = () => {
           </Button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>Usuario de prueba:</p>
-          <p className="font-mono text-xs mt-2">
-            admin@foodstore.com / admin1234
-          </p>
+        <div className="mt-6">
+          <p className="text-xs text-gray-400 text-center mb-3">Usuarios de prueba</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: 'Admin', email: 'admin@foodstore.com', password: 'admin1234', color: 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100' },
+              { label: 'Cliente', email: 'juan@example.com', password: 'Juan1234!', color: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' },
+            ].map((u) => (
+              <button
+                key={u.email}
+                type="button"
+                onClick={() => { setEmail(u.email); setPassword(u.password); setErrors({}); setDisplayError(null) }}
+                className={`border rounded-lg px-3 py-2 text-left transition-colors ${u.color}`}
+              >
+                <p className="font-semibold text-xs">{u.label}</p>
+                <p className="font-mono text-xs opacity-75 truncate">{u.email}</p>
+              </button>
+            ))}
+          </div>
         </div>
       </Card>
     </div>

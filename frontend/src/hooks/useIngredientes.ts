@@ -34,10 +34,18 @@ export const useUpdateIngrediente = () => {
   })
 }
 
-export const useDeleteIngrediente = () => {
+export const useBajaIngrediente = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ingredientesApi.deleteIngrediente,
+    mutationFn: ingredientesApi.bajaIngrediente,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['ingredientes'] }),
+  })
+}
+
+export const useReactivarIngrediente = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ingredientesApi.reactivarIngrediente,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['ingredientes'] }),
   })
 }

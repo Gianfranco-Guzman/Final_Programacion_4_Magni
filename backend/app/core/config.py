@@ -28,7 +28,6 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:5173,http://localhost:8000,http://127.0.0.1:3000,http://127.0.0.1:5173"
 
     model_config = {
-        # Busca .env siempre desde backend/, no desde CWD
         "env_file": Path(__file__).parent.parent.parent / ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": False,

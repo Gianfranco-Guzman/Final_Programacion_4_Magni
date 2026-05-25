@@ -134,9 +134,6 @@ async def get_me(
     return AuthService.obtener_usuario_con_roles(current_user.id, uow)
 
 
-# ─── Rutas de administración (RBAC: solo ADMIN) ───────────────────────────
-
-
 @router.get(
     "/admin/usuarios",
     response_model=list[AdminUserDetailResponse],

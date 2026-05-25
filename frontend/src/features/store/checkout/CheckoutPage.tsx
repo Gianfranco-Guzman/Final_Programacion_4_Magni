@@ -25,7 +25,6 @@ export const CheckoutPage: React.FC = () => {
   const [notas, setNotas] = useState('')
   const [error, setError] = useState('')
 
-  // Sync defaults once data loads
   React.useEffect(() => {
     if (direccionPrincipal && selectedDireccionId === null) {
       setSelectedDireccionId(direccionPrincipal.id)
@@ -87,10 +86,7 @@ export const CheckoutPage: React.FC = () => {
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Checkout</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* Left: forms */}
         <div className="lg:col-span-3 flex flex-col gap-6">
-
-          {/* Dirección */}
           <div className="bg-white rounded-lg shadow p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Dirección de entrega</h2>
             {direcciones.filter((d) => !d.deleted_at).length === 0 ? (
@@ -141,7 +137,6 @@ export const CheckoutPage: React.FC = () => {
             )}
           </div>
 
-          {/* Forma de pago */}
           <div className="bg-white rounded-lg shadow p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Forma de pago</h2>
             <div className="flex flex-col gap-3">
@@ -171,7 +166,6 @@ export const CheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Notas */}
           <div className="bg-white rounded-lg shadow p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-3">Notas (opcional)</h2>
             <textarea
@@ -185,7 +179,6 @@ export const CheckoutPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: order summary */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow p-5 sticky top-4">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Resumen</h2>

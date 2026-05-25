@@ -81,7 +81,6 @@ class IngredienteService:
         if ingrediente.deleted_at is not None:
             raise HTTPException(status_code=400, detail="El ingrediente ya está dado de baja")
 
-        # Verificar si está asociado a algún producto
         from app.db.models import ProductoIngrediente
         asociaciones = session.exec(
             select(ProductoIngrediente).where(

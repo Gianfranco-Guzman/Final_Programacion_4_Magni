@@ -31,7 +31,7 @@ ROLES_SEED = [
 
 USUARIOS_SEED = [
     {
-        "email": "admin@foodstore.local",
+        "email": "admin@foodstore.com",
         "password": "admin123",
         "nombre": "Admin",
         "apellido": "FoodStore",
@@ -39,7 +39,7 @@ USUARIOS_SEED = [
         "roles": ["ADMIN"],
     },
     {
-        "email": "cliente@foodstore.local",
+        "email": "cliente@foodstore.com",
         "password": "cliente123",
         "nombre": "Clara",
         "apellido": "Cliente",
@@ -47,7 +47,7 @@ USUARIOS_SEED = [
         "roles": ["CLIENT"],
     },
     {
-        "email": "stock@foodstore.local",
+        "email": "stock@foodstore.com",
         "password": "stock123",
         "nombre": "Sergio",
         "apellido": "Stock",
@@ -55,7 +55,7 @@ USUARIOS_SEED = [
         "roles": ["STOCK"],
     },
     {
-        "email": "pedidos@foodstore.local",
+        "email": "pedidos@foodstore.com",
         "password": "pedidos123",
         "nombre": "Paula",
         "apellido": "Pedidos",
@@ -214,7 +214,7 @@ def _sync_usuario_roles(
 def _seed_direcciones(session: Session, usuarios: dict[str, Usuario]) -> dict[str, DireccionEntrega]:
     direcciones_seed = [
         {
-            "email": "cliente@foodstore.local",
+            "email": "cliente@foodstore.com",
             "etiqueta": "Casa",
             "linea1": "San Martín 456",
             "linea2": "Depto 2B",
@@ -224,7 +224,7 @@ def _seed_direcciones(session: Session, usuarios: dict[str, Usuario]) -> dict[st
             "es_principal": True,
         },
         {
-            "email": "cliente@foodstore.local",
+            "email": "cliente@foodstore.com",
             "etiqueta": "Trabajo",
             "linea1": "Av. Colón 1250",
             "linea2": "Piso 4",
@@ -273,7 +273,7 @@ def _seed_direcciones(session: Session, usuarios: dict[str, Usuario]) -> dict[st
 
         direcciones[f'{data["email"]}:{data["etiqueta"]}'] = direccion
 
-    _normalize_principal_direcciones(session, usuarios["cliente@foodstore.local"].id)
+    _normalize_principal_direcciones(session, usuarios["cliente@foodstore.com"].id)
     return direcciones
 
 
@@ -615,11 +615,11 @@ def _seed_pedidos_demo(
     formas_pago: dict[str, FormaPago],
     productos: dict[str, Producto],
 ) -> None:
-    cliente = usuarios["cliente@foodstore.local"]
-    admin = usuarios["admin@foodstore.local"]
-    operador = usuarios["pedidos@foodstore.local"]
-    casa = direcciones["cliente@foodstore.local:Casa"]
-    trabajo = direcciones["cliente@foodstore.local:Trabajo"]
+    cliente = usuarios["cliente@foodstore.com"]
+    admin = usuarios["admin@foodstore.com"]
+    operador = usuarios["pedidos@foodstore.com"]
+    casa = direcciones["cliente@foodstore.com:Casa"]
+    trabajo = direcciones["cliente@foodstore.com:Trabajo"]
 
     pedidos_seed = [
         {

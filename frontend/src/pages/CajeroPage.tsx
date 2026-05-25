@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FeedbackAlert } from '@components/FeedbackAlert'
 import { Spinner } from '@components/Spinner'
 import { usePedidos, useAvanzarEstado, useCancelarPedido } from '@hooks/usePedidos'
 
@@ -32,6 +33,7 @@ const ESTADOS_ACTIVOS = ['PENDIENTE', 'CONFIRMADO', 'EN_PREP', 'EN_CAMINO']
 
 export const CajeroPage: React.FC = () => {
   const [estadoFiltro, setEstadoFiltro] = useState<string | undefined>(undefined)
+  const [actionError, setActionError] = useState('')
   const { data: pedidos = [], isLoading, error, refetch } = usePedidos({ estado: estadoFiltro, size: 50 })
   const avanzarMutation = useAvanzarEstado()
   const cancelarMutation = useCancelarPedido()
@@ -41,24 +43,26 @@ export const CajeroPage: React.FC = () => {
     : pedidos.filter((p) => ESTADOS_ACTIVOS.includes(p.estado_actual))
 
   const handleAvanzar = (id: number) => {
+    setActionError('')
     avanzarMutation.mutate(
       { id },
-      { onError: (err: unknown) => alert(err instanceof Error ? err.message : 'Error al avanzar estado') },
+      { onError: (err: unknown) => setActionError(err instanceof Error ? err.message : 'Error al avanzar estado') },
     )
   }
 
   const handleCancelar = (id: number) => {
     if (!window.confirm('¿Cancelar este pedido?')) return
+    setActionError('')
     cancelarMutation.mutate(
       { id },
-      { onError: (err: unknown) => alert(err instanceof Error ? err.message : 'Error al cancelar') },
+      { onError: (err: unknown) => setActionError(err instanceof Error ? err.message : 'Error al cancelar') },
     )
   }
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Error cargando pedidos</p>
+        <div className="text-center py-12">
+        <p className="text-red-600">{error instanceof Error ? error.message : 'Error cargando pedidos'}</p>
         <button onClick={() => refetch()} className="mt-4 text-blue-600 hover:underline text-sm">
           Reintentar
         </button>
@@ -94,6 +98,12 @@ export const CajeroPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {actionError && (
+        <div className="mb-4">
+          <FeedbackAlert title="No se pudo completar la acción">{actionError}</FeedbackAlert>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="py-12"><Spinner /></div>

@@ -4,13 +4,13 @@ from typing import Optional
 
 
 class ItemCarrito(BaseModel):
-    producto_id: int
+    producto_id: int = Field(ge=1, description="ID de producto válido")
     cantidad: int = Field(gt=0, description="Cantidad debe ser mayor a 0")
 
 
 class PedidoCreate(BaseModel):
-    direccion_entrega_id: int
-    forma_pago_id: int
+    direccion_entrega_id: int = Field(ge=1, description="Dirección de entrega requerida")
+    forma_pago_id: int = Field(ge=1, description="Forma de pago requerida")
     items: list[ItemCarrito] = Field(min_length=1, description="Al menos un ítem requerido")
     notas: Optional[str] = Field(None, max_length=500)
 

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { FeedbackAlert } from '@components/FeedbackAlert'
 import { Spinner } from '@components/Spinner'
 import { usePedido, useCancelarPedido } from '@hooks/usePedidos'
 
@@ -26,14 +27,16 @@ export const PedidoDetallePage: React.FC = () => {
   const navigate = useNavigate()
   const { data: pedido, isLoading, error } = usePedido(Number(pedidoId))
   const cancelarMutation = useCancelarPedido()
+  const [actionError, setActionError] = React.useState('')
 
   const handleCancelar = () => {
     if (!window.confirm('¿Cancelar este pedido?')) return
+    setActionError('')
     cancelarMutation.mutate(
       { id: pedido!.id },
       {
         onSuccess: () => navigate('/pedidos'),
-        onError: (err: unknown) => alert(err instanceof Error ? err.message : 'Error al cancelar'),
+        onError: (err: unknown) => setActionError(err instanceof Error ? err.message : 'Error al cancelar'),
       },
     )
   }
@@ -43,7 +46,7 @@ export const PedidoDetallePage: React.FC = () => {
   if (error || !pedido) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">Pedido no encontrado</p>
+        <p className="text-red-600">{error instanceof Error ? error.message : 'Pedido no encontrado'}</p>
         <button onClick={() => navigate(-1)} className="mt-4 text-blue-600 hover:underline text-sm">
           Volver
         </button>
@@ -62,6 +65,11 @@ export const PedidoDetallePage: React.FC = () => {
       </button>
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
+        {actionError && (
+          <div className="mb-4">
+            <FeedbackAlert title="No se pudo cancelar el pedido">{actionError}</FeedbackAlert>
+          </div>
+        )}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-gray-800">Pedido #{pedido.id}</h1>
           <span className={`px-3 py-1 rounded-full text-sm font-semibold ${estadoColor}`}>

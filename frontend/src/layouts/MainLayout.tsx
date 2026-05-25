@@ -22,6 +22,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
   const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
   const isCajero = hasAnyRole(usuario?.roles, ['PEDIDOS'])
+  const isClient = hasAnyRole(usuario?.roles, ['CLIENT'])
   const displayName = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ')
 
   const handleLogout = async () => {
@@ -51,18 +52,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {usuario && (
                 <span className="text-sm text-gray-700 font-medium hidden sm:inline">{displayName}</span>
               )}
-              <button
-                onClick={toggleCart}
-                className="relative flex items-center justify-center w-10 h-10 rounded hover:bg-gray-100"
-                aria-label="Carrito"
-              >
-                <span className="text-xl">🛒</span>
-                {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartCount > 9 ? '9+' : cartCount}
-                  </span>
-                )}
-              </button>
+              {isClient && (
+                <button
+                  onClick={toggleCart}
+                  className="relative flex items-center justify-center w-10 h-10 rounded hover:bg-gray-100"
+                  aria-label="Carrito"
+                >
+                  <span className="text-xl">🛒</span>
+                  {cartCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {cartCount > 9 ? '9+' : cartCount}
+                    </span>
+                  )}
+                </button>
+              )}
               <Button variant="secondary" size="sm" onClick={handleLogout}>
                 Salir
               </Button>
@@ -97,12 +100,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           <Link to="/catalogo" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
             Catálogo
           </Link>
-          <Link to="/pedidos" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
-            Mis pedidos
-          </Link>
-          <Link to="/direcciones" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
-            Direcciones
-          </Link>
+          {isClient && (
+            <>
+              <Link to="/pedidos" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+                Mis pedidos
+              </Link>
+              <Link to="/direcciones" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+                Direcciones
+              </Link>
+            </>
+          )}
 
           {(isAdmin || isCajero) && (
             <Link to="/cajero" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
@@ -117,17 +124,22 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   <Link to="/admin/productos" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
                     Admin productos
                   </Link>
+                  <Link to="/admin/categorias" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+                    Admin categorías
+                  </Link>
+                  <Link to="/admin/ingredientes" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+                    Admin ingredientes
+                  </Link>
                   <Link to="/admin/usuarios" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
                     Admin usuarios
                   </Link>
                 </>
               )}
-              <Link to="/categorias" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
-                Categorías
-              </Link>
-              <Link to="/ingredientes" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
-                Ingredientes
-              </Link>
+              {!isAdmin && (
+                <Link to="/admin/productos" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+                  Productos y disponibilidad
+                </Link>
+              )}
             </>
           )}
         </nav>

@@ -2,6 +2,18 @@
 
 **Sistema de Gestión de Pedidos de Comida** — React + TypeScript + FastAPI + PostgreSQL
 
+
+---
+## INTEGRANTES
+
+- Gianfranco Guzman
+- Bruno Racconto
+- Alexander Filchel
+
+### LINK VIDEO
+
+- https://youtu.be/u8AqXBbrxMg
+
 ---
 
 ## 📋 Requisitos

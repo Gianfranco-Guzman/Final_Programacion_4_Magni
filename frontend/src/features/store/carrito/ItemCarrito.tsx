@@ -1,11 +1,11 @@
 import React from 'react'
 import { CartItemState, useCartStore } from '@store/cartStore'
 
-interface CartItemProps {
+interface ItemCarritoProps {
   item: CartItemState
 }
 
-export const CartItem: React.FC<CartItemProps> = ({ item }) => {
+export const ItemCarrito: React.FC<ItemCarritoProps> = ({ item }) => {
   const { increase, decrease, removeItem } = useCartStore()
   const subtotal = item.producto.precio * item.cantidad
 

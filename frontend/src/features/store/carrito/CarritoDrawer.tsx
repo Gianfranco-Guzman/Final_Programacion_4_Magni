@@ -1,9 +1,9 @@
 import React from 'react'
 import { useCartStore } from '@store/cartStore'
-import { CartItem } from './CartItem'
-import { CartSummary } from './CartSummary'
+import { ItemCarrito } from './ItemCarrito'
+import { ResumenCarrito } from './ResumenCarrito'
 
-export const CartDrawer: React.FC = () => {
+export const CarritoDrawer: React.FC = () => {
   const { items, isOpen, closeCart, clearCart } = useCartStore()
 
   if (!isOpen) return null
@@ -33,7 +33,7 @@ export const CartDrawer: React.FC = () => {
               <p className="text-sm">El carrito está vacío</p>
             </div>
           ) : (
-            items.map((item) => <CartItem key={item.producto.id} item={item} />)
+            items.map((item) => <ItemCarrito key={item.producto.id} item={item} />)
           )}
         </div>
 
@@ -47,7 +47,7 @@ export const CartDrawer: React.FC = () => {
                 Vaciar carrito
               </button>
             </div>
-            <CartSummary />
+            <ResumenCarrito />
           </>
         )}
       </div>

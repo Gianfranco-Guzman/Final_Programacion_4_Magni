@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore, selectCartTotal } from '@store/cartStore'
 
-export const CartSummary: React.FC = () => {
+export const ResumenCarrito: React.FC = () => {
   const total = useCartStore(selectCartTotal)
   const closeCart = useCartStore((state) => state.closeCart)
   const navigate = useNavigate()

@@ -117,7 +117,6 @@ class ProductoService:
                 )
             )
 
-        # Crear las relaciones producto-ingrediente
         for ingrediente_data in ingredientes_payload:
             pi = ProductoIngrediente(
                 producto_id=producto.id,
@@ -128,7 +127,6 @@ class ProductoService:
             session.add(pi)
         uow.flush()
 
-        # Refrescar para cargar las relaciones
         uow.refresh(producto)
         return producto
 
@@ -184,11 +182,9 @@ class ProductoService:
                 item.categoria_id for item in categorias_payload if item.es_principal
             )
 
-        # Actualizar ingredientes si se proporcionan
         if data.ingredientes is not None:
             ingredientes_payload = ProductoService._validar_ingredientes(data.ingredientes, uow)
 
-            # Eliminar relaciones existentes
             existing_relations = session.exec(
                 select(ProductoIngrediente).where(
                     ProductoIngrediente.producto_id == producto_id
@@ -197,7 +193,6 @@ class ProductoService:
             for rel in existing_relations:
                 session.delete(rel)
 
-            # Crear nuevas relaciones
             for ingrediente_data in ingredientes_payload:
                 pi = ProductoIngrediente(
                     producto_id=producto_id,
@@ -207,7 +202,6 @@ class ProductoService:
                 )
                 session.add(pi)
 
-        # Actualizar campos del producto (excluyendo ingredientes)
         update_data = data.model_dump(exclude_unset=True, exclude={"categorias", "ingredientes"})
         for field, value in update_data.items():
             setattr(producto, field, value)

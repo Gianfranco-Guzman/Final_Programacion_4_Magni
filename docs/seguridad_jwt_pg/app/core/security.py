@@ -28,7 +28,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     # Agrega claims al payload
     to_encode.update({
         "type": "access",  # distingue access vs refresh (buena práctica)
-        "exp": expire      # claim estándar JWT
+        "exp": expire
     })
 
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

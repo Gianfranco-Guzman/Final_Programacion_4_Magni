@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FeedbackAlert } from '@components/FeedbackAlert'
 import { Spinner } from '@components/Spinner'
 import { usePedidos, useCancelarPedido } from '@hooks/usePedidos'
 
@@ -25,23 +26,25 @@ const ESTADOS_CANCELABLES = ['PENDIENTE', 'CONFIRMADO']
 
 export const MisPedidosPage: React.FC = () => {
   const [estadoFiltro, setEstadoFiltro] = useState<string | undefined>(undefined)
+  const [actionError, setActionError] = useState('')
   const { data: pedidos = [], isLoading, error } = usePedidos({ estado: estadoFiltro })
   const cancelarMutation = useCancelarPedido()
 
   const handleCancelar = (id: number) => {
     if (!window.confirm('¿Cancelar este pedido?')) return
+    setActionError('')
     cancelarMutation.mutate(
       { id },
-      { onError: (err: unknown) => alert(err instanceof Error ? err.message : 'Error al cancelar') },
+      { onError: (err: unknown) => setActionError(err instanceof Error ? err.message : 'Error al cancelar') },
     )
   }
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Error cargando pedidos</p>
-      </div>
-    )
+        <div className="text-center py-12">
+          <p className="text-red-600">{error instanceof Error ? error.message : 'Error cargando pedidos'}</p>
+        </div>
+      )
   }
 
   return (
@@ -59,6 +62,12 @@ export const MisPedidosPage: React.FC = () => {
           ))}
         </select>
       </div>
+
+      {actionError && (
+        <div className="mb-4">
+          <FeedbackAlert title="No se pudo cancelar el pedido">{actionError}</FeedbackAlert>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="py-12"><Spinner /></div>

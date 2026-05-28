@@ -10,6 +10,12 @@ export interface Usuario {
   roles: RoleInfo[]
 }
 
+export interface AdminUsuario extends Usuario {
+  created_at: string
+  updated_at: string
+  deleted_at?: string | null
+}
+
 export interface DireccionEntrega {
   id: number
   usuario_id: number

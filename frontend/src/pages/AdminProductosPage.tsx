@@ -4,8 +4,13 @@ import { useProductos, useDarDeBaja, useReactivar, useToggleDisponibilidad } fro
 import { Spinner } from '@components/Spinner'
 import { Button } from '@components/Button'
 import { Producto } from '@models/index'
+import { useAuthStore } from '@store/authStore'
+import { hasAnyRole } from '@/auth/permissions'
 
 export const AdminProductosPage: React.FC = () => {
+  const usuario = useAuthStore((state) => state.usuario)
+  const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
+  const canToggleDisponibilidad = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
   const { data: productosData, isLoading, error } = useProductos({
     page: 1,
     size: 100,
@@ -64,9 +69,11 @@ export const AdminProductosPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-800 mb-1">Productos</h1>
           <p className="text-gray-600">{productos.length} productos</p>
         </div>
-        <Link to="/productos/nuevo">
-          <Button>+ Nuevo Producto</Button>
-        </Link>
+        {isAdmin && (
+          <Link to="/productos/nuevo">
+            <Button>+ Nuevo Producto</Button>
+          </Link>
+        )}
       </div>
 
        {isLoading ? (
@@ -165,35 +172,41 @@ export const AdminProductosPage: React.FC = () => {
                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                        {producto.stock_cantidad}
                      </td>
-                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                       <Link
-                         to={`/productos/editar/${producto.id}`}
-                         className="text-blue-600 hover:text-blue-900 mr-3"
-                       >
-                         Editar
-                       </Link>
-                       <button
-                         onClick={() => handleToggleDisponibilidad(producto)}
-                         className="text-amber-600 hover:text-amber-900 mr-3"
-                       >
-                         {producto.disponible ? 'No disponible' : 'Disponible'}
-                       </button>
-                       {producto.deleted_at ? (
-                         <button
-                           onClick={() => handleReactivar(producto)}
-                           className="text-emerald-600 hover:text-emerald-900"
-                         >
-                           Reactivar
-                         </button>
-                       ) : (
-                         <button
-                           onClick={() => handleBaja(producto)}
-                           className="text-red-600 hover:text-red-900"
-                         >
-                           Dar de baja
-                         </button>
-                       )}
-                     </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {isAdmin && (
+                          <Link
+                            to={`/productos/editar/${producto.id}`}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                          >
+                            Editar
+                          </Link>
+                        )}
+                        {canToggleDisponibilidad && (
+                          <button
+                            onClick={() => handleToggleDisponibilidad(producto)}
+                            className="text-amber-600 hover:text-amber-900 mr-3"
+                          >
+                            {producto.disponible ? 'No disponible' : 'Disponible'}
+                          </button>
+                        )}
+                        {isAdmin && (
+                          producto.deleted_at ? (
+                            <button
+                              onClick={() => handleReactivar(producto)}
+                              className="text-emerald-600 hover:text-emerald-900"
+                            >
+                              Reactivar
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleBaja(producto)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Dar de baja
+                            </button>
+                          )
+                        )}
+                      </td>
                    </tr>
                  ))}
                </tbody>

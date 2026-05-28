@@ -14,6 +14,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
   const isOperationallyAvailable = producto.disponible && producto.stock_cantidad > 0
   const categoriaPrincipal = producto.categorias?.find((item) => item.es_principal)?.categoria
   const categoriasSecundarias = producto.categorias?.filter((item) => !item.es_principal).map((item) => item.categoria.nombre) || []
+  const alergenos = producto.ingredientes?.filter((item) => item.ingrediente.es_alergeno).map((item) => item.ingrediente.nombre) || []
   const stockDisplay = !producto.disponible
     ? 'No disponible'
     : producto.stock_cantidad > 0
@@ -82,6 +83,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
               </span>
             )}
           </div>
+        )}
+
+        {alergenos.length > 0 && (
+          <p className="text-xs text-red-700 mb-2 font-medium">
+            Alérgenos: {alergenos.join(', ')}
+          </p>
         )}
       </div>
 

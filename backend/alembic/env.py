@@ -7,31 +7,20 @@ from sqlalchemy import pool
 from alembic import context
 from sqlmodel import SQLModel
 
-# Asegurar import de app.* al ejecutar Alembic desde /backend
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
 from app.core.config import get_settings
-from app.db import models  # noqa: F401  # importar modelos para registrar metadata
+from app.db import models  # noqa: F401
 
-# this is the Alembic Config object, which provides
-# the values of the [alembic] section of the .ini
-# file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
 target_metadata = SQLModel.metadata
 
-# Configurar URL de la base de datos
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.database_url)
 

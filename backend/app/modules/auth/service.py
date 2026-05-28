@@ -110,8 +110,6 @@ class AuthService:
         roles_nombres = AuthService.obtener_roles_usuario(usuario, uow)
         return AuthService._usuario_a_response(usuario, roles_nombres)
 
-    # ─── Métodos de Administración (RBAC: solo ADMIN) ──────────────────────
-
     @staticmethod
     def listar_usuarios(uow: SqlModelUnitOfWork) -> list[AdminUserDetailResponse]:
         """Lista todos los usuarios con sus roles (solo para admin)."""

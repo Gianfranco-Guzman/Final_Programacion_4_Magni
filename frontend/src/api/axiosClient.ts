@@ -13,7 +13,6 @@ export const axiosClient = axios.create({
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Extraer mensaje amigable del backend
     const message =
       error.response?.data?.detail ||
       error.response?.data?.message ||

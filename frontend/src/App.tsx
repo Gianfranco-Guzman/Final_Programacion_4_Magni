@@ -12,6 +12,7 @@ import { CategoriasPage } from '@pages/CategoriasPage'
 import { DireccionesPage } from '@pages/DireccionesPage'
 import { IngredientesPage } from '@pages/IngredientesPage'
 import { AdminProductosPage } from '@pages/AdminProductosPage'
+import { AdminUsuariosPage } from '@pages/AdminUsuariosPage'
 import { MisPedidosPage } from '@pages/MisPedidosPage'
 import { PedidoDetallePage } from '@pages/PedidoDetallePage'
 import { CajeroPage } from '@pages/CajeroPage'
@@ -85,7 +86,15 @@ function App() {
           <Route
             path="/categorias"
             element={
-              <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
+              <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                <Navigate to="/admin/categorias" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categorias"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                 <MainLayout>
                   <CategoriasPage />
                 </MainLayout>
@@ -105,7 +114,15 @@ function App() {
           <Route
             path="/ingredientes"
             element={
-              <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
+              <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                <Navigate to="/admin/ingredientes" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/ingredientes"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                 <MainLayout>
                   <IngredientesPage />
                 </MainLayout>
@@ -115,9 +132,19 @@ function App() {
           <Route
             path="/admin/productos"
             element={
-              <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+              <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
                 <MainLayout>
                   <AdminProductosPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/usuarios"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                <MainLayout>
+                  <AdminUsuariosPage />
                 </MainLayout>
               </ProtectedRoute>
             }

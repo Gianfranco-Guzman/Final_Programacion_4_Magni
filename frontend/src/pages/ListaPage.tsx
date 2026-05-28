@@ -16,6 +16,7 @@ export const ListaPage: React.FC = () => {
   const usuario = useAuthStore((currentState) => currentState.usuario)
   const addItem = useCartStore((state) => state.addItem)
   const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
+  const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
 
   const handleAgregarAlCarrito = (producto: Producto) => {
     addItem(producto)
@@ -27,7 +28,7 @@ export const ListaPage: React.FC = () => {
     search: state.search || undefined,
     categoria_id: state.categoriaId || undefined,
     disponible: state.disponible ?? undefined,
-    incluir_baja: canManageCatalog ? state.showDeleted : false,
+    incluir_baja: isAdmin ? state.showDeleted : false,
   })
 
   const { data: categorias = [] } = useCategorias()
@@ -98,7 +99,7 @@ export const ListaPage: React.FC = () => {
           <Button onClick={handleExportar} disabled={exportarMutation.isPending}>
             {exportarMutation.isPending ? 'Exportando...' : 'Exportar a Excel'}
           </Button>
-          {canManageCatalog && (
+          {isAdmin && (
             <Link to="/productos/nuevo">
               <Button>+ Nuevo Producto</Button>
             </Link>
@@ -117,7 +118,7 @@ export const ListaPage: React.FC = () => {
         onResetFilters={handleResetFilters}
       />
 
-      {canManageCatalog && (
+      {isAdmin && (
         <div className="flex items-center gap-2 mb-4">
           <input
             type="checkbox"
@@ -139,8 +140,8 @@ export const ListaPage: React.FC = () => {
           {productosData && (
             <ProductGrid
               productos={productosData.items}
-              onDarDeBaja={canManageCatalog ? handleDarDeBaja : undefined}
-              onReactivar={canManageCatalog ? handleReactivar : undefined}
+              onDarDeBaja={isAdmin ? handleDarDeBaja : undefined}
+              onReactivar={isAdmin ? handleReactivar : undefined}
               onAgregarAlCarrito={!canManageCatalog ? handleAgregarAlCarrito : undefined}
             />
           )}

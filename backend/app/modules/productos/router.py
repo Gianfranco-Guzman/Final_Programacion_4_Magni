@@ -52,19 +52,30 @@ def _build_producto_read(producto: Producto) -> ProductoRead:
             if pi.ingrediente:
                 ingredientes.append(
                     ProductoIngredienteRead(
+                        id=pi.id,
                         ingrediente_id=pi.ingrediente_id,
+                        cantidad=pi.cantidad,
+                        unidad_medida=pi.unidad_medida,
+                        orden=pi.orden,
                         es_removible=pi.es_removible,
                         es_opcional=pi.es_opcional,
                         ingrediente=pi.ingrediente,
                     )
                 )
 
+    stock_disponible_calculado = ProductoService.calcular_stock_disponible(producto)
+
     return ProductoRead(
         id=producto.id,
         nombre=producto.nombre,
         descripcion=producto.descripcion,
-        precio=producto.precio,
+        precio_venta=producto.precio_venta,
+        precio_costo_calculado=producto.precio_costo_calculado,
+        descuento_porcentaje=producto.descuento_porcentaje,
+        tipo_producto=producto.tipo_producto,
         stock_cantidad=producto.stock_cantidad,
+        stock_disponible_calculado=stock_disponible_calculado,
+        puede_fabricarse=stock_disponible_calculado > 0,
         categoria_principal_id=categoria_principal_id,
         codigo=producto.codigo,
         disponible=producto.disponible,

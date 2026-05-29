@@ -1,6 +1,11 @@
 from datetime import datetime, timezone
 from typing import Optional
+from decimal import Decimal
+
+from sqlalchemy import Column, Enum as SAEnum, Numeric
 from sqlmodel import SQLModel, Field, Relationship
+
+from app.db.models.enums import TipoProducto
 
 
 class Producto(SQLModel, table=True):
@@ -18,13 +23,33 @@ class Producto(SQLModel, table=True):
         max_length=500,
         description="Descripcion detallada del producto"
     )
-    precio: float = Field(
-        gt=0,
-        description="Precio del producto (debe ser mayor a 0)"
+    precio_venta: Decimal = Field(
+        default=Decimal("0"),
+        sa_column=Column("precio", Numeric(12, 2), nullable=False, server_default="0"),
+        description="Precio de venta manual del producto"
+    )
+    precio_costo_calculado: Decimal = Field(
+        default=Decimal("0"),
+        sa_column=Column(Numeric(12, 2), nullable=False, server_default="0"),
+        description="Costo calculado del producto a partir de sus ingredientes"
+    )
+    descuento_porcentaje: Decimal = Field(
+        default=Decimal("0"),
+        sa_column=Column(Numeric(5, 2), nullable=False, server_default="0"),
+        description="Descuento porcentual del producto"
+    )
+    tipo_producto: TipoProducto = Field(
+        sa_column=Column(
+            SAEnum(TipoProducto, name="tipo_producto_enum", native_enum=False),
+            nullable=False,
+            server_default=TipoProducto.FABRICADO.value,
+        ),
+        description="Tipo operativo del producto"
     )
     stock_cantidad: int = Field(
+        default=0,
         ge=0,
-        description="Cantidad en stock disponible"
+        description="Campo legacy de compatibilidad hasta completar la migración del stock por ingrediente"
     )
     categoria_id: int = Field(
         foreign_key="categoria.id",
@@ -54,11 +79,19 @@ class Producto(SQLModel, table=True):
     )
 
     producto_categorias: list["ProductoCategoria"] = Relationship(back_populates="producto")
-    ingredientes: list["ProductoIngrediente"] = Relationship(back_populates="producto")
+    ingredientes: list["ProductoDetalle"] = Relationship(back_populates="producto")
 
     def __repr__(self) -> str:
-        return f"<Producto id={self.id} nombre={self.nombre} precio={self.precio}>"
+        return f"<Producto id={self.id} nombre={self.nombre} precio_venta={self.precio_venta}>"
 
     @property
     def is_deleted(self) -> bool:
         return self.deleted_at is not None
+
+    @property
+    def precio(self) -> Decimal:
+        return self.precio_venta
+
+    @precio.setter
+    def precio(self, value: Decimal | float | int) -> None:
+        self.precio_venta = Decimal(str(value))

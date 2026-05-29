@@ -394,7 +394,7 @@ def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[
             producto = Producto(
                 nombre=producto_data["nombre"],
                 descripcion=producto_data["descripcion"],
-                precio=producto_data["precio"],
+                precio_venta=producto_data["precio"],
                 stock_cantidad=producto_data["stock_cantidad"],
                 categoria_id=categoria.id,
                 codigo=producto_data["codigo"],

@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from io import BytesIO
+from decimal import Decimal, ROUND_FLOOR
 
 from fastapi import HTTPException
 from openpyxl import Workbook
@@ -16,6 +17,62 @@ from app.modules.productos.schemas import (
 
 
 class ProductoService:
+
+    @staticmethod
+    def calcular_stock_disponible(producto: Producto) -> int:
+        if not producto.ingredientes:
+            return 0
+
+        disponibilidades: list[int] = []
+        for detalle in producto.ingredientes:
+            cantidad_requerida = Decimal(str(detalle.cantidad))
+            if cantidad_requerida <= 0 or not detalle.ingrediente:
+                return 0
+            stock_actual = Decimal(str(detalle.ingrediente.stock_actual))
+            disponible = int((stock_actual / cantidad_requerida).to_integral_value(rounding=ROUND_FLOOR))
+            disponibilidades.append(max(disponible, 0))
+
+        return min(disponibilidades) if disponibilidades else 0
+
+    @staticmethod
+    def puede_fabricarse(producto: Producto) -> bool:
+        return ProductoService.calcular_stock_disponible(producto) > 0
+
+    @staticmethod
+    def _validar_reglas_tipo_producto(
+        tipo_producto,
+        ingredientes_payload: list[ProductoIngredientePayload],
+    ) -> None:
+        if tipo_producto.value == "REVENTA" and len(ingredientes_payload) != 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Un producto de reventa debe tener exactamente 1 ingrediente asociado",
+            )
+
+        if tipo_producto.value == "FABRICADO" and len(ingredientes_payload) < 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Un producto fabricado debe tener al menos 1 ingrediente en su detalle",
+            )
+
+    @staticmethod
+    def _calcular_precio_costo(
+        ingredientes_payload: list[ProductoIngredientePayload],
+        uow: SqlModelUnitOfWork,
+    ) -> Decimal:
+        session = uow.session
+        ingrediente_ids = [item.ingrediente_id for item in ingredientes_payload]
+        ingredientes = session.exec(
+            select(Ingrediente).where(Ingrediente.id.in_(ingrediente_ids))
+        ).all()
+        ingredientes_map = {ingrediente.id: ingrediente for ingrediente in ingredientes}
+
+        total = Decimal("0")
+        for item in ingredientes_payload:
+            ingrediente = ingredientes_map[item.ingrediente_id]
+            total += Decimal(str(ingrediente.costo_unitario)) * Decimal(str(item.cantidad))
+
+        return total.quantize(Decimal("0.01"))
 
     @staticmethod
     def _validar_categorias(
@@ -75,6 +132,23 @@ class ProductoService:
                 detail=f"Ingredientes no encontrados: {missing}",
             )
 
+        ingredientes_map = {ingrediente.id: ingrediente for ingrediente in ingredientes}
+        for item in ingredientes_payload:
+            ingrediente = ingredientes_map[item.ingrediente_id]
+            if item.unidad_medida != ingrediente.unidad_medida:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"La unidad del detalle para '{ingrediente.nombre}' debe coincidir con "
+                        f"la unidad del ingrediente ({ingrediente.unidad_medida.value})"
+                    ),
+                )
+            if not ingrediente.permite_fraccion and Decimal(str(item.cantidad)) % 1 != 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"El ingrediente '{ingrediente.nombre}' no permite cantidades fraccionadas",
+                )
+
         return ingredientes_payload
 
     @staticmethod
@@ -93,12 +167,17 @@ class ProductoService:
 
         categorias_payload = ProductoService._validar_categorias(data.categorias, uow)
         ingredientes_payload = ProductoService._validar_ingredientes(data.ingredientes, uow)
+        ProductoService._validar_reglas_tipo_producto(data.tipo_producto, ingredientes_payload)
 
         now = datetime.now(timezone.utc)
         categoria_principal_id = next(
             item.categoria_id for item in categorias_payload if item.es_principal
         )
         producto_data = data.model_dump(exclude={"categorias", "ingredientes"})
+        producto_data["precio_costo_calculado"] = ProductoService._calcular_precio_costo(
+            ingredientes_payload,
+            uow,
+        )
         producto = Producto(
             **producto_data,
             categoria_id=categoria_principal_id,
@@ -121,6 +200,9 @@ class ProductoService:
             pi = ProductoIngrediente(
                 producto_id=producto.id,
                 ingrediente_id=ingrediente_data.ingrediente_id,
+                cantidad=ingrediente_data.cantidad,
+                unidad_medida=ingrediente_data.unidad_medida,
+                orden=ingrediente_data.orden,
                 es_removible=ingrediente_data.es_removible,
                 es_opcional=ingrediente_data.es_opcional,
             )
@@ -160,6 +242,7 @@ class ProductoService:
                 )
 
         categorias_payload: list[ProductoCategoriaPayload] | None = None
+        ingredientes_payload: list[ProductoIngredientePayload] | None = None
         if data.categorias is not None:
             categorias_payload = ProductoService._validar_categorias(data.categorias, uow)
 
@@ -184,6 +267,8 @@ class ProductoService:
 
         if data.ingredientes is not None:
             ingredientes_payload = ProductoService._validar_ingredientes(data.ingredientes, uow)
+            tipo_producto = data.tipo_producto or producto.tipo_producto
+            ProductoService._validar_reglas_tipo_producto(tipo_producto, ingredientes_payload)
 
             existing_relations = session.exec(
                 select(ProductoIngrediente).where(
@@ -197,10 +282,35 @@ class ProductoService:
                 pi = ProductoIngrediente(
                     producto_id=producto_id,
                     ingrediente_id=ingrediente_data.ingrediente_id,
+                    cantidad=ingrediente_data.cantidad,
+                    unidad_medida=ingrediente_data.unidad_medida,
+                    orden=ingrediente_data.orden,
                     es_removible=ingrediente_data.es_removible,
                     es_opcional=ingrediente_data.es_opcional,
                 )
                 session.add(pi)
+
+            producto.precio_costo_calculado = ProductoService._calcular_precio_costo(
+                ingredientes_payload,
+                uow,
+            )
+
+        if data.tipo_producto is not None and ingredientes_payload is None:
+            existing_relations = session.exec(
+                select(ProductoIngrediente).where(ProductoIngrediente.producto_id == producto_id)
+            ).all()
+            dummy_payload = [
+                ProductoIngredientePayload(
+                    ingrediente_id=rel.ingrediente_id,
+                    cantidad=rel.cantidad,
+                    unidad_medida=rel.unidad_medida,
+                    orden=rel.orden,
+                    es_removible=rel.es_removible,
+                    es_opcional=rel.es_opcional,
+                )
+                for rel in existing_relations
+            ]
+            ProductoService._validar_reglas_tipo_producto(data.tipo_producto, dummy_payload)
 
         update_data = data.model_dump(exclude_unset=True, exclude={"categorias", "ingredientes"})
         for field, value in update_data.items():
@@ -279,8 +389,9 @@ class ProductoService:
             "Código",
             "Nombre",
             "Descripción",
-            "Precio",
-            "Stock",
+            "Precio Venta",
+            "Costo Calculado",
+            "Stock Calculado",
             "Disponible",
             "Categoría",
             "Ingredientes",
@@ -292,6 +403,7 @@ class ProductoService:
 
         for prod in productos:
             estado = "Baja" if prod.deleted_at else "Activo"
+            stock_calculado = ProductoService.calcular_stock_disponible(prod)
             categorias_nombres = ", ".join(
                 [
                     f"{pc.categoria.nombre}{' *' if pc.es_principal else ''}"
@@ -314,8 +426,9 @@ class ProductoService:
                     prod.codigo,
                     prod.nombre,
                     prod.descripcion or "",
-                    prod.precio,
-                    prod.stock_cantidad,
+                    float(prod.precio_venta),
+                    float(prod.precio_costo_calculado),
+                    stock_calculado,
                     "Sí" if prod.disponible else "No",
                     categorias_nombres,
                     ingredientes_nombres,

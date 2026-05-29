@@ -49,6 +49,18 @@ def _ensure_category_schema() -> None:
 def _ensure_product_schema() -> None:
     statements = [
         "ALTER TABLE producto ADD COLUMN IF NOT EXISTS disponible BOOLEAN NOT NULL DEFAULT true",
+        "ALTER TABLE producto ADD COLUMN IF NOT EXISTS precio_costo_calculado NUMERIC(12,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE producto ADD COLUMN IF NOT EXISTS descuento_porcentaje NUMERIC(5,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE producto ADD COLUMN IF NOT EXISTS tipo_producto VARCHAR(20) NOT NULL DEFAULT 'FABRICADO'",
+        "ALTER TABLE ingrediente ADD COLUMN IF NOT EXISTS unidad_medida VARCHAR(20) NOT NULL DEFAULT 'UNIDAD'",
+        "ALTER TABLE ingrediente ADD COLUMN IF NOT EXISTS stock_actual NUMERIC(12,3) NOT NULL DEFAULT 0",
+        "ALTER TABLE ingrediente ADD COLUMN IF NOT EXISTS stock_minimo NUMERIC(12,3) NOT NULL DEFAULT 0",
+        "ALTER TABLE ingrediente ADD COLUMN IF NOT EXISTS costo_unitario NUMERIC(12,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE ingrediente ADD COLUMN IF NOT EXISTS permite_fraccion BOOLEAN NOT NULL DEFAULT false",
+        "ALTER TABLE producto_ingrediente ADD COLUMN IF NOT EXISTS id INTEGER",
+        "ALTER TABLE producto_ingrediente ADD COLUMN IF NOT EXISTS cantidad NUMERIC(12,3) NOT NULL DEFAULT 1",
+        "ALTER TABLE producto_ingrediente ADD COLUMN IF NOT EXISTS unidad_medida VARCHAR(20) NOT NULL DEFAULT 'UNIDAD'",
+        "ALTER TABLE producto_ingrediente ADD COLUMN IF NOT EXISTS orden INTEGER NOT NULL DEFAULT 1",
         "ALTER TABLE producto_ingrediente ADD COLUMN IF NOT EXISTS es_removible BOOLEAN NOT NULL DEFAULT true",
         "ALTER TABLE producto_ingrediente ADD COLUMN IF NOT EXISTS es_opcional BOOLEAN NOT NULL DEFAULT false",
     ]

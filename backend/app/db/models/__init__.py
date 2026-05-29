@@ -5,7 +5,8 @@ from app.db.models.categoria import Categoria
 from app.db.models.producto import Producto
 from app.db.models.producto_categoria import ProductoCategoria
 from app.db.models.ingrediente import Ingrediente
-from app.db.models.producto_ingrediente import ProductoIngrediente
+from app.db.models.movimiento_stock_ingrediente import MovimientoStockIngrediente
+from app.db.models.producto_ingrediente import ProductoDetalle, ProductoIngrediente
 from app.db.models.forma_pago import FormaPago
 from app.db.models.estado_pedido import EstadoPedido
 from app.db.models.pedido import Pedido
@@ -21,6 +22,8 @@ __all__ = [
     "Producto",
     "ProductoCategoria",
     "Ingrediente",
+    "MovimientoStockIngrediente",
+    "ProductoDetalle",
     "ProductoIngrediente",
     "FormaPago",
     "EstadoPedido",

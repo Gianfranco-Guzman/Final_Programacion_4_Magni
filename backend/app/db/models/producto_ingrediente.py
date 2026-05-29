@@ -49,6 +49,3 @@ class ProductoDetalle(SQLModel, table=True):
 
     producto: Optional["Producto"] = Relationship(back_populates="ingredientes")
     ingrediente: Optional["Ingrediente"] = Relationship(back_populates="productos")
-
-
-ProductoIngrediente = ProductoDetalle

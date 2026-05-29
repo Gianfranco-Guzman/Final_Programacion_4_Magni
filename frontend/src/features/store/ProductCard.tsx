@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Card } from '@components/Card'
 import { Producto } from '@models/index'
+import { getProductoEtiquetaStock, getProductoPrecioBase, getProductoPrecioFinal, getProductoStockDisponible, isProductoOperativamenteDisponible } from '@/utils/producto'
 
 interface ProductCardProps {
   producto: Producto
@@ -11,16 +12,15 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja, onReactivar, onAgregarAlCarrito }) => {
   const isDeleted = producto.deleted_at != null
-  const isOperationallyAvailable = producto.disponible && producto.stock_cantidad > 0
+  const isOperationallyAvailable = isProductoOperativamenteDisponible(producto)
   const categoriaPrincipal = producto.categorias?.find((item) => item.es_principal)?.categoria
   const categoriasSecundarias = producto.categorias?.filter((item) => !item.es_principal).map((item) => item.categoria.nombre) || []
   const alergenos = producto.ingredientes?.filter((item) => item.ingrediente.es_alergeno).map((item) => item.ingrediente.nombre) || []
-  const stockDisplay = !producto.disponible
-    ? 'No disponible'
-    : producto.stock_cantidad > 0
-      ? `${producto.stock_cantidad} en stock`
-      : 'Sin stock'
+  const stockDisplay = getProductoEtiquetaStock(producto)
   const stockColor = isOperationallyAvailable ? 'text-green-600' : 'text-red-600'
+  const precioFinal = getProductoPrecioFinal(producto)
+  const precioBase = getProductoPrecioBase(producto)
+  const stockDisponible = getProductoStockDisponible(producto)
 
   return (
     <Card className={`h-full flex flex-col ${isDeleted ? 'bg-red-50 border-red-300' : ''}`}>
@@ -96,11 +96,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
         <div className="flex justify-between items-end">
           <div>
             <p className="text-2xl font-bold text-blue-600">
-              ${producto.precio.toFixed(2)}
+              ${precioFinal.toFixed(2)}
             </p>
+            {producto.descuento_porcentaje > 0 && (
+              <p className="text-xs text-gray-500 line-through">${precioBase.toFixed(2)}</p>
+            )}
+            <p className="text-xs text-gray-500">{producto.tipo_producto}</p>
             <p className={`text-xs ${stockColor} font-medium`}>
               {stockDisplay}
             </p>
+            <p className="text-xs text-gray-400">Stock calculado: {stockDisponible}</p>
             {!producto.disponible && (
               <p className="text-xs text-amber-600 font-medium mt-1">
                 Oculto del flujo de compra

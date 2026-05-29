@@ -5,6 +5,7 @@ import { useCartStore, selectCartTotal } from '@store/cartStore'
 import { useCheckout } from '@hooks/useCheckout'
 import { useDirecciones } from '@hooks/useDirecciones'
 import { useFormasPago } from '@hooks/useFormasPago'
+import { getProductoPrecioFinal, getProductoStockDisponible } from '@/utils/producto'
 
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate()
@@ -24,6 +25,7 @@ export const CheckoutPage: React.FC = () => {
   )
   const [notas, setNotas] = useState('')
   const [error, setError] = useState('')
+  const hasInvalidStock = items.some((item) => item.cantidad > getProductoStockDisponible(item.producto))
 
   React.useEffect(() => {
     if (direccionPrincipal && selectedDireccionId === null) {
@@ -55,6 +57,7 @@ export const CheckoutPage: React.FC = () => {
     setError('')
     if (!selectedDireccionId) return setError('Seleccioná una dirección de entrega.')
     if (!selectedFormaPagoId) return setError('Seleccioná una forma de pago.')
+    if (hasInvalidStock) return setError('Hay productos con cantidades mayores al stock disponible.')
 
     checkoutMutation.mutate(
       {
@@ -190,11 +193,17 @@ export const CheckoutPage: React.FC = () => {
                     {item.producto.nombre} <span className="text-gray-400">x{item.cantidad}</span>
                   </span>
                   <span className="font-medium text-gray-800 flex-shrink-0">
-                    ${(item.producto.precio * item.cantidad).toFixed(2)}
+                    ${(getProductoPrecioFinal(item.producto) * item.cantidad).toFixed(2)}
                   </span>
                 </div>
               ))}
             </div>
+
+            {hasInvalidStock && (
+              <div className="mb-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Revisá el carrito: una o más cantidades superan el stock disponible actual.
+              </div>
+            )}
 
             <div className="border-t pt-3 flex justify-between font-bold text-lg mb-6">
               <span>Total</span>
@@ -209,7 +218,7 @@ export const CheckoutPage: React.FC = () => {
 
             <button
               onClick={handleConfirmar}
-              disabled={checkoutMutation.isPending}
+              disabled={checkoutMutation.isPending || hasInvalidStock}
               className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {checkoutMutation.isPending ? 'Confirmando...' : 'Confirmar pedido'}

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Producto } from '@models/index'
+import { getProductoPrecioFinal, getProductoStockDisponible } from '@/utils/producto'
 
 export interface CartItemState {
   producto: Producto
@@ -29,7 +30,10 @@ export const useCartStore = create<CartState>()(
       addItem: (producto) =>
         set((state) => {
           const existing = state.items.find((i) => i.producto.id === producto.id)
+          const stockDisponible = getProductoStockDisponible(producto)
+          if (stockDisponible <= 0) return state
           if (existing) {
+            if (existing.cantidad >= stockDisponible) return state
             return {
               items: state.items.map((i) =>
                 i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i,
@@ -45,9 +49,11 @@ export const useCartStore = create<CartState>()(
 
       increase: (productoId) =>
         set((state) => ({
-          items: state.items.map((i) =>
-            i.producto.id === productoId ? { ...i, cantidad: i.cantidad + 1 } : i,
-          ),
+          items: state.items.map((i) => {
+            if (i.producto.id !== productoId) return i
+            const stockDisponible = getProductoStockDisponible(i.producto)
+            return i.cantidad >= stockDisponible ? i : { ...i, cantidad: i.cantidad + 1 }
+          }),
         })),
 
       decrease: (productoId) =>
@@ -72,7 +78,7 @@ export const useCartStore = create<CartState>()(
 )
 
 export const selectCartTotal = (state: CartState) =>
-  state.items.reduce((sum, item) => sum + item.producto.precio * item.cantidad, 0)
+  state.items.reduce((sum, item) => sum + getProductoPrecioFinal(item.producto) * item.cantidad, 0)
 
 export const selectCartItemCount = (state: CartState) =>
   state.items.reduce((sum, item) => sum + item.cantidad, 0)

@@ -52,13 +52,26 @@ export interface Ingrediente {
   nombre: string
   descripcion?: string
   es_alergeno: boolean
+  unidad_medida: UnidadMedida
+  stock_actual: number
+  stock_minimo: number
+  costo_unitario: number
+  permite_fraccion: boolean
   deleted_at?: string | null
   created_at: string
   updated_at: string
 }
 
-export interface ProductoIngredienteConfig {
+export type UnidadMedida = 'UNIDAD' | 'GRAMO' | 'KILOGRAMO' | 'MILILITRO' | 'LITRO'
+
+export type TipoProducto = 'FABRICADO' | 'REVENTA'
+
+export interface ProductoDetalleConfig {
+  id?: number | null
   ingrediente_id: number
+  cantidad: number
+  unidad_medida: UnidadMedida
+  orden: number
   es_removible: boolean
   es_opcional: boolean
   ingrediente: Ingrediente
@@ -74,8 +87,13 @@ export interface Producto {
   id: number
   nombre: string
   descripcion?: string
-  precio: number
-  stock_cantidad: number
+  precio_venta: number
+  precio_costo_calculado: number
+  descuento_porcentaje: number
+  precio_final: number
+  tipo_producto: TipoProducto
+  stock_disponible_calculado: number
+  puede_fabricarse: boolean
   categoria_principal_id?: number | null
   codigo: string
   disponible: boolean
@@ -83,7 +101,7 @@ export interface Producto {
   created_at: string
   updated_at: string
   categorias?: ProductoCategoriaConfig[]
-  ingredientes?: ProductoIngredienteConfig[]
+  ingredientes?: ProductoDetalleConfig[]
 }
 
 export interface DetallePedido {

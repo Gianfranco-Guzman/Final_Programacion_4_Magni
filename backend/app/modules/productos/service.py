@@ -3,20 +3,27 @@ from io import BytesIO
 from decimal import Decimal, ROUND_FLOOR
 
 from fastapi import HTTPException
-from openpyxl import Workbook
 from sqlmodel import select
 
-from app.db.models import Categoria, Producto, ProductoCategoria, Ingrediente, ProductoIngrediente
+from app.db.models import Categoria, Producto, ProductoCategoria, Ingrediente, ProductoDetalle
 from app.db.unit_of_work import SqlModelUnitOfWork
 from app.modules.productos.schemas import (
     ProductoCategoriaPayload,
     ProductoCreate,
-    ProductoIngredientePayload,
+    ProductoDetallePayload,
     ProductoUpdate,
 )
 
 
 class ProductoService:
+
+    @staticmethod
+    def calcular_precio_final(producto: Producto) -> Decimal:
+        precio_venta = Decimal(str(producto.precio_venta))
+        descuento = Decimal(str(producto.descuento_porcentaje))
+        if descuento <= 0:
+            return precio_venta.quantize(Decimal("0.01"))
+        return (precio_venta * (Decimal("1") - (descuento / Decimal("100")))).quantize(Decimal("0.01"))
 
     @staticmethod
     def calcular_stock_disponible(producto: Producto) -> int:
@@ -41,7 +48,7 @@ class ProductoService:
     @staticmethod
     def _validar_reglas_tipo_producto(
         tipo_producto,
-        ingredientes_payload: list[ProductoIngredientePayload],
+        ingredientes_payload: list[ProductoDetallePayload],
     ) -> None:
         if tipo_producto.value == "REVENTA" and len(ingredientes_payload) != 1:
             raise HTTPException(
@@ -57,7 +64,7 @@ class ProductoService:
 
     @staticmethod
     def _calcular_precio_costo(
-        ingredientes_payload: list[ProductoIngredientePayload],
+        ingredientes_payload: list[ProductoDetallePayload],
         uow: SqlModelUnitOfWork,
     ) -> Decimal:
         session = uow.session
@@ -109,9 +116,9 @@ class ProductoService:
 
     @staticmethod
     def _validar_ingredientes(
-        ingredientes_payload: list[ProductoIngredientePayload],
+        ingredientes_payload: list[ProductoDetallePayload],
         uow: SqlModelUnitOfWork,
-    ) -> list[ProductoIngredientePayload]:
+    ) -> list[ProductoDetallePayload]:
         session = uow.session
         ingrediente_ids = [item.ingrediente_id for item in ingredientes_payload]
 
@@ -197,7 +204,7 @@ class ProductoService:
             )
 
         for ingrediente_data in ingredientes_payload:
-            pi = ProductoIngrediente(
+            pi = ProductoDetalle(
                 producto_id=producto.id,
                 ingrediente_id=ingrediente_data.ingrediente_id,
                 cantidad=ingrediente_data.cantidad,
@@ -242,7 +249,7 @@ class ProductoService:
                 )
 
         categorias_payload: list[ProductoCategoriaPayload] | None = None
-        ingredientes_payload: list[ProductoIngredientePayload] | None = None
+        ingredientes_payload: list[ProductoDetallePayload] | None = None
         if data.categorias is not None:
             categorias_payload = ProductoService._validar_categorias(data.categorias, uow)
 
@@ -271,15 +278,16 @@ class ProductoService:
             ProductoService._validar_reglas_tipo_producto(tipo_producto, ingredientes_payload)
 
             existing_relations = session.exec(
-                select(ProductoIngrediente).where(
-                    ProductoIngrediente.producto_id == producto_id
+                select(ProductoDetalle).where(
+                    ProductoDetalle.producto_id == producto_id
                 )
             ).all()
             for rel in existing_relations:
                 session.delete(rel)
+            uow.flush()
 
             for ingrediente_data in ingredientes_payload:
-                pi = ProductoIngrediente(
+                pi = ProductoDetalle(
                     producto_id=producto_id,
                     ingrediente_id=ingrediente_data.ingrediente_id,
                     cantidad=ingrediente_data.cantidad,
@@ -297,10 +305,10 @@ class ProductoService:
 
         if data.tipo_producto is not None and ingredientes_payload is None:
             existing_relations = session.exec(
-                select(ProductoIngrediente).where(ProductoIngrediente.producto_id == producto_id)
+                select(ProductoDetalle).where(ProductoDetalle.producto_id == producto_id)
             ).all()
             dummy_payload = [
-                ProductoIngredientePayload(
+                ProductoDetallePayload(
                     ingrediente_id=rel.ingrediente_id,
                     cantidad=rel.cantidad,
                     unidad_medida=rel.unidad_medida,
@@ -380,6 +388,8 @@ class ProductoService:
 
     @staticmethod
     def exportar_a_excel(productos: list[Producto]) -> BytesIO:
+        from openpyxl import Workbook
+
         wb = Workbook()
         ws = wb.active
         ws.title = "Productos"
@@ -390,6 +400,8 @@ class ProductoService:
             "Nombre",
             "Descripción",
             "Precio Venta",
+            "Descuento %",
+            "Precio Final",
             "Costo Calculado",
             "Stock Calculado",
             "Disponible",
@@ -404,6 +416,7 @@ class ProductoService:
         for prod in productos:
             estado = "Baja" if prod.deleted_at else "Activo"
             stock_calculado = ProductoService.calcular_stock_disponible(prod)
+            precio_final = ProductoService.calcular_precio_final(prod)
             categorias_nombres = ", ".join(
                 [
                     f"{pc.categoria.nombre}{' *' if pc.es_principal else ''}"
@@ -427,6 +440,8 @@ class ProductoService:
                     prod.nombre,
                     prod.descripcion or "",
                     float(prod.precio_venta),
+                    float(prod.descuento_porcentaje),
+                    float(precio_final),
                     float(prod.precio_costo_calculado),
                     stock_calculado,
                     "Sí" if prod.disponible else "No",

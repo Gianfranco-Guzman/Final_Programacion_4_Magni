@@ -11,7 +11,7 @@ from app.core.dependencies import (
     user_has_any_role,
 )
 from app.db.base import get_session
-from app.db.models import Categoria, Producto, ProductoCategoria, ProductoIngrediente
+from app.db.models import Categoria, Producto, ProductoCategoria, ProductoDetalle
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.productos.schemas import (
@@ -19,7 +19,7 @@ from app.modules.productos.schemas import (
     PaginatedResponse,
     ProductoCategoriaRead,
     ProductoCreate,
-    ProductoIngredienteRead,
+    ProductoDetalleRead,
     ProductoRead,
     ProductoUpdate,
 )
@@ -49,9 +49,9 @@ def _build_producto_read(producto: Producto) -> ProductoRead:
     ingredientes = []
     if producto.ingredientes:
         for pi in producto.ingredientes:
-            if pi.ingrediente:
+            if pi is not None and pi.ingrediente:
                 ingredientes.append(
-                    ProductoIngredienteRead(
+                    ProductoDetalleRead(
                         id=pi.id,
                         ingrediente_id=pi.ingrediente_id,
                         cantidad=pi.cantidad,
@@ -64,6 +64,7 @@ def _build_producto_read(producto: Producto) -> ProductoRead:
                 )
 
     stock_disponible_calculado = ProductoService.calcular_stock_disponible(producto)
+    precio_final = ProductoService.calcular_precio_final(producto)
 
     return ProductoRead(
         id=producto.id,
@@ -72,8 +73,8 @@ def _build_producto_read(producto: Producto) -> ProductoRead:
         precio_venta=producto.precio_venta,
         precio_costo_calculado=producto.precio_costo_calculado,
         descuento_porcentaje=producto.descuento_porcentaje,
+        precio_final=precio_final,
         tipo_producto=producto.tipo_producto,
-        stock_cantidad=producto.stock_cantidad,
         stock_disponible_calculado=stock_disponible_calculado,
         puede_fabricarse=stock_disponible_calculado > 0,
         categoria_principal_id=categoria_principal_id,
@@ -104,7 +105,7 @@ def listar_productos(
 ):
     query = select(Producto).options(
         selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-        selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente),
+        selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
     )
     count_query = select(func.count()).select_from(Producto)
 
@@ -170,7 +171,7 @@ def exportar_productos(
         select(Producto)
         .options(
             selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-            selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente),
+            selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
         )
         .order_by(Producto.created_at.desc())
     )
@@ -215,7 +216,7 @@ def obtener_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow
         select(Producto)
         .options(
             selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-            selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente),
+            selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
         )
         .where((Producto.id == producto_id) & (Producto.deleted_at.is_(None)))
     ).first()

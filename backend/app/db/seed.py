@@ -15,11 +15,12 @@ from app.db.models import (
     Pedido,
     Producto,
     ProductoCategoria,
-    ProductoIngrediente,
+    ProductoDetalle,
     Rol,
     Usuario,
     UsuarioRol,
 )
+from app.modules.productos.service import ProductoService
 
 
 ROLES_SEED = [
@@ -80,32 +81,32 @@ ESTADOS_PEDIDO_SEED = [
 ]
 
 INGREDIENTES_SEED = [
-    {"nombre": "Queso Mozzarella", "descripcion": "Queso mozzarella fresco", "es_alergeno": True},
-    {"nombre": "Salsa de Tomate", "descripcion": "Salsa de tomate natural", "es_alergeno": False},
-    {"nombre": "Pepperoni", "descripcion": "Rodajas de pepperoni picante", "es_alergeno": False},
-    {"nombre": "Orégano", "descripcion": "Orégano seco", "es_alergeno": False},
-    {"nombre": "Cebolla", "descripcion": "Cebolla fresca", "es_alergeno": False},
-    {"nombre": "Morron", "descripcion": "Morrón rojo y verde", "es_alergeno": False},
-    {"nombre": "Pollo", "descripcion": "Pollo desmenuzado", "es_alergeno": False},
-    {"nombre": "Salsa BBQ", "descripcion": "Salsa barbacoa ahumada", "es_alergeno": False},
-    {"nombre": "Brie", "descripcion": "Queso brie importado", "es_alergeno": True},
-    {"nombre": "Parmesano", "descripcion": "Queso parmesano rallado", "es_alergeno": True},
-    {"nombre": "Roquefort", "descripcion": "Queso roquefort", "es_alergeno": True},
-    {"nombre": "Tomate", "descripcion": "Tomate fresco", "es_alergeno": False},
-    {"nombre": "Lechuga", "descripcion": "Lechuga criolla", "es_alergeno": False},
-    {"nombre": "Mascarpone", "descripcion": "Queso mascarpone", "es_alergeno": True},
-    {"nombre": "Cafe", "descripcion": "Café espresso", "es_alergeno": False},
-    {"nombre": "Chocolate", "descripcion": "Chocolate amargo", "es_alergeno": True},
-    {"nombre": "Vainilla", "descripcion": "Extracto de vainilla", "es_alergeno": False},
-    {"nombre": "Nueces", "descripcion": "Nueces picadas", "es_alergeno": True},
-    {"nombre": "Frutos Rojos", "descripcion": "Mezcla de frutos rojos", "es_alergeno": False},
-    {"nombre": "Carne", "descripcion": "Carne cortada a cuchillo", "es_alergeno": False},
-    {"nombre": "Empanada Masa", "descripcion": "Masa para empanadas", "es_alergeno": True},
-    {"nombre": "Papa", "descripcion": "Papas frescas", "es_alergeno": False},
-    {"nombre": "Ketchup", "descripcion": "Salsa ketchup", "es_alergeno": False},
-    {"nombre": "Mayonesa", "descripcion": "Mayonesa casera", "es_alergeno": True},
-    {"nombre": "Fiambres", "descripcion": "Selección de fiambres", "es_alergeno": False},
-    {"nombre": "Quesos Importados", "descripcion": "Variedad de quesos importados", "es_alergeno": True},
+    {"nombre": "Queso Mozzarella", "descripcion": "Queso mozzarella fresco", "es_alergeno": True, "stock_actual": 5000, "stock_minimo": 1000, "costo_unitario": 15.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Salsa de Tomate", "descripcion": "Salsa de tomate natural", "es_alergeno": False, "stock_actual": 10000, "stock_minimo": 2000, "costo_unitario": 8.50, "unidad_medida": "MILILITRO", "permite_fraccion": True},
+    {"nombre": "Pepperoni", "descripcion": "Rodajas de pepperoni picante", "es_alergeno": False, "stock_actual": 3000, "stock_minimo": 500, "costo_unitario": 25.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Orégano", "descripcion": "Orégano seco", "es_alergeno": False, "stock_actual": 500, "stock_minimo": 100, "costo_unitario": 5.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Cebolla", "descripcion": "Cebolla fresca", "es_alergeno": False, "stock_actual": 100, "stock_minimo": 20, "costo_unitario": 3.50, "unidad_medida": "UNIDAD", "permite_fraccion": True},
+    {"nombre": "Morron", "descripcion": "Morrón rojo y verde", "es_alergeno": False, "stock_actual": 80, "stock_minimo": 15, "costo_unitario": 5.00, "unidad_medida": "UNIDAD", "permite_fraccion": True},
+    {"nombre": "Pollo", "descripcion": "Pollo desmenuzado", "es_alergeno": False, "stock_actual": 8000, "stock_minimo": 2000, "costo_unitario": 18.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Salsa BBQ", "descripcion": "Salsa barbacoa ahumada", "es_alergeno": False, "stock_actual": 5000, "stock_minimo": 1000, "costo_unitario": 12.00, "unidad_medida": "MILILITRO", "permite_fraccion": True},
+    {"nombre": "Brie", "descripcion": "Queso brie importado", "es_alergeno": True, "stock_actual": 2000, "stock_minimo": 500, "costo_unitario": 35.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Parmesano", "descripcion": "Queso parmesano rallado", "es_alergeno": True, "stock_actual": 3000, "stock_minimo": 500, "costo_unitario": 22.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Roquefort", "descripcion": "Queso roquefort", "es_alergeno": True, "stock_actual": 1500, "stock_minimo": 300, "costo_unitario": 40.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Tomate", "descripcion": "Tomate fresco", "es_alergeno": False, "stock_actual": 100, "stock_minimo": 20, "costo_unitario": 2.50, "unidad_medida": "UNIDAD", "permite_fraccion": True},
+    {"nombre": "Lechuga", "descripcion": "Lechuga criolla", "es_alergeno": False, "stock_actual": 60, "stock_minimo": 10, "costo_unitario": 3.00, "unidad_medida": "UNIDAD", "permite_fraccion": True},
+    {"nombre": "Mascarpone", "descripcion": "Queso mascarpone", "es_alergeno": True, "stock_actual": 2000, "stock_minimo": 500, "costo_unitario": 30.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Cafe", "descripcion": "Café espresso", "es_alergeno": False, "stock_actual": 5000, "stock_minimo": 1000, "costo_unitario": 1.50, "unidad_medida": "MILILITRO", "permite_fraccion": True},
+    {"nombre": "Chocolate", "descripcion": "Chocolate amargo", "es_alergeno": True, "stock_actual": 3000, "stock_minimo": 500, "costo_unitario": 20.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Vainilla", "descripcion": "Extracto de vainilla", "es_alergeno": False, "stock_actual": 1000, "stock_minimo": 200, "costo_unitario": 25.00, "unidad_medida": "MILILITRO", "permite_fraccion": True},
+    {"nombre": "Nueces", "descripcion": "Nueces picadas", "es_alergeno": True, "stock_actual": 2000, "stock_minimo": 500, "costo_unitario": 18.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Frutos Rojos", "descripcion": "Mezcla de frutos rojos", "es_alergeno": False, "stock_actual": 2500, "stock_minimo": 500, "costo_unitario": 22.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Carne", "descripcion": "Carne cortada a cuchillo", "es_alergeno": False, "stock_actual": 5000, "stock_minimo": 1000, "costo_unitario": 15.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Empanada Masa", "descripcion": "Masa para empanadas", "es_alergeno": True, "stock_actual": 200, "stock_minimo": 50, "costo_unitario": 3.00, "unidad_medida": "UNIDAD", "permite_fraccion": True},
+    {"nombre": "Papa", "descripcion": "Papas frescas", "es_alergeno": False, "stock_actual": 10000, "stock_minimo": 2000, "costo_unitario": 2.50, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Ketchup", "descripcion": "Salsa ketchup", "es_alergeno": False, "stock_actual": 3000, "stock_minimo": 500, "costo_unitario": 6.00, "unidad_medida": "MILILITRO", "permite_fraccion": True},
+    {"nombre": "Mayonesa", "descripcion": "Mayonesa casera", "es_alergeno": True, "stock_actual": 2000, "stock_minimo": 500, "costo_unitario": 8.00, "unidad_medida": "MILILITRO", "permite_fraccion": True},
+    {"nombre": "Fiambres", "descripcion": "Selección de fiambres", "es_alergeno": False, "stock_actual": 3000, "stock_minimo": 500, "costo_unitario": 28.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Quesos Importados", "descripcion": "Variedad de quesos importados", "es_alergeno": True, "stock_actual": 2000, "stock_minimo": 500, "costo_unitario": 45.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
 ]
 
 
@@ -355,6 +356,11 @@ def _seed_ingredientes(session: Session) -> dict[str, Ingrediente]:
         else:
             ingrediente.descripcion = ingrediente_data["descripcion"]
             ingrediente.es_alergeno = ingrediente_data["es_alergeno"]
+            ingrediente.stock_actual = ingrediente_data["stock_actual"]
+            ingrediente.stock_minimo = ingrediente_data["stock_minimo"]
+            ingrediente.costo_unitario = ingrediente_data["costo_unitario"]
+            ingrediente.unidad_medida = ingrediente_data["unidad_medida"]
+            ingrediente.permite_fraccion = ingrediente_data.get("permite_fraccion", False)
             ingrediente.deleted_at = None
             ingrediente.updated_at = datetime.now(timezone.utc)
             session.add(ingrediente)
@@ -366,22 +372,22 @@ def _seed_ingredientes(session: Session) -> dict[str, Ingrediente]:
 
 def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[str, Producto]:
     productos_seed = [
-        {"codigo": "PIZZA-001", "nombre": "Pizza Clásica", "descripcion": "Pizza con salsa, queso y orégano", "precio": 299.99, "stock_cantidad": 50, "categoria": "Pizzas Clásicas", "disponible": True},
-        {"codigo": "PIZZA-002", "nombre": "Pizza Pepperoni", "descripcion": "Pizza con queso mozzarella y pepperoni", "precio": 349.99, "stock_cantidad": 45, "categoria": "Pizzas Especiales", "disponible": True},
-        {"codigo": "PIZZA-003", "nombre": "Pizza Vegetariana", "descripcion": "Pizza con verduras frescas: tomate, cebolla y morrón", "precio": 329.99, "stock_cantidad": 40, "categoria": "Pizzas Clásicas", "disponible": True},
-        {"codigo": "PIZZA-004", "nombre": "Pizza BBQ", "descripcion": "Pizza con pollo, salsa BBQ y cebolla", "precio": 379.99, "stock_cantidad": 30, "categoria": "Pizzas Especiales", "disponible": True},
-        {"codigo": "PIZZA-005", "nombre": "Pizza 4 Quesos", "descripcion": "Pizza con mozzarella, brie, parmesano y roquefort", "precio": 399.99, "stock_cantidad": 25, "categoria": "Pizzas Especiales", "disponible": True},
-        {"codigo": "BEB-001", "nombre": "Coca Cola 2L", "descripcion": "Bebida gaseosa, botella de 2 litros", "precio": 89.99, "stock_cantidad": 120, "categoria": "Bebidas Frías", "disponible": True},
-        {"codigo": "BEB-002", "nombre": "Agua Mineral", "descripcion": "Agua mineral sin gas, 1.5L", "precio": 49.99, "stock_cantidad": 200, "categoria": "Bebidas Frías", "disponible": True},
-        {"codigo": "BEB-003", "nombre": "Cerveza Artesanal", "descripcion": "Cerveza artesanal premium, 355ml", "precio": 129.99, "stock_cantidad": 80, "categoria": "Bebidas Frías", "disponible": True},
-        {"codigo": "BEB-004", "nombre": "Jugo de Naranja", "descripcion": "Jugo natural exprimido, 500ml", "precio": 79.99, "stock_cantidad": 60, "categoria": "Bebidas Frías", "disponible": False},
-        {"codigo": "POST-001", "nombre": "Tiramisú", "descripcion": "Postre italiano clásico con mascarpone", "precio": 149.99, "stock_cantidad": 25, "categoria": "Postres Fríos", "disponible": True},
-        {"codigo": "POST-002", "nombre": "Helado Vainilla", "descripcion": "Helado de vainilla artesanal, 500ml", "precio": 99.99, "stock_cantidad": 35, "categoria": "Postres Fríos", "disponible": True},
-        {"codigo": "POST-003", "nombre": "Brownie de Chocolate", "descripcion": "Brownie casero con nueces", "precio": 79.99, "stock_cantidad": 50, "categoria": "Postres", "disponible": True},
-        {"codigo": "POST-004", "nombre": "Cheesecake", "descripcion": "Cheesecake de frutos rojos", "precio": 169.99, "stock_cantidad": 20, "categoria": "Postres Fríos", "disponible": True},
-        {"codigo": "ENT-001", "nombre": "Empanadas x6", "descripcion": "Empanadas de carne cortada a cuchillo", "precio": 199.99, "stock_cantidad": 40, "categoria": "Entradas", "disponible": True},
-        {"codigo": "ENT-002", "nombre": "Papas Fritas", "descripcion": "Papas fritas crocantes con ketchup y mayo", "precio": 89.99, "stock_cantidad": 70, "categoria": "Entradas", "disponible": True},
-        {"codigo": "ENT-003", "nombre": "Tabla de Fiambres", "descripcion": "Selección de fiambres y quesos importados", "precio": 349.99, "stock_cantidad": 15, "categoria": "Entradas", "disponible": False},
+        {"codigo": "PIZZA-001", "nombre": "Pizza Clásica", "descripcion": "Pizza con salsa, queso y orégano", "precio": 299.99, "categoria": "Pizzas Clásicas", "disponible": True},
+        {"codigo": "PIZZA-002", "nombre": "Pizza Pepperoni", "descripcion": "Pizza con queso mozzarella y pepperoni", "precio": 349.99, "categoria": "Pizzas Especiales", "disponible": True},
+        {"codigo": "PIZZA-003", "nombre": "Pizza Vegetariana", "descripcion": "Pizza con verduras frescas: tomate, cebolla y morrón", "precio": 329.99, "categoria": "Pizzas Clásicas", "disponible": True},
+        {"codigo": "PIZZA-004", "nombre": "Pizza BBQ", "descripcion": "Pizza con pollo, salsa BBQ y cebolla", "precio": 379.99, "categoria": "Pizzas Especiales", "disponible": True},
+        {"codigo": "PIZZA-005", "nombre": "Pizza 4 Quesos", "descripcion": "Pizza con mozzarella, brie, parmesano y roquefort", "precio": 399.99, "categoria": "Pizzas Especiales", "disponible": True},
+        {"codigo": "BEB-001", "nombre": "Coca Cola 2L", "descripcion": "Bebida gaseosa, botella de 2 litros", "precio": 89.99, "categoria": "Bebidas Frías", "disponible": True},
+        {"codigo": "BEB-002", "nombre": "Agua Mineral", "descripcion": "Agua mineral sin gas, 1.5L", "precio": 49.99, "categoria": "Bebidas Frías", "disponible": True},
+        {"codigo": "BEB-003", "nombre": "Cerveza Artesanal", "descripcion": "Cerveza artesanal premium, 355ml", "precio": 129.99, "categoria": "Bebidas Frías", "disponible": True},
+        {"codigo": "BEB-004", "nombre": "Jugo de Naranja", "descripcion": "Jugo natural exprimido, 500ml", "precio": 79.99, "categoria": "Bebidas Frías", "disponible": False},
+        {"codigo": "POST-001", "nombre": "Tiramisú", "descripcion": "Postre italiano clásico con mascarpone", "precio": 149.99, "categoria": "Postres Fríos", "disponible": True},
+        {"codigo": "POST-002", "nombre": "Helado Vainilla", "descripcion": "Helado de vainilla artesanal, 500ml", "precio": 99.99, "categoria": "Postres Fríos", "disponible": True},
+        {"codigo": "POST-003", "nombre": "Brownie de Chocolate", "descripcion": "Brownie casero con nueces", "precio": 79.99, "categoria": "Postres", "disponible": True},
+        {"codigo": "POST-004", "nombre": "Cheesecake", "descripcion": "Cheesecake de frutos rojos", "precio": 169.99, "categoria": "Postres Fríos", "disponible": True},
+        {"codigo": "ENT-001", "nombre": "Empanadas x6", "descripcion": "Empanadas de carne cortada a cuchillo", "precio": 199.99, "categoria": "Entradas", "disponible": True},
+        {"codigo": "ENT-002", "nombre": "Papas Fritas", "descripcion": "Papas fritas crocantes con ketchup y mayo", "precio": 89.99, "categoria": "Entradas", "disponible": True},
+        {"codigo": "ENT-003", "nombre": "Tabla de Fiambres", "descripcion": "Selección de fiambres y quesos importados", "precio": 349.99, "categoria": "Entradas", "disponible": False},
     ]
 
     productos: dict[str, Producto] = {}
@@ -395,7 +401,6 @@ def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[
                 nombre=producto_data["nombre"],
                 descripcion=producto_data["descripcion"],
                 precio_venta=producto_data["precio"],
-                stock_cantidad=producto_data["stock_cantidad"],
                 categoria_id=categoria.id,
                 codigo=producto_data["codigo"],
                 disponible=producto_data["disponible"],
@@ -407,7 +412,6 @@ def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[
             producto.nombre = producto_data["nombre"]
             producto.descripcion = producto_data["descripcion"]
             producto.precio = producto_data["precio"]
-            producto.stock_cantidad = producto_data["stock_cantidad"]
             producto.categoria_id = categoria.id
             producto.codigo = producto_data["codigo"]
             producto.disponible = producto_data["disponible"]
@@ -540,7 +544,7 @@ def _seed_producto_ingredientes(
         producto = productos[codigo]
         desired_ingredient_ids = {ingredientes[name].id for name, _, _ in ingredient_rows}
         existing_relations = session.exec(
-            select(ProductoIngrediente).where(ProductoIngrediente.producto_id == producto.id)
+            select(ProductoDetalle).where(ProductoDetalle.producto_id == producto.id)
         ).all()
 
         existing_ingredient_ids = {relation.ingrediente_id for relation in existing_relations}
@@ -560,9 +564,11 @@ def _seed_producto_ingredientes(
                 session.add(relation)
             elif ingrediente.id not in existing_ingredient_ids:
                 session.add(
-                    ProductoIngrediente(
+                    ProductoDetalle(
                         producto_id=producto.id,
                         ingrediente_id=ingrediente.id,
+                        cantidad=1,
+                        unidad_medida=ingrediente.unidad_medida,
                         es_removible=es_removible,
                         es_opcional=es_opcional,
                     )
@@ -656,7 +662,7 @@ def _seed_pedidos_demo(
             select(Pedido).where(Pedido.notas == pedido_seed["nota"])
         ).first()
         created_at = datetime.now(timezone.utc) - timedelta(hours=pedido_seed["created_offset_hours"])
-        total = sum(productos[codigo].precio * cantidad for codigo, cantidad in pedido_seed["lineas"])
+        total = sum(ProductoService.calcular_precio_final(productos[codigo]) * cantidad for codigo, cantidad in pedido_seed["lineas"])
 
         if not pedido:
             pedido = Pedido(
@@ -704,11 +710,12 @@ def _sync_detalles_pedido(
 
     for codigo, cantidad in lineas:
         producto = productos[codigo]
-        subtotal = round(producto.precio * cantidad, 2)
+        precio_unitario = ProductoService.calcular_precio_final(producto)
+        subtotal = round(precio_unitario * cantidad, 2)
         detail = existing_by_product_id.get(producto.id)
         if detail:
             detail.cantidad = cantidad
-            detail.precio_unitario_snapshot = producto.precio
+            detail.precio_unitario_snapshot = precio_unitario
             detail.nombre_producto_snapshot = producto.nombre
             detail.subtotal = subtotal
             session.add(detail)
@@ -718,7 +725,7 @@ def _sync_detalles_pedido(
                     pedido_id=pedido.id,
                     producto_id=producto.id,
                     cantidad=cantidad,
-                    precio_unitario_snapshot=producto.precio,
+                    precio_unitario_snapshot=precio_unitario,
                     nombre_producto_snapshot=producto.nombre,
                     subtotal=subtotal,
                 )

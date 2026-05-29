@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import select, col
 
 from app.core.dependencies import user_has_any_role
-from app.db.models import ProductoIngrediente, MovimientoStockIngrediente, Ingrediente
+from app.db.models import ProductoDetalle, MovimientoStockIngrediente, Ingrediente
 from app.db.models.enums import TipoMovimientoIngrediente
 from app.db.models.direccion_entrega import DireccionEntrega
 from app.db.models.forma_pago import FormaPago
@@ -19,6 +19,7 @@ from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork
 from app.modules.ingredientes.stock_service import IngredienteStockService
 from app.modules.pedidos.schemas import PedidoCreate
+from app.modules.productos.service import ProductoService
 
 VALID_TRANSITIONS: dict[str, list[str]] = {
     "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
@@ -42,6 +43,75 @@ PRIVILEGED_ROLES = ["ADMIN", "PEDIDOS"]
 class PedidoService:
 
     @staticmethod
+    def _consolidar_items(items) -> dict[int, int]:
+        items_consolidados: dict[int, int] = {}
+        for item in items:
+            items_consolidados[item.producto_id] = items_consolidados.get(item.producto_id, 0) + item.cantidad
+        return items_consolidados
+
+    @staticmethod
+    def _cargar_productos_para_pedido(
+        producto_ids: list[int],
+        uow: SqlModelUnitOfWork,
+    ) -> dict[int, Producto]:
+        session = uow.session
+        productos = session.exec(
+            select(Producto)
+            .options(selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente))
+            .where(
+                Producto.id.in_(producto_ids),
+                Producto.deleted_at.is_(None),
+                Producto.disponible == True,
+            )
+        ).all()
+        return {producto.id: producto for producto in productos}
+
+    @staticmethod
+    def _preparar_detalles_y_consumo(
+        items_consolidados: dict[int, int],
+        uow: SqlModelUnitOfWork,
+    ) -> tuple[list[dict], dict[int, Decimal], Decimal]:
+        productos_map = PedidoService._cargar_productos_para_pedido(list(items_consolidados.keys()), uow)
+        detalles_data: list[dict] = []
+        consumo_por_ingrediente: dict[int, Decimal] = {}
+        total = Decimal("0")
+
+        for producto_id, cantidad_solicitada in items_consolidados.items():
+            producto = productos_map.get(producto_id)
+            if not producto:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Producto con id {producto_id} no encontrado o no disponible",
+                )
+
+            if not producto.ingredientes:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"El producto '{producto.nombre}' no tiene detalle de ingredientes configurado",
+                )
+
+            precio_unitario = ProductoService.calcular_precio_final(producto)
+            subtotal = (precio_unitario * Decimal(str(cantidad_solicitada))).quantize(Decimal("0.01"))
+            total += subtotal
+            detalles_data.append(
+                {
+                    "producto_id": producto.id,
+                    "cantidad": cantidad_solicitada,
+                    "precio_unitario_snapshot": precio_unitario,
+                    "nombre_producto_snapshot": producto.nombre,
+                    "subtotal": subtotal,
+                }
+            )
+
+            for receta_detalle in producto.ingredientes:
+                cantidad_total = Decimal(str(receta_detalle.cantidad)) * Decimal(str(cantidad_solicitada))
+                consumo_por_ingrediente[receta_detalle.ingrediente_id] = (
+                    consumo_por_ingrediente.get(receta_detalle.ingrediente_id, Decimal("0")) + cantidad_total
+                )
+
+        return detalles_data, consumo_por_ingrediente, total.quantize(Decimal("0.01"))
+
+    @staticmethod
     def _consolidar_consumo_ingredientes_desde_detalles(
         detalles: list[DetallePedido],
         uow: SqlModelUnitOfWork,
@@ -52,7 +122,7 @@ class PedidoService:
         for detalle in detalles:
             producto = session.exec(
                 select(Producto)
-                .options(selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente))
+                .options(selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente))
                 .where(Producto.id == detalle.producto_id)
             ).first()
             if not producto:
@@ -173,41 +243,12 @@ class PedidoService:
             raise HTTPException(status_code=404, detail="Forma de pago no encontrada o inactiva")
 
         now = datetime.now(timezone.utc)
-        total = Decimal("0")
-        detalles_data = []
-
-        for item in data.items:
-            producto = session.exec(
-                select(Producto).where(
-                    (Producto.id == item.producto_id)
-                    & (Producto.deleted_at.is_(None))
-                    & (Producto.disponible == True)
-                )
-            ).first()
-            if not producto:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Producto con id {item.producto_id} no encontrado o no disponible",
-                )
-            if producto.stock_cantidad < item.cantidad:
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Stock insuficiente para '{producto.nombre}': "
-                        f"disponible {producto.stock_cantidad}, solicitado {item.cantidad}"
-                    ),
-                )
-            subtotal = (Decimal(str(producto.precio)) * Decimal(str(item.cantidad))).quantize(Decimal("0.01"))
-            total += subtotal
-            detalles_data.append({
-                "producto_id": producto.id,
-                "cantidad": item.cantidad,
-                "precio_unitario_snapshot": producto.precio,
-                "nombre_producto_snapshot": producto.nombre,
-                "subtotal": subtotal,
-            })
-
-        total = total.quantize(Decimal("0.01"))
+        items_consolidados = PedidoService._consolidar_items(data.items)
+        detalles_data, consumo_por_ingrediente, total = PedidoService._preparar_detalles_y_consumo(
+            items_consolidados,
+            uow,
+        )
+        PedidoService._validar_stock_para_consumo(consumo_por_ingrediente, uow)
 
         pedido = Pedido(
             usuario_id=current_user.id,

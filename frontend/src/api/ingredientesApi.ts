@@ -1,10 +1,15 @@
 import axiosClient from './axiosClient'
-import { Ingrediente } from '@models/index'
+import { Ingrediente, UnidadMedida } from '@models/index'
 
 export interface IngredienteCreateInput {
   nombre: string
   descripcion?: string
   es_alergeno: boolean
+  unidad_medida: UnidadMedida
+  stock_actual: number
+  stock_minimo: number
+  costo_unitario: number
+  permite_fraccion: boolean
 }
 
 export type IngredienteUpdateInput = Partial<IngredienteCreateInput>

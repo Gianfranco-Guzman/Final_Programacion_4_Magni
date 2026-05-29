@@ -6,6 +6,7 @@ import { Button } from '@components/Button'
 import { Producto } from '@models/index'
 import { useAuthStore } from '@store/authStore'
 import { hasAnyRole } from '@/auth/permissions'
+import { getProductoPrecioFinal, getProductoStockDisponible } from '@/utils/producto'
 
 export const AdminProductosPage: React.FC = () => {
   const usuario = useAuthStore((state) => state.usuario)
@@ -126,9 +127,9 @@ export const AdminProductosPage: React.FC = () => {
                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                      Código
                    </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Stock
-                   </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tipo / stock
+                    </th>
                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                      Acciones
                    </th>
@@ -162,16 +163,17 @@ export const AdminProductosPage: React.FC = () => {
                          </span>
                        )}
                      </td>
-                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                       <div className="font-semibold">{producto.nombre}</div>
-                       <div className="text-xs text-gray-500">${producto.precio.toFixed(2)}</div>
-                     </td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        <div className="font-semibold">{producto.nombre}</div>
+                        <div className="text-xs text-gray-500">${getProductoPrecioFinal(producto).toFixed(2)}</div>
+                      </td>
                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                        {producto.codigo}
                      </td>
-                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                       {producto.stock_cantidad}
-                     </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div>{producto.tipo_producto}</div>
+                        <div className="text-xs text-gray-400">Disp.: {getProductoStockDisponible(producto)}</div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {isAdmin && (
                           <Link

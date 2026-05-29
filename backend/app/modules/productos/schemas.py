@@ -78,10 +78,6 @@ class ProductoDetalleRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
-ProductoIngredientePayload = ProductoDetallePayload
-ProductoIngredienteRead = ProductoDetalleRead
-
-
 class ProductoBase(BaseModel):
     nombre: str = Field(..., min_length=1, max_length=150)
     descripcion: Optional[str] = Field(default=None, max_length=500)
@@ -140,8 +136,8 @@ class ProductoRead(BaseModel):
     precio_venta: Decimal = Field(validation_alias=AliasChoices("precio_venta", "precio"))
     precio_costo_calculado: Decimal = Field(default=Decimal("0"))
     descuento_porcentaje: Decimal = Field(default=Decimal("0"))
+    precio_final: Decimal = Field(default=Decimal("0"))
     tipo_producto: TipoProducto = Field(default=TipoProducto.FABRICADO)
-    stock_cantidad: Optional[int] = None
     stock_disponible_calculado: int = 0
     puede_fabricarse: bool = False
     categoria_principal_id: Optional[int] = None

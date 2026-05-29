@@ -46,11 +46,6 @@ class Producto(SQLModel, table=True):
         ),
         description="Tipo operativo del producto"
     )
-    stock_cantidad: int = Field(
-        default=0,
-        ge=0,
-        description="Campo legacy de compatibilidad hasta completar la migración del stock por ingrediente"
-    )
     categoria_id: int = Field(
         foreign_key="categoria.id",
         description="ID de la categoría"

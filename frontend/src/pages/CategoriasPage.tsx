@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react'
 import {
   useBajaCategoria,
   useCategoriasList,
+  useCategoriasTree,
   useCreateCategoria,
   useReactivarCategoria,
   useUpdateCategoria,
@@ -17,13 +18,23 @@ interface CategoriaNodeProps {
 }
 
 function CategoriaNode({ categoria, level = 0 }: CategoriaNodeProps) {
+  const [open, setOpen] = useState(true)
+  const hasChildren = (categoria.subcategorias?.length || 0) > 0
+
   return (
     <div className="border-l border-gray-200 pl-3" style={{ marginLeft: level * 12 }}>
-      <div className="py-1 text-sm text-gray-700">
+      <div className="py-1 text-sm text-gray-700 flex items-center gap-2">
+        {hasChildren ? (
+          <button type="button" onClick={() => setOpen((prev) => !prev)} className="text-xs text-gray-400 hover:text-gray-700">
+            {open ? '▾' : '▸'}
+          </button>
+        ) : (
+          <span className="w-3" />
+        )}
         <span className="font-medium">{categoria.nombre}</span>
         {categoria.deleted_at && <span className="ml-2 text-xs text-red-600">dada de baja</span>}
       </div>
-      {categoria.subcategorias?.map((subcategoria) => (
+      {open && categoria.subcategorias?.map((subcategoria) => (
         <CategoriaNode key={subcategoria.id} categoria={subcategoria} level={level + 1} />
       ))}
     </div>
@@ -42,6 +53,7 @@ export function CategoriasPage() {
     incluir_baja: incluirBaja,
     size: 100,
   })
+  const { data: categoriasTree = [] } = useCategoriasTree()
   const createMutation = useCreateCategoria()
   const updateMutation = useUpdateCategoria()
   const bajaMutation = useBajaCategoria()
@@ -57,10 +69,7 @@ export function CategoriasPage() {
     [categorias],
   )
 
-  const categoriasRaiz = useMemo(
-    () => categorias.filter((categoria) => categoria.parent_id === null || categoria.parent_id === undefined),
-    [categorias],
-  )
+  const categoriasRaiz = useMemo(() => categoriasTree, [categoriasTree])
 
   const parentOptions = useMemo(
     () => categoriasActivas.filter((categoria) => categoria.id !== editingCategoria?.id),

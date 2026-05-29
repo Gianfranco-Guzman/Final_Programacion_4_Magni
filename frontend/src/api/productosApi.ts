@@ -1,8 +1,11 @@
 import axiosClient from './axiosClient'
-import { Producto } from '@models/index'
+import { Producto, TipoProducto, UnidadMedida } from '@models/index'
 
-export interface ProductoIngredienteInput {
+export interface ProductoDetalleInput {
   ingrediente_id: number
+  cantidad: number
+  unidad_medida: UnidadMedida
+  orden: number
   es_removible: boolean
   es_opcional: boolean
 }
@@ -32,23 +35,25 @@ export interface GetProductosParams {
 export interface ProductoCreateInput {
   nombre: string
   descripcion?: string
-  precio: number
-  stock_cantidad: number
+  precio_venta: number
   codigo: string
   disponible: boolean
+  tipo_producto: TipoProducto
+  descuento_porcentaje: number
   categorias: ProductoCategoriaInput[]
-  ingredientes: ProductoIngredienteInput[]
+  ingredientes: ProductoDetalleInput[]
 }
 
 export interface ProductoUpdateInput {
   nombre?: string
   descripcion?: string
-  precio?: number
-  stock_cantidad?: number
+  precio_venta?: number
   codigo?: string
   disponible?: boolean
+  tipo_producto?: TipoProducto
+  descuento_porcentaje?: number
   categorias?: ProductoCategoriaInput[]
-  ingredientes?: ProductoIngredienteInput[]
+  ingredientes?: ProductoDetalleInput[]
 }
 
 export const productosApi = {

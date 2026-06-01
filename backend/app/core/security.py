@@ -5,6 +5,7 @@ import jwt
 import bcrypt
 from app.core.config import get_settings
 
+"""Este modulo tiene funciones para el manejo de seguridad, incluyendo hashing de contraseñas y generación/decodificación de tokens JWT."""
 
 def hash_password(password: str) -> str:
 

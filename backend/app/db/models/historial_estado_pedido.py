@@ -15,7 +15,7 @@ class HistorialEstadoPedido(SQLModel, table=True):
     usuario_id: int = Field(foreign_key="usuario.id")
     observacion: Optional[str] = Field(default=None, max_length=255)
 
-    pedido: Optional["Pedido"] = Relationship(back_populates="historial")
+    pedido: Optional["Pedido"] = Relationship(back_populates="historial")   #conectada a pedido
 
     def __repr__(self) -> str:
         return f"<HistorialEstadoPedido pedido_id={self.pedido_id} {self.estado_anterior}→{self.estado_nuevo}>"

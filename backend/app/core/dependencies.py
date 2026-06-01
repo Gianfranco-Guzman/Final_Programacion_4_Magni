@@ -12,7 +12,7 @@ from app.db.models.usuario import Usuario, UsuarioRol
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 
 
-class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
+class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):        #clase para obtener el token de la cookie o del header Authorization
     async def __call__(self, request: Request) -> str | None:
         settings = get_settings()
         token = request.cookies.get(settings.auth_cookie_name)
@@ -49,7 +49,7 @@ def _credentials_exception() -> HTTPException:
     )
 
 
-def _resolve_user_from_token(session: Session, token: str) -> Usuario:
+def _resolve_user_from_token(session: Session, token: str) -> Usuario:      #para saber el usuario a partir del ttoken
     credentials_exception = _credentials_exception()
 
     payload = decode_access_token(token)
@@ -110,7 +110,7 @@ def user_has_any_role(user: Usuario | None, roles: list[str], session: Session) 
     return any(role in roles for role in user_roles)
 
 
-def _normalize_allowed_roles(allowed_roles: tuple[str | list[str] | tuple[str, ...], ...]) -> list[str]:
+def _normalize_allowed_roles(allowed_roles: tuple[str | list[str] | tuple[str, ...], ...]) -> list[str]:      #normalizar los roles permitidos
     if len(allowed_roles) == 1 and isinstance(allowed_roles[0], (list, tuple)):
         return list(allowed_roles[0])
 
@@ -118,17 +118,6 @@ def _normalize_allowed_roles(allowed_roles: tuple[str | list[str] | tuple[str, .
 
 
 def require_role(*allowed_roles: str | list[str] | tuple[str, ...]):
-    """
-    Factory de dependencias para control de acceso basado en roles (RBAC).
-
-    Obtiene el usuario autenticado via get_current_user y consulta los roles
-    desde la BD via UnitOfWork, garantizando que reflejan el estado actual
-    del usuario.
-
-    Uso:
-        @router.get("/admin/...", dependencies=[Depends(require_role("ADMIN"))])
-        _admin: Usuario = Depends(require_role("ADMIN"))
-    """
 
     normalized_roles = _normalize_allowed_roles(allowed_roles)
 

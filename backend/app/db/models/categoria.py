@@ -12,23 +12,23 @@ class Categoria(SQLModel, table=True):
         index=True,
         unique=True,
         max_length=100,
-        description="Nombre único de la categoría"
+        description="nombre de la categoria"
     )
     descripcion: Optional[str] = Field(
         default=None,
         max_length=500,
-        description="Descripción de la categoría"
+        description="Descripcion de la categoria"
     )
     parent_id: Optional[int] = Field(
         default=None,
         foreign_key="categoria.id",
         index=True,
-        description="ID de la categoría padre para jerarquías"
+        description="ID de la categoria padre para jerarquias"
     )
     deleted_at: Optional[datetime] = Field(
         default=None,
         index=True,
-        description="Fecha de eliminación lógica (soft delete)"
+        description="Fecha de eliminacion logica (soft delete)"
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -47,4 +47,4 @@ class Categoria(SQLModel, table=True):
     subcategorias: list["Categoria"] = Relationship(back_populates="parent")
 
     def __repr__(self) -> str:
-        return f"<Categoria id={self.id} nombre={self.nombre}>"
+        return f"<Categoria id={self.id} nombre={self.nombre}>"    #sirve para mostrar algo legible cuando se llama a la categoria 

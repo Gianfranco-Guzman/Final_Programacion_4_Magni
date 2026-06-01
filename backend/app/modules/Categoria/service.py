@@ -204,5 +204,4 @@ class CategoriaService:
 
     @staticmethod
     def eliminar_categoria(categoria_id: int, uow: SqlModelUnitOfWork) -> Categoria:
-        """Alias retrocompatible: eliminar significa soft delete."""
         return CategoriaService.dar_de_baja(categoria_id, uow)

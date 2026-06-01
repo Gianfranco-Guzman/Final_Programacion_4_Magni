@@ -7,6 +7,7 @@ from app.db.models import Ingrediente, MovimientoStockIngrediente
 from app.db.models.enums import TipoMovimientoIngrediente
 from app.db.unit_of_work import SqlModelUnitOfWork
 
+#service solo para el manejo de stock de los ingredientes
 
 class IngredienteStockService:
     @staticmethod

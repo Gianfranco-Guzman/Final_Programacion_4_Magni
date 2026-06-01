@@ -31,7 +31,7 @@ class Rol(SQLModel, table=True):
         description="Fecha de ultima actualización"
     )
 
-    usuarios: list["Usuario"] = Relationship(
+    usuarios: list["Usuario"] = Relationship(          #se conecta con usuario por la tabla intermedia UsuarioRol
         back_populates="roles",
         link_model=UsuarioRol,
     )

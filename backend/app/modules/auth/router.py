@@ -22,13 +22,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
 
-def _set_auth_cookie(response: Response, access_token: str) -> None:
+def _set_auth_cookie(response: Response, access_token: str) -> None:  #fucion para configurar la cookie
     response.set_cookie(
         key=settings.auth_cookie_name,
         value=access_token,
         httponly=True,
         max_age=settings.access_token_expire_minutes * 60,
-        samesite=settings.auth_cookie_samesite,
+        samesite=settings.auth_cookie_samesite, 
         secure=settings.auth_cookie_secure,
         path="/",
     )

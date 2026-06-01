@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
         print("Seed data poblado")
     except Exception as e:
         print(f"[AVISO] BD no disponible: {e}")
-        print("La app arranca igual — algunos endpoints fallarán hasta que PostgreSQL esté corriendo.")
+        print("La app arranca igual — algunos endpoints fallarán hasta que PostgreSQL esté corriendo.")       #sirve para que arranque aunque la base de datos no este disponible
     
     yield
     

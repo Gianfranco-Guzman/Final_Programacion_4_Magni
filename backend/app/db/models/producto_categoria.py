@@ -2,6 +2,7 @@ from typing import Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
+#tabla intermedia
 
 class ProductoCategoria(SQLModel, table=True):
 

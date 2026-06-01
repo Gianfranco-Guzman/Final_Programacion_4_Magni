@@ -312,7 +312,6 @@ class PedidoService:
         if not es_privilegiado and pedido.usuario_id != current_user.id:
             raise HTTPException(status_code=403, detail="No tenés acceso a este pedido")
 
-        # Trigger lazy loads while session is open
         _ = list(pedido.detalles)
         _ = list(pedido.historial)
 

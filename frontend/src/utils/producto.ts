@@ -1,15 +1,16 @@
 import { Producto, ProductoDetalleConfig } from '@models/index'
 
-export const getProductoPrecioBase = (producto: Producto) => producto.precio_venta
+export const getProductoPrecioBase = (producto: Producto) => Number(producto.precio_venta) || 0
 
 export const getProductoPrecioFinal = (producto: Producto) => {
   if (typeof producto.precio_final === 'number') return producto.precio_final
-  const descuento = producto.descuento_porcentaje || 0
-  return Number((producto.precio_venta * (1 - descuento / 100)).toFixed(2))
+  const precio = Number(producto.precio_venta) || 0
+  const descuento = Number(producto.descuento_porcentaje) || 0
+  return Number((precio * (1 - descuento / 100)).toFixed(2))
 }
 
 export const getProductoStockDisponible = (producto: Producto) =>
-  Math.max(producto.stock_disponible_calculado ?? 0, 0)
+  Math.max(Number(producto.stock_disponible_calculado) || 0, 0)
 
 export const isProductoOperativamenteDisponible = (producto: Producto) =>
   producto.disponible && getProductoStockDisponible(producto) > 0
@@ -23,7 +24,7 @@ export const getProductoEtiquetaStock = (producto: Producto) => {
 export const calcularCostoProducto = (ingredientes: ProductoDetalleConfig[]) =>
   Number(
     ingredientes
-      .reduce((sum, item) => sum + item.ingrediente.costo_unitario * item.cantidad, 0)
+      .reduce((sum, item) => sum + Number(item.ingrediente.costo_unitario) * Number(item.cantidad), 0)
       .toFixed(2),
   )
 

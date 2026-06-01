@@ -48,11 +48,11 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
       setForm({
         nombre: producto.nombre,
         codigo: producto.codigo,
-        precio_venta: producto.precio_venta,
+        precio_venta: Number(producto.precio_venta) || 0,
         descripcion: producto.descripcion || '',
         disponible: producto.disponible,
         tipo_producto: producto.tipo_producto,
-        descuento_porcentaje: producto.descuento_porcentaje,
+        descuento_porcentaje: Number(producto.descuento_porcentaje) || 0,
         categorias: producto.categorias?.map((item) => ({ categoria_id: item.categoria_id, es_principal: item.es_principal })) || [],
         ingredientes: producto.ingredientes?.map((item) => ({
           ingrediente_id: item.ingrediente_id,

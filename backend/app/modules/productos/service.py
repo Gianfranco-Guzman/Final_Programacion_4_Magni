@@ -3,6 +3,7 @@ from io import BytesIO
 from decimal import Decimal, ROUND_FLOOR
 
 from fastapi import HTTPException
+from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
 from app.db.models import Categoria, Producto, ProductoCategoria, Ingrediente, ProductoDetalle
@@ -216,7 +217,16 @@ class ProductoService:
             session.add(pi)
         uow.flush()
 
-        uow.refresh(producto)
+        # Recargar el producto CON las relaciones eagerly loaded
+        producto = session.exec(
+            select(Producto)
+            .options(
+                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
+                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
+            )
+            .where(Producto.id == producto.id)
+        ).one()
+
         return producto
 
     @staticmethod
@@ -327,7 +337,18 @@ class ProductoService:
 
         session.add(producto)
         uow.flush()
-        uow.refresh(producto)
+
+        # Recargar el producto CON las relaciones eagerly loaded
+        # (refresh() solo refresca campos escalares, no relationships)
+        producto = session.exec(
+            select(Producto)
+            .options(
+                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
+                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
+            )
+            .where(Producto.id == producto_id)
+        ).one()
+
         return producto
 
     @staticmethod
@@ -343,6 +364,15 @@ class ProductoService:
         producto.updated_at = datetime.now(timezone.utc)
         session.add(producto)
         uow.flush()
+
+        producto = session.exec(
+            select(Producto)
+            .options(
+                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
+                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
+            )
+            .where(Producto.id == producto_id)
+        ).one()
         return producto
 
     @staticmethod
@@ -371,6 +401,15 @@ class ProductoService:
         producto.updated_at = datetime.now(timezone.utc)
         session.add(producto)
         uow.flush()
+
+        producto = session.exec(
+            select(Producto)
+            .options(
+                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
+                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
+            )
+            .where(Producto.id == producto_id)
+        ).one()
         return producto
 
     @staticmethod
@@ -384,6 +423,15 @@ class ProductoService:
         producto.updated_at = datetime.now(timezone.utc)
         session.add(producto)
         uow.flush()
+
+        producto = session.exec(
+            select(Producto)
+            .options(
+                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
+                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
+            )
+            .where(Producto.id == producto_id)
+        ).one()
         return producto
 
     @staticmethod

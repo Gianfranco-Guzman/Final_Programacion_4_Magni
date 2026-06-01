@@ -14,8 +14,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
   const isDeleted = producto.deleted_at != null
   const isOperationallyAvailable = isProductoOperativamenteDisponible(producto)
   const categoriaPrincipal = producto.categorias?.find((item) => item.es_principal)?.categoria
-  const categoriasSecundarias = producto.categorias?.filter((item) => !item.es_principal).map((item) => item.categoria.nombre) || []
-  const alergenos = producto.ingredientes?.filter((item) => item.ingrediente.es_alergeno).map((item) => item.ingrediente.nombre) || []
+  const categoriasSecundarias = producto.categorias?.filter((item) => !item.es_principal && item.categoria).map((item) => item.categoria!.nombre) || []
+  const alergenos = producto.ingredientes?.filter((item) => item.ingrediente?.es_alergeno).map((item) => item.ingrediente!.nombre) || []
   const stockDisplay = getProductoEtiquetaStock(producto)
   const stockColor = isOperationallyAvailable ? 'text-green-600' : 'text-red-600'
   const precioFinal = getProductoPrecioFinal(producto)
@@ -65,16 +65,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
 
         {producto.ingredientes && producto.ingredientes.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
-            {producto.ingredientes.slice(0, 3).map((item) => (
+            {producto.ingredientes.filter((item) => item.ingrediente).slice(0, 3).map((item) => (
               <span
                 key={item.ingrediente_id}
                 className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                  item.ingrediente.es_alergeno
+                  item.ingrediente!.es_alergeno
                     ? 'bg-red-100 text-red-800'
                     : 'bg-gray-100 text-gray-700'
                 }`}
               >
-                {item.ingrediente.nombre}
+                {item.ingrediente!.nombre}
               </span>
             ))}
             {producto.ingredientes.length > 3 && (

@@ -18,6 +18,7 @@ from app.db.models.producto import Producto
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork
 from app.modules.ingredientes.stock_service import IngredienteStockService
+from app.modules.pedidos.realtime import PedidoRealtimePublisher
 from app.modules.pedidos.schemas import PedidoCreate
 from app.modules.productos.service import ProductoService
 
@@ -276,6 +277,7 @@ class PedidoService:
         )
         session.add(historial)
         uow.flush()
+        PedidoRealtimePublisher.queue_event(uow, "PEDIDO_CREATED", pedido.id)
 
         return pedido
 
@@ -356,6 +358,7 @@ class PedidoService:
         pedido.updated_at = datetime.now(timezone.utc)
         session.add(pedido)
         uow.flush()
+        PedidoRealtimePublisher.queue_event(uow, "PEDIDO_UPDATED", pedido.id)
 
         return pedido
 
@@ -398,5 +401,6 @@ class PedidoService:
         pedido.updated_at = datetime.now(timezone.utc)
         session.add(pedido)
         uow.flush()
+        PedidoRealtimePublisher.queue_event(uow, "PEDIDO_CANCELLED", pedido.id)
 
         return pedido

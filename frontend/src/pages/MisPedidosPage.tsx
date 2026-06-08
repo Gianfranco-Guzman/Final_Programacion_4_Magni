@@ -1,8 +1,11 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { hasAnyRole } from '@/auth/permissions'
 import { FeedbackAlert } from '@components/FeedbackAlert'
 import { Spinner } from '@components/Spinner'
 import { usePedidos, useCancelarPedido } from '@hooks/usePedidos'
+import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
+import { useAuthStore } from '@store/authStore'
 
 const ESTADO_COLORS: Record<string, string> = {
   PENDIENTE: 'bg-yellow-100 text-yellow-800',
@@ -27,8 +30,24 @@ const ESTADOS_CANCELABLES = ['PENDIENTE', 'CONFIRMADO']
 export const MisPedidosPage: React.FC = () => {
   const [estadoFiltro, setEstadoFiltro] = useState<string | undefined>(undefined)
   const [actionError, setActionError] = useState('')
-  const { data: pedidos = [], isLoading, error } = usePedidos({ estado: estadoFiltro })
+  const usuario = useAuthStore((state) => state.usuario)
+  const { data: pedidos = [], isLoading, error, refetch } = usePedidos({ estado: estadoFiltro })
   const cancelarMutation = useCancelarPedido()
+
+  const handleWsMessage = useCallback((message: WsMessage) => {
+    if (message.event === 'WS_CONNECTED' || message.event.startsWith('PEDIDO_')) {
+      void refetch()
+    }
+  }, [refetch])
+
+  const { subscribeToOrder } = useWebSocket({
+    enabled: !!usuario && hasAnyRole(usuario.roles, ['CLIENT']),
+    onMessage: handleWsMessage,
+  })
+
+  useEffect(() => {
+    pedidos.forEach((pedido) => subscribeToOrder(pedido.id))
+  }, [pedidos, subscribeToOrder])
 
   const handleCancelar = (id: number) => {
     if (!window.confirm('¿Cancelar este pedido?')) return

@@ -1,9 +1,11 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, status
 
-from app.core.dependencies import get_current_user, require_role
+from app.core.dependencies import get_current_user, get_current_websocket_user, get_user_role_names, require_role
+from app.core.websocket import manager
 from app.db.models.usuario import Usuario
+from app.db.models.pedido import Pedido
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.pedidos.schemas import (
     AvanzarEstadoRequest,
@@ -12,6 +14,7 @@ from app.modules.pedidos.schemas import (
     PedidoDetalle,
     PedidoRead,
 )
+from app.modules.pedidos.realtime import STAFF_ROLES
 from app.modules.pedidos.service import PedidoService
 
 router = APIRouter(tags=["pedidos"])
@@ -90,3 +93,48 @@ def cancelar_pedido(
 ):
     pedido = PedidoService.cancelar_pedido(pedido_id, current_user, uow, body.observacion)
     return PedidoRead.model_validate(pedido)
+
+
+@router.websocket("/ws")
+async def pedidos_websocket(
+    websocket: WebSocket,
+    current_user: Usuario = Depends(get_current_websocket_user),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+):
+    session = uow.session
+    user_roles = get_user_role_names(session, current_user.id)
+    await manager.connect(websocket, user_roles)
+
+    try:
+        while True:
+            message = await websocket.receive_json()
+            action = message.get("action")
+            order_id = message.get("order_id")
+
+            if not isinstance(order_id, int):
+                await manager.send_json(websocket, "ERROR", {"detail": "order_id inválido"})
+                continue
+
+            pedido = session.get(Pedido, order_id)
+            if pedido is None:
+                await manager.send_json(websocket, "ERROR", {"detail": "Pedido no encontrado"})
+                continue
+
+            is_staff = any(role in STAFF_ROLES for role in user_roles)
+            if not is_staff and pedido.usuario_id != current_user.id:
+                await manager.send_json(websocket, "ERROR", {"detail": "No tenés acceso a este pedido"})
+                continue
+
+            if action == "subscribe-order":
+                manager.join_order_room(websocket, order_id)
+                await manager.send_json(websocket, "SUBSCRIBED", {"order_id": order_id})
+                continue
+
+            if action == "unsubscribe-order":
+                manager.leave_order_room(websocket, order_id)
+                await manager.send_json(websocket, "UNSUBSCRIBED", {"order_id": order_id})
+                continue
+
+            await manager.send_json(websocket, "ERROR", {"detail": "Acción no soportada"})
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)

@@ -1,8 +1,11 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { hasAnyRole } from '@/auth/permissions'
 import { FeedbackAlert } from '@components/FeedbackAlert'
 import { Spinner } from '@components/Spinner'
 import { usePedidos, useAvanzarEstado, useCancelarPedido } from '@hooks/usePedidos'
+import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
+import { useAuthStore } from '@store/authStore'
 
 const ESTADO_COLORS: Record<string, string> = {
   PENDIENTE: 'bg-yellow-100 text-yellow-800',
@@ -34,9 +37,21 @@ const ESTADOS_ACTIVOS = ['PENDIENTE', 'CONFIRMADO', 'EN_PREP', 'EN_CAMINO']
 export const CajeroPage: React.FC = () => {
   const [estadoFiltro, setEstadoFiltro] = useState<string | undefined>(undefined)
   const [actionError, setActionError] = useState('')
+  const usuario = useAuthStore((state) => state.usuario)
   const { data: pedidos = [], isLoading, error, refetch } = usePedidos({ estado: estadoFiltro, size: 50 })
   const avanzarMutation = useAvanzarEstado()
   const cancelarMutation = useCancelarPedido()
+
+  const handleWsMessage = useCallback((message: WsMessage) => {
+    if (message.event === 'WS_CONNECTED' || message.event.startsWith('PEDIDO_')) {
+      void refetch()
+    }
+  }, [refetch])
+
+  useWebSocket({
+    enabled: !!usuario && hasAnyRole(usuario.roles, ['PEDIDOS', 'ADMIN']),
+    onMessage: handleWsMessage,
+  })
 
   const pedidosActivos = estadoFiltro
     ? pedidos

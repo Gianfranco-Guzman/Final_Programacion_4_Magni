@@ -1,8 +1,11 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { hasAnyRole } from '@/auth/permissions'
 import { FeedbackAlert } from '@components/FeedbackAlert'
 import { Spinner } from '@components/Spinner'
 import { usePedido, useCancelarPedido } from '@hooks/usePedidos'
+import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
+import { useAuthStore } from '@store/authStore'
 
 const ESTADO_COLORS: Record<string, string> = {
   PENDIENTE: 'bg-yellow-100 text-yellow-800',
@@ -24,10 +27,29 @@ const ESTADO_LABEL: Record<string, string> = {
 
 export const PedidoDetallePage: React.FC = () => {
   const { pedidoId } = useParams<{ pedidoId: string }>()
+  const pedidoIdNumber = Number(pedidoId)
   const navigate = useNavigate()
-  const { data: pedido, isLoading, error } = usePedido(Number(pedidoId))
+  const usuario = useAuthStore((state) => state.usuario)
+  const { data: pedido, isLoading, error, refetch } = usePedido(pedidoIdNumber)
   const cancelarMutation = useCancelarPedido()
   const [actionError, setActionError] = React.useState('')
+
+  const handleWsMessage = React.useCallback((message: WsMessage) => {
+    if (message.event === 'WS_CONNECTED' || message.event.startsWith('PEDIDO_')) {
+      void refetch()
+    }
+  }, [refetch])
+
+  const { subscribeToOrder } = useWebSocket({
+    enabled: !!usuario && hasAnyRole(usuario.roles, ['CLIENT', 'PEDIDOS', 'ADMIN']),
+    onMessage: handleWsMessage,
+  })
+
+  React.useEffect(() => {
+    if (pedidoIdNumber > 0) {
+      subscribeToOrder(pedidoIdNumber)
+    }
+  }, [pedidoIdNumber, subscribeToOrder])
 
   const handleCancelar = () => {
     if (!window.confirm('¿Cancelar este pedido?')) return

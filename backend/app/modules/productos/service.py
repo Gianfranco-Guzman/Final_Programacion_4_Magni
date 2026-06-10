@@ -3,10 +3,8 @@ from io import BytesIO
 from decimal import Decimal, ROUND_FLOOR
 
 from fastapi import HTTPException
-from sqlalchemy.orm import selectinload
-from sqlmodel import select
 
-from app.db.models import Categoria, Producto, ProductoCategoria, Ingrediente, ProductoDetalle
+from app.db.models import Producto
 from app.db.unit_of_work import SqlModelUnitOfWork
 from app.modules.productos.schemas import (
     ProductoCategoriaPayload,
@@ -68,11 +66,8 @@ class ProductoService:
         ingredientes_payload: list[ProductoDetallePayload],
         uow: SqlModelUnitOfWork,
     ) -> Decimal:
-        session = uow.session
         ingrediente_ids = [item.ingrediente_id for item in ingredientes_payload]
-        ingredientes = session.exec(
-            select(Ingrediente).where(Ingrediente.id.in_(ingrediente_ids))
-        ).all()
+        ingredientes = uow.ingredientes.list_by_ids(ingrediente_ids)
         ingredientes_map = {ingrediente.id: ingrediente for ingrediente in ingredientes}
 
         total = Decimal("0")
@@ -87,13 +82,12 @@ class ProductoService:
         categorias_payload: list[ProductoCategoriaPayload],
         uow: SqlModelUnitOfWork,
     ) -> list[ProductoCategoriaPayload]:
-        session = uow.session
         categoria_ids = [item.categoria_id for item in categorias_payload]
 
         if len(categoria_ids) != len(set(categoria_ids)):
             raise HTTPException(status_code=400, detail="No se permiten categorías duplicadas")
 
-        categorias = session.exec(select(Categoria).where(Categoria.id.in_(categoria_ids))).all()
+        categorias = uow.categorias.list_by_ids(categoria_ids)
         if len(categorias) != len(categoria_ids):
             found_ids = {categoria.id for categoria in categorias}
             missing = [item_id for item_id in categoria_ids if item_id not in found_ids]
@@ -120,7 +114,6 @@ class ProductoService:
         ingredientes_payload: list[ProductoDetallePayload],
         uow: SqlModelUnitOfWork,
     ) -> list[ProductoDetallePayload]:
-        session = uow.session
         ingrediente_ids = [item.ingrediente_id for item in ingredientes_payload]
 
         if len(ingrediente_ids) != len(set(ingrediente_ids)):
@@ -129,9 +122,7 @@ class ProductoService:
                 detail="No se permiten ingredientes duplicados",
             )
 
-        ingredientes = session.exec(
-            select(Ingrediente).where(Ingrediente.id.in_(ingrediente_ids))
-        ).all()
+        ingredientes = uow.ingredientes.list_by_ids(ingrediente_ids)
         if len(ingredientes) != len(ingrediente_ids):
             found_ids = {i.id for i in ingredientes}
             missing = [item_id for item_id in ingrediente_ids if item_id not in found_ids]
@@ -161,12 +152,7 @@ class ProductoService:
 
     @staticmethod
     def crear_producto(data: ProductoCreate, uow: SqlModelUnitOfWork) -> Producto:
-        session = uow.session
-        existing = session.exec(
-            select(Producto).where(
-                (Producto.codigo == data.codigo) & (Producto.deleted_at.is_(None))
-            )
-        ).first()
+        existing = uow.productos.get_active_by_codigo(data.codigo)
         if existing:
             raise HTTPException(
                 status_code=409,
@@ -192,42 +178,37 @@ class ProductoService:
             created_at=now,
             updated_at=now,
         )
-        session.add(producto)
+        uow.productos.save(producto)
         uow.flush()
 
-        for categoria_data in categorias_payload:
-            session.add(
-                ProductoCategoria(
-                    producto_id=producto.id,
-                    categoria_id=categoria_data.categoria_id,
-                    es_principal=categoria_data.es_principal,
-                )
-            )
+        uow.productos.replace_categorias(
+            producto.id,
+            [
+                {
+                    "categoria_id": categoria_data.categoria_id,
+                    "es_principal": categoria_data.es_principal,
+                }
+                for categoria_data in categorias_payload
+            ],
+        )
 
-        for ingrediente_data in ingredientes_payload:
-            pi = ProductoDetalle(
-                producto_id=producto.id,
-                ingrediente_id=ingrediente_data.ingrediente_id,
-                cantidad=ingrediente_data.cantidad,
-                unidad_medida=ingrediente_data.unidad_medida,
-                orden=ingrediente_data.orden,
-                es_removible=ingrediente_data.es_removible,
-                es_opcional=ingrediente_data.es_opcional,
-            )
-            session.add(pi)
+        uow.productos.replace_ingredientes(
+            producto.id,
+            [
+                {
+                    "ingrediente_id": ingrediente_data.ingrediente_id,
+                    "cantidad": ingrediente_data.cantidad,
+                    "unidad_medida": ingrediente_data.unidad_medida,
+                    "orden": ingrediente_data.orden,
+                    "es_removible": ingrediente_data.es_removible,
+                    "es_opcional": ingrediente_data.es_opcional,
+                }
+                for ingrediente_data in ingredientes_payload
+            ],
+        )
         uow.flush()
 
-        # Recargar el producto CON las relaciones eagerly loaded
-        producto = session.exec(
-            select(Producto)
-            .options(
-                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
-            )
-            .where(Producto.id == producto.id)
-        ).one()
-
-        return producto
+        return uow.productos.get_by_id_with_relations(producto.id)
 
     @staticmethod
     def actualizar_producto(
@@ -235,23 +216,12 @@ class ProductoService:
         data: ProductoUpdate,
         uow: SqlModelUnitOfWork,
     ) -> Producto:
-        session = uow.session
-        producto = session.exec(
-            select(Producto).where(
-                (Producto.id == producto_id) & (Producto.deleted_at.is_(None))
-            )
-        ).first()
+        producto = uow.productos.get_active_by_id(producto_id)
         if not producto:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
 
         if data.codigo is not None and data.codigo != producto.codigo:
-            conflict = session.exec(
-                select(Producto).where(
-                    (Producto.codigo == data.codigo)
-                    & (Producto.deleted_at.is_(None))
-                    & (Producto.id != producto_id)
-                )
-            ).first()
+            conflict = uow.productos.get_active_by_codigo_excluding_id(data.codigo, producto_id)
             if conflict:
                 raise HTTPException(
                     status_code=409,
@@ -262,21 +232,16 @@ class ProductoService:
         ingredientes_payload: list[ProductoDetallePayload] | None = None
         if data.categorias is not None:
             categorias_payload = ProductoService._validar_categorias(data.categorias, uow)
-
-            existing_category_relations = session.exec(
-                select(ProductoCategoria).where(ProductoCategoria.producto_id == producto_id)
-            ).all()
-            for rel in existing_category_relations:
-                session.delete(rel)
-
-            for categoria_data in categorias_payload:
-                session.add(
-                    ProductoCategoria(
-                        producto_id=producto_id,
-                        categoria_id=categoria_data.categoria_id,
-                        es_principal=categoria_data.es_principal,
-                    )
-                )
+            uow.productos.replace_categorias(
+                producto_id,
+                [
+                    {
+                        "categoria_id": categoria_data.categoria_id,
+                        "es_principal": categoria_data.es_principal,
+                    }
+                    for categoria_data in categorias_payload
+                ],
+            )
 
             producto.categoria_id = next(
                 item.categoria_id for item in categorias_payload if item.es_principal
@@ -286,27 +251,21 @@ class ProductoService:
             ingredientes_payload = ProductoService._validar_ingredientes(data.ingredientes, uow)
             tipo_producto = data.tipo_producto or producto.tipo_producto
             ProductoService._validar_reglas_tipo_producto(tipo_producto, ingredientes_payload)
-
-            existing_relations = session.exec(
-                select(ProductoDetalle).where(
-                    ProductoDetalle.producto_id == producto_id
-                )
-            ).all()
-            for rel in existing_relations:
-                session.delete(rel)
+            uow.productos.replace_ingredientes(
+                producto_id,
+                [
+                    {
+                        "ingrediente_id": ingrediente_data.ingrediente_id,
+                        "cantidad": ingrediente_data.cantidad,
+                        "unidad_medida": ingrediente_data.unidad_medida,
+                        "orden": ingrediente_data.orden,
+                        "es_removible": ingrediente_data.es_removible,
+                        "es_opcional": ingrediente_data.es_opcional,
+                    }
+                    for ingrediente_data in ingredientes_payload
+                ],
+            )
             uow.flush()
-
-            for ingrediente_data in ingredientes_payload:
-                pi = ProductoDetalle(
-                    producto_id=producto_id,
-                    ingrediente_id=ingrediente_data.ingrediente_id,
-                    cantidad=ingrediente_data.cantidad,
-                    unidad_medida=ingrediente_data.unidad_medida,
-                    orden=ingrediente_data.orden,
-                    es_removible=ingrediente_data.es_removible,
-                    es_opcional=ingrediente_data.es_opcional,
-                )
-                session.add(pi)
 
             producto.precio_costo_calculado = ProductoService._calcular_precio_costo(
                 ingredientes_payload,
@@ -314,9 +273,7 @@ class ProductoService:
             )
 
         if data.tipo_producto is not None and ingredientes_payload is None:
-            existing_relations = session.exec(
-                select(ProductoDetalle).where(ProductoDetalle.producto_id == producto_id)
-            ).all()
+            existing_relations = uow.productos.list_detalles_by_producto_id(producto_id)
             dummy_payload = [
                 ProductoDetallePayload(
                     ingrediente_id=rel.ingrediente_id,
@@ -335,26 +292,14 @@ class ProductoService:
             setattr(producto, field, value)
         producto.updated_at = datetime.now(timezone.utc)
 
-        session.add(producto)
+        uow.productos.save(producto)
         uow.flush()
 
-        # Recargar el producto CON las relaciones eagerly loaded
-        # (refresh() solo refresca campos escalares, no relationships)
-        producto = session.exec(
-            select(Producto)
-            .options(
-                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
-            )
-            .where(Producto.id == producto_id)
-        ).one()
-
-        return producto
+        return uow.productos.get_by_id_with_relations(producto_id)
 
     @staticmethod
     def dar_de_baja(producto_id: int, uow: SqlModelUnitOfWork) -> Producto:
-        session = uow.session
-        producto = session.exec(select(Producto).where(Producto.id == producto_id)).first()
+        producto = uow.productos.get_by_id(producto_id)
         if not producto:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
         if producto.deleted_at is not None:
@@ -362,35 +307,20 @@ class ProductoService:
 
         producto.deleted_at = datetime.now(timezone.utc)
         producto.updated_at = datetime.now(timezone.utc)
-        session.add(producto)
+        uow.productos.save(producto)
         uow.flush()
 
-        producto = session.exec(
-            select(Producto)
-            .options(
-                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
-            )
-            .where(Producto.id == producto_id)
-        ).one()
-        return producto
+        return uow.productos.get_by_id_with_relations(producto_id)
 
     @staticmethod
     def reactivar_producto(producto_id: int, uow: SqlModelUnitOfWork) -> Producto:
-        session = uow.session
-        producto = session.exec(select(Producto).where(Producto.id == producto_id)).first()
+        producto = uow.productos.get_by_id(producto_id)
         if not producto:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
         if producto.deleted_at is None:
             raise HTTPException(status_code=400, detail="El producto no está dado de baja")
 
-        conflict = session.exec(
-            select(Producto).where(
-                (Producto.codigo == producto.codigo)
-                & (Producto.deleted_at.is_(None))
-                & (Producto.id != producto_id)
-            )
-        ).first()
+        conflict = uow.productos.get_active_by_codigo_excluding_id(producto.codigo, producto_id)
         if conflict:
             raise HTTPException(
                 status_code=409,
@@ -399,40 +329,23 @@ class ProductoService:
 
         producto.deleted_at = None
         producto.updated_at = datetime.now(timezone.utc)
-        session.add(producto)
+        uow.productos.save(producto)
         uow.flush()
 
-        producto = session.exec(
-            select(Producto)
-            .options(
-                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
-            )
-            .where(Producto.id == producto_id)
-        ).one()
-        return producto
+        return uow.productos.get_by_id_with_relations(producto_id)
 
     @staticmethod
     def toggle_disponible(producto_id: int, uow: SqlModelUnitOfWork) -> Producto:
-        session = uow.session
-        producto = session.exec(select(Producto).where(Producto.id == producto_id)).first()
+        producto = uow.productos.get_by_id(producto_id)
         if not producto:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
 
         producto.disponible = not producto.disponible
         producto.updated_at = datetime.now(timezone.utc)
-        session.add(producto)
+        uow.productos.save(producto)
         uow.flush()
 
-        producto = session.exec(
-            select(Producto)
-            .options(
-                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
-            )
-            .where(Producto.id == producto_id)
-        ).one()
-        return producto
+        return uow.productos.get_by_id_with_relations(producto_id)
 
     @staticmethod
     def exportar_a_excel(productos: list[Producto]) -> BytesIO:

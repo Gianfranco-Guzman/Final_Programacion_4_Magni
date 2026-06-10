@@ -3,14 +3,9 @@ from decimal import Decimal
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlalchemy.orm import selectinload
-from sqlmodel import select, col
 
-from app.core.dependencies import user_has_any_role
-from app.db.models import ProductoDetalle, MovimientoStockIngrediente, Ingrediente
+from app.db.models import Ingrediente
 from app.db.models.enums import TipoMovimientoIngrediente
-from app.db.models.direccion_entrega import DireccionEntrega
-from app.db.models.forma_pago import FormaPago
 from app.db.models.pedido import Pedido
 from app.db.models.detalle_pedido import DetallePedido
 from app.db.models.historial_estado_pedido import HistorialEstadoPedido
@@ -55,16 +50,7 @@ class PedidoService:
         producto_ids: list[int],
         uow: SqlModelUnitOfWork,
     ) -> dict[int, Producto]:
-        session = uow.session
-        productos = session.exec(
-            select(Producto)
-            .options(selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente))
-            .where(
-                Producto.id.in_(producto_ids),
-                Producto.deleted_at.is_(None),
-                Producto.disponible == True,
-            )
-        ).all()
+        productos = uow.productos.list_available_by_ids_with_ingredientes(producto_ids)
         return {producto.id: producto for producto in productos}
 
     @staticmethod
@@ -117,15 +103,10 @@ class PedidoService:
         detalles: list[DetallePedido],
         uow: SqlModelUnitOfWork,
     ) -> dict[int, Decimal]:
-        session = uow.session
         consumo_por_ingrediente: dict[int, Decimal] = {}
 
         for detalle in detalles:
-            producto = session.exec(
-                select(Producto)
-                .options(selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente))
-                .where(Producto.id == detalle.producto_id)
-            ).first()
+            producto = uow.productos.get_by_id_with_relations(detalle.producto_id)
             if not producto:
                 raise HTTPException(status_code=404, detail=f"Producto con id {detalle.producto_id} no encontrado")
 
@@ -142,11 +123,8 @@ class PedidoService:
         consumo_por_ingrediente: dict[int, Decimal],
         uow: SqlModelUnitOfWork,
     ) -> dict[int, Ingrediente]:
-        session = uow.session
         ingrediente_ids = list(consumo_por_ingrediente.keys())
-        ingredientes = session.exec(
-            select(Ingrediente).where(Ingrediente.id.in_(ingrediente_ids))
-        ).all()
+        ingredientes = uow.ingredientes.list_by_ids(ingrediente_ids)
         ingredientes_map = {ingrediente.id: ingrediente for ingrediente in ingredientes}
 
         for ingrediente_id, cantidad_requerida in consumo_por_ingrediente.items():
@@ -182,10 +160,7 @@ class PedidoService:
 
     @staticmethod
     def _revertir_stock_por_cancelacion(pedido: Pedido, uow: SqlModelUnitOfWork) -> None:
-        session = uow.session
-        movimientos = session.exec(
-            select(MovimientoStockIngrediente).where(MovimientoStockIngrediente.pedido_id == pedido.id)
-        ).all()
+        movimientos = uow.movimientos_stock_ingredientes.list_by_pedido_id(pedido.id)
 
         consumos: dict[int, Decimal] = {}
         reversas: dict[int, Decimal] = {}
@@ -203,9 +178,7 @@ class PedidoService:
         if not pendientes:
             return
 
-        ingredientes = session.exec(
-            select(Ingrediente).where(Ingrediente.id.in_(list(pendientes.keys())))
-        ).all()
+        ingredientes = uow.ingredientes.list_by_ids(list(pendientes.keys()))
         ingredientes_map = {ingrediente.id: ingrediente for ingrediente in ingredientes}
 
         for ingrediente_id, cantidad in pendientes.items():
@@ -220,26 +193,14 @@ class PedidoService:
 
     @staticmethod
     def crear_pedido(data: PedidoCreate, current_user: Usuario, uow: SqlModelUnitOfWork) -> Pedido:
-        session = uow.session
-
-        direccion = session.exec(
-            select(DireccionEntrega).where(
-                (DireccionEntrega.id == data.direccion_entrega_id)
-                & (DireccionEntrega.usuario_id == current_user.id)
-                & (DireccionEntrega.deleted_at.is_(None))
-            )
-        ).first()
+        direccion = uow.direcciones.get_active_for_user(data.direccion_entrega_id, current_user.id)
         if not direccion:
             raise HTTPException(
                 status_code=404,
                 detail="Dirección de entrega no encontrada o no pertenece al usuario",
             )
 
-        forma_pago = session.exec(
-            select(FormaPago).where(
-                (FormaPago.id == data.forma_pago_id) & (FormaPago.activo == True)
-            )
-        ).first()
+        forma_pago = uow.formas_pago.get_active_by_id(data.forma_pago_id)
         if not forma_pago:
             raise HTTPException(status_code=404, detail="Forma de pago no encontrada o inactiva")
 
@@ -261,12 +222,12 @@ class PedidoService:
             created_at=now,
             updated_at=now,
         )
-        session.add(pedido)
+        uow.pedidos.save(pedido)
         uow.flush()
 
         for detalle_data in detalles_data:
             detalle = DetallePedido(pedido_id=pedido.id, **detalle_data)
-            session.add(detalle)
+            uow.pedidos.add_detalle(detalle)
 
         historial = HistorialEstadoPedido(
             pedido_id=pedido.id,
@@ -275,7 +236,7 @@ class PedidoService:
             fecha=now,
             usuario_id=current_user.id,
         )
-        session.add(historial)
+        uow.pedidos.add_historial(historial)
         uow.flush()
         PedidoRealtimePublisher.queue_event(uow, "PEDIDO_CREATED", pedido.id)
 
@@ -289,33 +250,23 @@ class PedidoService:
         page: int = 1,
         size: int = 20,
     ) -> list[Pedido]:
-        session = uow.session
-        es_privilegiado = user_has_any_role(current_user, PRIVILEGED_ROLES, session)
-
-        stmt = select(Pedido)
-        if not es_privilegiado:
-            stmt = stmt.where(Pedido.usuario_id == current_user.id)
-        if estado:
-            stmt = stmt.where(Pedido.estado_actual == estado)
-
-        offset = (page - 1) * size
-        stmt = stmt.order_by(col(Pedido.created_at).desc()).offset(offset).limit(size)
-
-        return list(session.exec(stmt).all())
+        es_privilegiado = uow.roles.user_has_any_role(current_user.id, PRIVILEGED_ROLES)
+        return uow.pedidos.list_pedidos(
+            usuario_id=None if es_privilegiado else current_user.id,
+            estado=estado,
+            page=page,
+            size=size,
+        )
 
     @staticmethod
     def obtener_pedido(pedido_id: int, current_user: Usuario, uow: SqlModelUnitOfWork) -> Pedido:
-        session = uow.session
-        pedido = session.get(Pedido, pedido_id)
+        pedido = uow.pedidos.get_by_id_with_detalles_historial(pedido_id)
         if not pedido:
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
 
-        es_privilegiado = user_has_any_role(current_user, PRIVILEGED_ROLES, session)
+        es_privilegiado = uow.roles.user_has_any_role(current_user.id, PRIVILEGED_ROLES)
         if not es_privilegiado and pedido.usuario_id != current_user.id:
             raise HTTPException(status_code=403, detail="No tenés acceso a este pedido")
-
-        _ = list(pedido.detalles)
-        _ = list(pedido.historial)
 
         return pedido
 
@@ -326,8 +277,7 @@ class PedidoService:
         uow: SqlModelUnitOfWork,
         observacion: Optional[str] = None,
     ) -> Pedido:
-        session = uow.session
-        pedido = session.get(Pedido, pedido_id)
+        pedido = uow.pedidos.get_by_id_with_detalles(pedido_id)
         if not pedido:
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
 
@@ -348,15 +298,14 @@ class PedidoService:
             usuario_id=current_user.id,
             observacion=observacion,
         )
-        session.add(historial)
+        uow.pedidos.add_historial(historial)
 
         if estado_actual == "PENDIENTE" and siguiente == "CONFIRMADO":
-            _ = list(pedido.detalles)
             PedidoService._descontar_stock_por_confirmacion(pedido, uow)
 
         pedido.estado_actual = siguiente
         pedido.updated_at = datetime.now(timezone.utc)
-        session.add(pedido)
+        uow.pedidos.save(pedido)
         uow.flush()
         PedidoRealtimePublisher.queue_event(uow, "PEDIDO_UPDATED", pedido.id)
 
@@ -369,12 +318,11 @@ class PedidoService:
         uow: SqlModelUnitOfWork,
         observacion: Optional[str] = None,
     ) -> Pedido:
-        session = uow.session
-        pedido = session.get(Pedido, pedido_id)
+        pedido = uow.pedidos.get_by_id_with_detalles(pedido_id)
         if not pedido:
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
 
-        es_privilegiado = user_has_any_role(current_user, PRIVILEGED_ROLES, session)
+        es_privilegiado = uow.roles.user_has_any_role(current_user.id, PRIVILEGED_ROLES)
         if not es_privilegiado and pedido.usuario_id != current_user.id:
             raise HTTPException(status_code=403, detail="No tenés acceso a este pedido")
 
@@ -393,13 +341,13 @@ class PedidoService:
             usuario_id=current_user.id,
             observacion=observacion,
         )
-        session.add(historial)
+        uow.pedidos.add_historial(historial)
 
         PedidoService._revertir_stock_por_cancelacion(pedido, uow)
 
         pedido.estado_actual = "CANCELADO"
         pedido.updated_at = datetime.now(timezone.utc)
-        session.add(pedido)
+        uow.pedidos.save(pedido)
         uow.flush()
         PedidoRealtimePublisher.queue_event(uow, "PEDIDO_CANCELLED", pedido.id)
 

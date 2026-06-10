@@ -1,9 +1,7 @@
 from fastapi import HTTPException, status
-from sqlmodel import select
 
 from app.core.security import hash_password, verify_password
-from app.db.models.rol import Rol
-from app.db.models.usuario import Usuario, UsuarioRol
+from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork
 from app.modules.auth.schemas import (
     AdminActionResponse,
@@ -18,13 +16,7 @@ class AuthService:
     @staticmethod
     def obtener_roles_usuario(user: Usuario, uow: SqlModelUnitOfWork) -> list[str]:
         """Obtiene los nombres de los roles de un usuario."""
-        session = uow.session
-        statement = (
-            select(Rol.nombre)
-            .join(UsuarioRol, UsuarioRol.rol_id == Rol.id)
-            .where(UsuarioRol.usuario_id == user.id)
-        )
-        return list(session.exec(statement).all())
+        return uow.roles.get_names_for_user(user.id)
 
     @staticmethod
     def _usuario_a_response(usuario: Usuario, roles_nombres: list[str]) -> UsuarioResponse:
@@ -43,9 +35,7 @@ class AuthService:
     @staticmethod
     def autenticar(email: str, password: str, uow: SqlModelUnitOfWork) -> tuple[Usuario, list[str]]:
         """Autentica y retorna (usuario, roles)."""
-        session = uow.session
-        statement = select(Usuario).where(Usuario.email == email)
-        user = session.exec(statement).first()
+        user = uow.usuarios.get_by_email(email)
 
         if not user or not verify_password(password, user.password_hash):
             raise HTTPException(
@@ -65,9 +55,7 @@ class AuthService:
     @staticmethod
     def crear_usuario(request: RegisterRequest, uow: SqlModelUnitOfWork) -> UsuarioResponse:
         """Registra un nuevo usuario con rol CLIENT y retorna UsuarioResponse con roles."""
-        session = uow.session
-        statement = select(Usuario).where(Usuario.email == request.email)
-        existing_user = session.exec(statement).first()
+        existing_user = uow.usuarios.get_by_email(request.email)
 
         if existing_user:
             raise HTTPException(
@@ -84,12 +72,12 @@ class AuthService:
             is_active=True,
         )
 
-        session.add(nuevo_usuario)
+        uow.usuarios.save(nuevo_usuario)
         uow.flush()
 
-        client_rol = session.exec(select(Rol).where(Rol.nombre == "CLIENT")).first()
+        client_rol = uow.roles.get_by_name("CLIENT")
         if client_rol:
-            session.add(UsuarioRol(usuario_id=nuevo_usuario.id, rol_id=client_rol.id))
+            uow.roles.assign_to_user(nuevo_usuario.id, client_rol.id)
 
         return AuthService._usuario_a_response(nuevo_usuario, ["CLIENT"])
 
@@ -97,9 +85,7 @@ class AuthService:
     def obtener_usuario_con_roles(
         usuario_id: int, uow: SqlModelUnitOfWork
     ) -> UsuarioResponse:
-        session = uow.session
-        statement = select(Usuario).where(Usuario.id == usuario_id)
-        usuario = session.exec(statement).first()
+        usuario = uow.usuarios.get_by_id(usuario_id)
 
         if not usuario:
             raise HTTPException(
@@ -113,8 +99,7 @@ class AuthService:
     @staticmethod
     def listar_usuarios(uow: SqlModelUnitOfWork) -> list[AdminUserDetailResponse]:
         """Lista todos los usuarios con sus roles (solo para admin)."""
-        session = uow.session
-        usuarios = session.exec(select(Usuario)).all()
+        usuarios = uow.usuarios.list_all()
 
         result = []
         for user in usuarios:
@@ -139,18 +124,16 @@ class AuthService:
         usuario_id: int, activo: bool, uow: SqlModelUnitOfWork
     ) -> AdminActionResponse:
         """Activa o desactiva un usuario."""
-        session = uow.session
-        statement = select(Usuario).where(Usuario.id == usuario_id)
-        usuario = session.exec(statement).first()
+        usuario = uow.usuarios.get_by_id(usuario_id)
 
         if not usuario:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Usuario no encontrado",
             )
-
+        
         usuario.is_active = activo
-        session.add(usuario)
+        uow.usuarios.save(usuario)
 
         roles_nombres = AuthService.obtener_roles_usuario(usuario, uow)
         roles = [RolResponse(id=0, nombre=r) for r in roles_nombres]

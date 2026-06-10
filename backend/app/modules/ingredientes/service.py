@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi import HTTPException
-from sqlmodel import select
 
 from app.db.models import Ingrediente
 from app.db.models.enums import TipoMovimientoIngrediente, UnidadMedida
@@ -41,13 +40,8 @@ class IngredienteService:
 
     @staticmethod
     def crear_ingrediente(data: IngredienteCreate, uow: SqlModelUnitOfWork) -> Ingrediente:
-        session = uow.session
         IngredienteService._validar_reglas_unidad_y_fraccion(data)
-        existing = session.exec(
-            select(Ingrediente).where(
-                (Ingrediente.nombre == data.nombre) & (Ingrediente.deleted_at.is_(None))
-            )
-        ).first()
+        existing = uow.ingredientes.get_active_by_name(data.nombre)
         if existing:
             raise HTTPException(
                 status_code=409,
@@ -60,7 +54,7 @@ class IngredienteService:
             created_at=now,
             updated_at=now,
         )
-        session.add(ingrediente)
+        uow.ingredientes.save(ingrediente)
         uow.flush()
 
         if Decimal(str(ingrediente.stock_actual)) > 0:
@@ -82,23 +76,12 @@ class IngredienteService:
         data: IngredienteUpdate,
         uow: SqlModelUnitOfWork,
     ) -> Ingrediente:
-        session = uow.session
-        ingrediente = session.exec(
-            select(Ingrediente).where(
-                (Ingrediente.id == ingrediente_id) & (Ingrediente.deleted_at.is_(None))
-            )
-        ).first()
+        ingrediente = uow.ingredientes.get_active_by_id(ingrediente_id)
         if not ingrediente:
             raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
 
         if data.nombre is not None and data.nombre != ingrediente.nombre:
-            conflict = session.exec(
-                select(Ingrediente).where(
-                    (Ingrediente.nombre == data.nombre)
-                    & (Ingrediente.deleted_at.is_(None))
-                    & (Ingrediente.id != ingrediente_id)
-                )
-            ).first()
+            conflict = uow.ingredientes.get_active_by_name_excluding_id(data.nombre, ingrediente_id)
             if conflict:
                 raise HTTPException(
                     status_code=409,
@@ -112,7 +95,7 @@ class IngredienteService:
             setattr(ingrediente, field, value)
         ingrediente.updated_at = datetime.now(timezone.utc)
 
-        session.add(ingrediente)
+        uow.ingredientes.save(ingrediente)
         uow.flush()
 
         if "stock_actual" in update_data:
@@ -133,20 +116,13 @@ class IngredienteService:
 
     @staticmethod
     def dar_de_baja(ingrediente_id: int, uow: SqlModelUnitOfWork) -> Ingrediente:
-        session = uow.session
-        ingrediente = session.exec(select(Ingrediente).where(Ingrediente.id == ingrediente_id)).first()
+        ingrediente = uow.ingredientes.get_by_id(ingrediente_id)
         if not ingrediente:
             raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
         if ingrediente.deleted_at is not None:
             raise HTTPException(status_code=400, detail="El ingrediente ya está dado de baja")
 
-        from app.db.models import ProductoDetalle
-        asociaciones = session.exec(
-            select(ProductoDetalle).where(
-                ProductoDetalle.ingrediente_id == ingrediente_id
-            )
-        ).all()
-        if asociaciones:
+        if uow.ingredientes.has_product_associations(ingrediente_id):
             raise HTTPException(
                 status_code=400,
                 detail="No se puede eliminar el ingrediente porque está asociado a productos",
@@ -154,26 +130,19 @@ class IngredienteService:
 
         ingrediente.deleted_at = datetime.now(timezone.utc)
         ingrediente.updated_at = datetime.now(timezone.utc)
-        session.add(ingrediente)
+        uow.ingredientes.save(ingrediente)
         uow.flush()
         return ingrediente
 
     @staticmethod
     def reactivar(ingrediente_id: int, uow: SqlModelUnitOfWork) -> Ingrediente:
-        session = uow.session
-        ingrediente = session.exec(select(Ingrediente).where(Ingrediente.id == ingrediente_id)).first()
+        ingrediente = uow.ingredientes.get_by_id(ingrediente_id)
         if not ingrediente:
             raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
         if ingrediente.deleted_at is None:
             raise HTTPException(status_code=400, detail="El ingrediente no está dado de baja")
 
-        conflict = session.exec(
-            select(Ingrediente).where(
-                (Ingrediente.nombre == ingrediente.nombre)
-                & (Ingrediente.deleted_at.is_(None))
-                & (Ingrediente.id != ingrediente_id)
-            )
-        ).first()
+        conflict = uow.ingredientes.get_active_by_name_excluding_id(ingrediente.nombre, ingrediente_id)
         if conflict:
             raise HTTPException(
                 status_code=409,
@@ -182,6 +151,6 @@ class IngredienteService:
 
         ingrediente.deleted_at = None
         ingrediente.updated_at = datetime.now(timezone.utc)
-        session.add(ingrediente)
+        uow.ingredientes.save(ingrediente)
         uow.flush()
         return ingrediente

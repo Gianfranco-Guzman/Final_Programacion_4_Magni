@@ -48,7 +48,7 @@ class IngredienteStockService:
                 )
             ingrediente.stock_actual = stock_posterior
             ingrediente.updated_at = datetime.now(timezone.utc)
-            uow.session.add(ingrediente)
+            uow.ingredientes.save(ingrediente)
 
         movimiento = MovimientoStockIngrediente(
             ingrediente_id=ingrediente.id,
@@ -60,7 +60,7 @@ class IngredienteStockService:
             observacion=observacion,
             created_at=datetime.now(timezone.utc),
         )
-        uow.session.add(movimiento)
+        uow.movimientos_stock_ingredientes.save(movimiento)
         uow.flush()
         return movimiento
 

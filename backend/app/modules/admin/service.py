@@ -1,10 +1,8 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
-from sqlmodel import select
 
-from app.db.models import Rol
-from app.db.models.usuario import Usuario, UsuarioRol
+from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork
 from app.modules.admin.schemas import (
     AdminUserActionResponse,
@@ -24,8 +22,7 @@ class AdminService:
         size: int = 20,
         rol: str | None = None,
     ) -> AdminUserListResponse:
-        session = uow.session
-        usuarios = session.exec(select(Usuario).order_by(Usuario.created_at.desc())).all()
+        usuarios = uow.usuarios.list_ordered_by_created_desc()
 
         if rol:
             rol = rol.upper()
@@ -57,16 +54,11 @@ class AdminService:
         current_admin: Usuario,
         uow: SqlModelUnitOfWork,
     ) -> AdminUserRead:
-        session = uow.session
         usuario = AdminService._obtener_usuario(usuario_id, uow)
         update_data = data.model_dump(exclude_unset=True)
 
         if "email" in update_data and update_data["email"] != usuario.email:
-            existing_user = session.exec(
-                select(Usuario).where(
-                    (Usuario.email == update_data["email"]) & (Usuario.id != usuario_id)
-                )
-            ).first()
+            existing_user = uow.usuarios.get_by_email_excluding_id(update_data["email"], usuario_id)
             if existing_user:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
@@ -83,7 +75,7 @@ class AdminService:
             setattr(usuario, field, value)
 
         usuario.updated_at = datetime.now(timezone.utc)
-        session.add(usuario)
+        uow.usuarios.save(usuario)
         uow.flush()
         uow.refresh(usuario)
         return AdminService._build_admin_user(usuario, AdminService._obtener_roles(usuario.id, uow))
@@ -100,7 +92,6 @@ class AdminService:
                 detail="No podés darte de baja a vos mismo",
             )
 
-        session = uow.session
         usuario = AdminService._obtener_usuario(usuario_id, uow)
         if usuario.deleted_at is not None:
             raise HTTPException(
@@ -112,7 +103,7 @@ class AdminService:
         usuario.is_active = False
         usuario.deleted_at = now
         usuario.updated_at = now
-        session.add(usuario)
+        uow.usuarios.save(usuario)
         uow.flush()
         uow.refresh(usuario)
 
@@ -123,7 +114,6 @@ class AdminService:
 
     @staticmethod
     def reactivar_usuario(usuario_id: int, uow: SqlModelUnitOfWork) -> AdminUserActionResponse:
-        session = uow.session
         usuario = AdminService._obtener_usuario(usuario_id, uow)
         if usuario.deleted_at is None and usuario.is_active:
             raise HTTPException(
@@ -134,7 +124,7 @@ class AdminService:
         usuario.is_active = True
         usuario.deleted_at = None
         usuario.updated_at = datetime.now(timezone.utc)
-        session.add(usuario)
+        uow.usuarios.save(usuario)
         uow.flush()
         uow.refresh(usuario)
 
@@ -150,7 +140,6 @@ class AdminService:
         current_admin: Usuario,
         uow: SqlModelUnitOfWork,
     ) -> AdminUserActionResponse:
-        session = uow.session
         usuario = AdminService._obtener_usuario(usuario_id, uow)
         requested_roles = list(dict.fromkeys(role.upper() for role in data.roles if role.strip()))
 
@@ -160,7 +149,7 @@ class AdminService:
                 detail="Debés enviar al menos un rol válido",
             )
 
-        available_roles = session.exec(select(Rol).where(Rol.nombre.in_(requested_roles))).all()
+        available_roles = uow.roles.get_by_names(requested_roles)
         available_roles_by_name = {role.nombre: role for role in available_roles}
         missing_roles = [role for role in requested_roles if role not in available_roles_by_name]
         if missing_roles:
@@ -175,18 +164,13 @@ class AdminService:
                 detail="No podés quitarte el rol ADMIN a vos mismo",
             )
 
-        existing_relations = session.exec(
-            select(UsuarioRol).where(UsuarioRol.usuario_id == usuario.id)
-        ).all()
-        for relation in existing_relations:
-            session.delete(relation)
-
-        for role_name in requested_roles:
-            role = available_roles_by_name[role_name]
-            session.add(UsuarioRol(usuario_id=usuario.id, rol_id=role.id))
+        uow.roles.replace_roles_for_user(
+            usuario.id,
+            [available_roles_by_name[role_name].id for role_name in requested_roles],
+        )
 
         usuario.updated_at = datetime.now(timezone.utc)
-        session.add(usuario)
+        uow.usuarios.save(usuario)
         uow.flush()
         uow.refresh(usuario)
 
@@ -197,8 +181,7 @@ class AdminService:
 
     @staticmethod
     def _obtener_usuario(usuario_id: int, uow: SqlModelUnitOfWork) -> Usuario:
-        session = uow.session
-        usuario = session.exec(select(Usuario).where(Usuario.id == usuario_id)).first()
+        usuario = uow.usuarios.get_by_id(usuario_id)
         if not usuario:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -208,12 +191,7 @@ class AdminService:
 
     @staticmethod
     def _obtener_roles(usuario_id: int, uow: SqlModelUnitOfWork) -> list[RolResponse]:
-        session = uow.session
-        rows = session.exec(
-            select(Rol.id, Rol.nombre)
-            .join(UsuarioRol, UsuarioRol.rol_id == Rol.id)
-            .where(UsuarioRol.usuario_id == usuario_id)
-        ).all()
+        rows = uow.roles.get_rows_for_user(usuario_id)
         return [RolResponse(id=role_id, nombre=role_name) for role_id, role_name in rows]
 
     @staticmethod

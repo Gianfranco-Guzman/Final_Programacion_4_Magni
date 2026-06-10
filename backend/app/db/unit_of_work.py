@@ -1,5 +1,16 @@
 from sqlmodel import Session
 
+from app.core.repositories import (
+    CategoriaRepository,
+    DireccionRepository,
+    FormaPagoRepository,
+    IngredienteRepository,
+    MovimientoStockIngredienteRepository,
+    PedidoRepository,
+    ProductoRepository,
+    RolRepository,
+    UsuarioRepository,
+)
 from app.db.base import engine
 
 
@@ -7,6 +18,15 @@ class SqlModelUnitOfWork:
 
     def __init__(self, session: Session):
         self.session = session
+        self.formas_pago = FormaPagoRepository(session)
+        self.direcciones = DireccionRepository(session)
+        self.categorias = CategoriaRepository(session)
+        self.usuarios = UsuarioRepository(session)
+        self.roles = RolRepository(session)
+        self.ingredientes = IngredienteRepository(session)
+        self.movimientos_stock_ingredientes = MovimientoStockIngredienteRepository(session)
+        self.productos = ProductoRepository(session)
+        self.pedidos = PedidoRepository(session)
         self._after_commit_callbacks: list[callable] = []
 
     def commit(self) -> None:

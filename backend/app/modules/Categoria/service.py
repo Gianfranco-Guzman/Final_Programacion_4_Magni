@@ -1,9 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
-from sqlmodel import select
-
-from app.db.models import Categoria, Producto, ProductoCategoria
+from app.db.models import Categoria
 from app.db.unit_of_work import SqlModelUnitOfWork
 from app.modules.Categoria.schemas import CategoriaCreate, CategoriaUpdate
 
@@ -11,9 +9,7 @@ from app.modules.Categoria.schemas import CategoriaCreate, CategoriaUpdate
 class CategoriaService:
     @staticmethod
     def _get_categoria(categoria_id: int, uow: SqlModelUnitOfWork) -> Categoria:
-        categoria = uow.session.exec(
-            select(Categoria).where(Categoria.id == categoria_id)
-        ).first()
+        categoria = uow.categorias.get_by_id(categoria_id)
 
         if not categoria:
             raise HTTPException(status_code=404, detail="Categoría no encontrada")
@@ -26,14 +22,10 @@ class CategoriaService:
         uow: SqlModelUnitOfWork,
         categoria_id: int | None = None,
     ) -> None:
-        statement = select(Categoria).where(
-            (Categoria.nombre == nombre) & (Categoria.deleted_at.is_(None))
-        )
-
-        if categoria_id is not None:
-            statement = statement.where(Categoria.id != categoria_id)
-
-        existing = uow.session.exec(statement).first()
+        if categoria_id is None:
+            existing = uow.categorias.get_active_by_name(nombre)
+        else:
+            existing = uow.categorias.get_active_by_name_excluding_id(nombre, categoria_id)
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -55,11 +47,7 @@ class CategoriaService:
                 detail="Una categoría no puede ser padre de sí misma",
             )
 
-        parent = uow.session.exec(
-            select(Categoria).where(
-                (Categoria.id == parent_id) & (Categoria.deleted_at.is_(None))
-            )
-        ).first()
+        parent = uow.categorias.get_active_parent(parent_id)
 
         if not parent:
             raise HTTPException(
@@ -70,21 +58,11 @@ class CategoriaService:
         if categoria_id is None:
             return
 
-        current_parent_id = parent.parent_id
-        visited: set[int] = set()
-        while current_parent_id is not None:
-            if current_parent_id == categoria_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="La categoría padre generaría un ciclo jerárquico",
-                )
-            if current_parent_id in visited:
-                break
-            visited.add(current_parent_id)
-            current_parent = uow.session.exec(
-                select(Categoria).where(Categoria.id == current_parent_id)
-            ).first()
-            current_parent_id = current_parent.parent_id if current_parent else None
+        if uow.categorias.parent_creates_cycle(categoria_id, parent_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La categoría padre generaría un ciclo jerárquico",
+            )
 
     @staticmethod
     def crear_categoria(data: CategoriaCreate, uow: SqlModelUnitOfWork) -> Categoria:
@@ -97,7 +75,7 @@ class CategoriaService:
             created_at=now,
             updated_at=now,
         )
-        uow.session.add(categoria)
+        uow.categorias.add(categoria)
         uow.flush()
         uow.refresh(categoria)
         return categoria
@@ -127,7 +105,7 @@ class CategoriaService:
             setattr(categoria, field, value)
         categoria.updated_at = datetime.now(timezone.utc)
 
-        uow.session.add(categoria)
+        uow.categorias.add(categoria)
         uow.flush()
         uow.refresh(categoria)
         return categoria
@@ -141,26 +119,13 @@ class CategoriaService:
                 detail="La categoría ya está dada de baja",
             )
 
-        producto_activo = uow.session.exec(
-            select(Producto)
-            .join(ProductoCategoria, ProductoCategoria.producto_id == Producto.id)
-            .where(
-                (ProductoCategoria.categoria_id == categoria_id)
-                & (Producto.deleted_at.is_(None))
-            )
-        ).first()
-        if producto_activo:
+        if uow.categorias.has_active_products(categoria_id):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="No se puede dar de baja la categoría porque tiene productos activos",
             )
 
-        subcategoria_activa = uow.session.exec(
-            select(Categoria).where(
-                (Categoria.parent_id == categoria_id) & (Categoria.deleted_at.is_(None))
-            )
-        ).first()
-        if subcategoria_activa:
+        if uow.categorias.has_active_children(categoria_id):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="No se puede dar de baja la categoría porque tiene subcategorías activas",
@@ -169,7 +134,7 @@ class CategoriaService:
         now = datetime.now(timezone.utc)
         categoria.deleted_at = now
         categoria.updated_at = now
-        uow.session.add(categoria)
+        uow.categorias.add(categoria)
         uow.flush()
         uow.refresh(categoria)
         return categoria
@@ -184,9 +149,7 @@ class CategoriaService:
             )
 
         if categoria.parent_id is not None:
-            parent = uow.session.exec(
-                select(Categoria).where(Categoria.id == categoria.parent_id)
-            ).first()
+            parent = uow.categorias.get_by_id(categoria.parent_id)
             if not parent or parent.deleted_at is not None:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
@@ -197,7 +160,7 @@ class CategoriaService:
 
         categoria.deleted_at = None
         categoria.updated_at = datetime.now(timezone.utc)
-        uow.session.add(categoria)
+        uow.categorias.add(categoria)
         uow.flush()
         uow.refresh(categoria)
         return categoria

@@ -1,9 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import selectinload
-from sqlmodel import Session, func, select
 
 from app.core.dependencies import require_role
-from app.db.base import get_session
 from app.db.models import Categoria
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
@@ -28,24 +25,12 @@ def listar_categorias(
     size: int = Query(50, ge=1, le=100),
     parent_id: int | None = Query(None),
     incluir_baja: bool = Query(False),
-    session: Session = Depends(get_session),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> CategoriaListResponse:
-    query = select(Categoria).options(selectinload(Categoria.subcategorias))
-    count_query = select(func.count()).select_from(Categoria)
-
-    if not incluir_baja:
-        query = query.where(Categoria.deleted_at.is_(None))
-        count_query = count_query.where(Categoria.deleted_at.is_(None))
-
-    if parent_id is not None:
-        query = query.where(Categoria.parent_id == parent_id)
-        count_query = count_query.where(Categoria.parent_id == parent_id)
-
-    total = session.exec(count_query).one()
+    total = uow.categorias.count_filtered(parent_id=parent_id, incluir_baja=incluir_baja)
     pages = (total + size - 1) // size
-    categorias = session.exec(
-        query.order_by(Categoria.nombre).offset((page - 1) * size).limit(size)
-    ).all()
+    categorias = uow.categorias.list_filtered(parent_id=parent_id, incluir_baja=incluir_baja)
+    categorias = categorias[(page - 1) * size : page * size]
 
     return CategoriaListResponse(
         items=[CategoriaRead.model_validate(c) for c in categorias],
@@ -61,13 +46,8 @@ def listar_categorias(
     response_model=list[CategoriaRead],
     summary="Listar árbol de categorías activas",
 )
-def listar_arbol_categorias(session: Session = Depends(get_session)) -> list[CategoriaRead]:
-    categorias = session.exec(
-        select(Categoria)
-        .options(selectinload(Categoria.subcategorias))
-        .where((Categoria.parent_id.is_(None)) & (Categoria.deleted_at.is_(None)))
-        .order_by(Categoria.nombre)
-    ).all()
+def listar_arbol_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)) -> list[CategoriaRead]:
+    categorias = uow.categorias.list_root_active_ordered()
     return [CategoriaRead.model_validate(c) for c in categorias]
 
 
@@ -76,12 +56,8 @@ def listar_arbol_categorias(session: Session = Depends(get_session)) -> list[Cat
     response_model=CategoriaRead,
     summary="Obtener categoría por ID",
 )
-def obtener_categoria(categoria_id: int, session: Session = Depends(get_session)):
-    categoria = session.exec(
-        select(Categoria)
-        .options(selectinload(Categoria.subcategorias))
-        .where(Categoria.id == categoria_id)
-    ).first()
+def obtener_categoria(categoria_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
+    categoria = uow.categorias.get_by_id(categoria_id)
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
     return CategoriaRead.model_validate(categoria)

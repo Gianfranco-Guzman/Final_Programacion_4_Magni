@@ -2,13 +2,10 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, WebSocket, WebSocketException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlmodel import Session, select
 
 from app.core.config import get_settings
 from app.core.security import decode_access_token
-from app.db.base import get_session
-from app.db.models.rol import Rol
-from app.db.models.usuario import Usuario, UsuarioRol
+from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 
 
@@ -49,7 +46,7 @@ def _credentials_exception() -> HTTPException:
     )
 
 
-def _resolve_user_from_token(session: Session, token: str) -> Usuario:      #para saber el usuario a partir del ttoken
+def _resolve_user_from_token(uow: SqlModelUnitOfWork, token: str) -> Usuario:      #para saber el usuario a partir del ttoken
     credentials_exception = _credentials_exception()
 
     payload = decode_access_token(token)
@@ -65,7 +62,7 @@ def _resolve_user_from_token(session: Session, token: str) -> Usuario:      #par
     except (TypeError, ValueError):
         raise credentials_exception
 
-    user = session.exec(select(Usuario).where(Usuario.id == user_id_int)).first()
+    user = uow.usuarios.get_by_id(user_id_int)
 
     if user is None:
         raise credentials_exception
@@ -81,37 +78,30 @@ def _resolve_user_from_token(session: Session, token: str) -> Usuario:      #par
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
-    session: Annotated[Session, Depends(get_session)],
+    uow: Annotated[SqlModelUnitOfWork, Depends(get_uow)],
 ) -> Usuario:
-    return _resolve_user_from_token(session, token)
+    return _resolve_user_from_token(uow, token)
 
 
-def get_user_role_names(session: Session, user_id: int) -> list[str]:
-    statement = (
-        select(Rol.nombre)
-        .join(UsuarioRol, UsuarioRol.rol_id == Rol.id)
-        .where(UsuarioRol.usuario_id == user_id)
-    )
-    return list(session.exec(statement).all())
+def get_user_role_names(uow: SqlModelUnitOfWork, user_id: int) -> list[str]:
+    return uow.roles.get_names_for_user(user_id)
 
 
 async def get_optional_current_user(
     token: Annotated[str | None, Depends(optional_oauth2_scheme)],
-    session: Annotated[Session, Depends(get_session)],
+    uow: Annotated[SqlModelUnitOfWork, Depends(get_uow)],
 ) -> Usuario | None:
     if token is None:
         return None
 
-    return _resolve_user_from_token(session, token)
+    return _resolve_user_from_token(uow, token)
 
 
-def user_has_any_role(user: Usuario | None, roles: list[str], session: Session) -> bool:
+def user_has_any_role(user: Usuario | None, roles: list[str], uow: SqlModelUnitOfWork) -> bool:
     if user is None:
         return False
 
-    user_roles = get_user_role_names(session, user.id)
-
-    return any(role in roles for role in user_roles)
+    return uow.roles.user_has_any_role(user.id, roles)
 
 
 async def get_current_websocket_user(
@@ -124,7 +114,7 @@ async def get_current_websocket_user(
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION, reason="No autenticado")
 
     try:
-        return _resolve_user_from_token(uow.session, token)
+        return _resolve_user_from_token(uow, token)
     except HTTPException as exc:
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION, reason=exc.detail)
 
@@ -147,8 +137,7 @@ def require_role(*allowed_roles: str | list[str] | tuple[str, ...]):
         if not normalized_roles:
             return current_user
 
-        session = uow.session
-        user_roles = get_user_role_names(session, current_user.id)
+        user_roles = get_user_role_names(uow, current_user.id)
 
         if not any(role in normalized_roles for role in user_roles):
             raise HTTPException(

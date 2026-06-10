@@ -1,9 +1,6 @@
-from fastapi import APIRouter, Depends, status
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.dependencies import require_role
-from app.db.base import get_session
-from app.db.models.forma_pago import FormaPago
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.formas_pago.schemas import FormaPagoCreate, FormaPagoRead, FormaPagoUpdate
@@ -17,10 +14,8 @@ router = APIRouter(tags=["formas_pago"])
     response_model=list[FormaPagoRead],
     summary="Listar formas de pago activas",
 )
-def listar_formas_pago(session: Session = Depends(get_session)):
-    formas = session.exec(
-        select(FormaPago).where(FormaPago.activo == True).order_by(FormaPago.nombre)
-    ).all()
+def listar_formas_pago(uow: SqlModelUnitOfWork = Depends(get_uow)):
+    formas = uow.formas_pago.list_active_ordered()
     return [FormaPagoRead.model_validate(f) for f in formas]
 
 
@@ -29,10 +24,9 @@ def listar_formas_pago(session: Session = Depends(get_session)):
     response_model=FormaPagoRead,
     summary="Obtener forma de pago por ID",
 )
-def obtener_forma_pago(forma_pago_id: int, session: Session = Depends(get_session)):
-    forma_pago = session.get(FormaPago, forma_pago_id)
+def obtener_forma_pago(forma_pago_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
+    forma_pago = uow.formas_pago.get_by_id(forma_pago_id)
     if not forma_pago:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Forma de pago no encontrada")
     return FormaPagoRead.model_validate(forma_pago)
 

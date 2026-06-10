@@ -5,6 +5,10 @@ from app.db.models import Ingrediente, ProductoDetalle
 
 
 class IngredienteRepository(BaseRepository):
+    def list_all(self) -> list[Ingrediente]:
+        statement = select(Ingrediente)
+        return list(self.session.exec(statement).all())
+
     def get_by_id(self, ingrediente_id: int) -> Ingrediente | None:
         statement = select(Ingrediente).where(Ingrediente.id == ingrediente_id)
         return self.session.exec(statement).first()

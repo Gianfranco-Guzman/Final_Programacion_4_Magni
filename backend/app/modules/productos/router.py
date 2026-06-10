@@ -2,16 +2,13 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import selectinload
-from sqlmodel import Session, func, select
 
 from app.core.dependencies import (
     get_optional_current_user,
     require_role,
     user_has_any_role,
 )
-from app.db.base import get_session
-from app.db.models import Categoria, Producto, ProductoCategoria, ProductoDetalle
+from app.db.models import Producto
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.productos.schemas import (
@@ -100,55 +97,30 @@ def listar_productos(
     search: Optional[str] = Query(None),
     disponible: Optional[bool] = Query(None),
     incluir_baja: bool = Query(False, description="Incluir productos dados de baja"),
-    session: Session = Depends(get_session),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
     current_user: Usuario | None = Depends(get_optional_current_user),
 ):
-    query = select(Producto).options(
-        selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-        selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
-    )
-    count_query = select(func.count()).select_from(Producto)
-
-    if incluir_baja and not user_has_any_role(current_user, ["ADMIN", "STOCK"], session):
+    if incluir_baja and not user_has_any_role(current_user, ["ADMIN", "STOCK"], uow):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo usuarios ADMIN o STOCK pueden incluir productos dados de baja",
         )
 
-    if not incluir_baja:
-        query = query.where(Producto.deleted_at.is_(None))
-        count_query = count_query.where(Producto.deleted_at.is_(None))
-
-    if categoria_id is not None:
-        query = query.join(
-            ProductoCategoria,
-            ProductoCategoria.producto_id == Producto.id,
-        ).where(ProductoCategoria.categoria_id == categoria_id)
-        count_query = count_query.join(
-            ProductoCategoria,
-            ProductoCategoria.producto_id == Producto.id,
-        ).where(ProductoCategoria.categoria_id == categoria_id)
-
-    if search:
-        term = f"%{search.lower()}%"
-        query = query.where(
-            (Producto.nombre.ilike(term)) | (Producto.codigo.ilike(term))
-        )
-        count_query = count_query.where(
-            (Producto.nombre.ilike(term)) | (Producto.codigo.ilike(term))
-        )
-
-    if disponible is True:
-        query = query.where(Producto.disponible.is_(True))
-        count_query = count_query.where(Producto.disponible.is_(True))
-    elif disponible is False:
-        query = query.where(Producto.disponible.is_(False))
-        count_query = count_query.where(Producto.disponible.is_(False))
-
-    total = session.exec(count_query).one()
+    total = uow.productos.count_for_catalog(
+        categoria_id=categoria_id,
+        search=search,
+        disponible=disponible,
+        incluir_baja=incluir_baja,
+    )
     pages = (total + size - 1) // size
-    query = query.offset((page - 1) * size).limit(size)
-    productos = session.exec(query).unique().all()
+    productos = uow.productos.list_for_catalog(
+        categoria_id=categoria_id,
+        search=search,
+        disponible=disponible,
+        incluir_baja=incluir_baja,
+        page=page,
+        size=size,
+    )
 
     return PaginatedResponse(
         items=[_build_producto_read(p) for p in productos],
@@ -165,26 +137,9 @@ def listar_productos(
 )
 def exportar_productos(
     search: Optional[str] = Query(default=None),
-    session: Session = Depends(get_session),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
 ):
-    query = (
-        select(Producto)
-        .options(
-            selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-            selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
-        )
-        .order_by(Producto.created_at.desc())
-    )
-    query = query.where(Producto.deleted_at.is_(None))
-
-    if search:
-        term = f"%{search.lower()}%"
-        query = query.where(
-            (Producto.nombre.ilike(term)) | (Producto.codigo.ilike(term))
-        )
-
-    query = query.limit(1000)
-    productos = session.exec(query).unique().all()
+    productos = uow.productos.list_for_export(search=search, limit=1000)
     excel_file = ProductoService.exportar_a_excel(productos)
 
     return StreamingResponse(
@@ -200,8 +155,7 @@ def exportar_productos(
     summary="Listar todas las categorías",
 )
 def listar_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)):
-    session = uow.session
-    categorias = session.exec(select(Categoria)).all()
+    categorias = uow.categorias.list_all_ordered()
     return [CategoriaRead.model_validate(c) for c in categorias]
 
 
@@ -211,15 +165,7 @@ def listar_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)):
     summary="Obtener producto por ID",
 )
 def obtener_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
-    session = uow.session
-    producto = session.exec(
-        select(Producto)
-        .options(
-            selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-            selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
-        )
-        .where((Producto.id == producto_id) & (Producto.deleted_at.is_(None)))
-    ).first()
+    producto = uow.productos.get_active_by_id_with_relations(producto_id)
 
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")

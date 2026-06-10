@@ -23,3 +23,7 @@ class FormaPagoRepository(BaseRepository):
             (FormaPago.nombre == nombre) & (FormaPago.id != forma_pago_id)
         )
         return self.session.exec(statement).first()
+
+    def list_active_ordered(self) -> list[FormaPago]:
+        statement = select(FormaPago).where(FormaPago.activo == True).order_by(FormaPago.nombre)
+        return list(self.session.exec(statement).all())

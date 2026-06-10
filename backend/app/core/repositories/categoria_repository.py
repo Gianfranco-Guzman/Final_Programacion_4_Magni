@@ -9,6 +9,28 @@ class CategoriaRepository(BaseRepository):
         statement = select(Categoria).where(Categoria.id == categoria_id)
         return self.session.exec(statement).first()
 
+    def list_all_ordered(self) -> list[Categoria]:
+        statement = select(Categoria).order_by(Categoria.nombre)
+        return list(self.session.exec(statement).all())
+
+    def list_root_active_ordered(self) -> list[Categoria]:
+        statement = select(Categoria).where(
+            (Categoria.parent_id.is_(None)) & (Categoria.deleted_at.is_(None))
+        ).order_by(Categoria.nombre)
+        return list(self.session.exec(statement).all())
+
+    def list_filtered(self, *, parent_id: int | None = None, incluir_baja: bool = False) -> list[Categoria]:
+        statement = select(Categoria)
+        if not incluir_baja:
+            statement = statement.where(Categoria.deleted_at.is_(None))
+        if parent_id is not None:
+            statement = statement.where(Categoria.parent_id == parent_id)
+        statement = statement.order_by(Categoria.nombre)
+        return list(self.session.exec(statement).all())
+
+    def count_filtered(self, *, parent_id: int | None = None, incluir_baja: bool = False) -> int:
+        return len(self.list_filtered(parent_id=parent_id, incluir_baja=incluir_baja))
+
     def list_by_ids(self, categoria_ids: list[int]) -> list[Categoria]:
         if not categoria_ids:
             return []

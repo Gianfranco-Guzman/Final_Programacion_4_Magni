@@ -1,9 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
 
 from app.core.dependencies import require_role
-from app.db.base import get_session
-from app.db.models import Ingrediente
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.ingredientes.schemas import (
@@ -21,8 +18,8 @@ router = APIRouter(tags=["ingredientes"])
     response_model=list[IngredienteRead],
     summary="Listar todos los ingredientes",
 )
-def listar_ingredientes(session: Session = Depends(get_session)):
-    ingredientes = session.exec(select(Ingrediente)).all()
+def listar_ingredientes(uow: SqlModelUnitOfWork = Depends(get_uow)):
+    ingredientes = uow.ingredientes.list_all()
     return [IngredienteRead.model_validate(i) for i in ingredientes]
 
 
@@ -31,12 +28,8 @@ def listar_ingredientes(session: Session = Depends(get_session)):
     response_model=IngredienteRead,
     summary="Obtener ingrediente por ID",
 )
-def obtener_ingrediente(ingrediente_id: int, session: Session = Depends(get_session)):
-    ingrediente = session.exec(
-        select(Ingrediente).where(
-            (Ingrediente.id == ingrediente_id) & (Ingrediente.deleted_at.is_(None))
-        )
-    ).first()
+def obtener_ingrediente(ingrediente_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
+    ingrediente = uow.ingredientes.get_active_by_id(ingrediente_id)
     if not ingrediente:
         raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
     return IngredienteRead.model_validate(ingrediente)

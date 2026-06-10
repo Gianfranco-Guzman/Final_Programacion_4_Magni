@@ -6,6 +6,12 @@ from app.db.models import Producto, ProductoCategoria, ProductoDetalle
 
 
 class ProductoRepository(BaseRepository):
+    def _base_with_relations(self):
+        return select(Producto).options(
+            selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
+            selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
+        )
+
     def get_by_id(self, producto_id: int) -> Producto | None:
         statement = select(Producto).where(Producto.id == producto_id)
         return self.session.exec(statement).first()
@@ -54,14 +60,76 @@ class ProductoRepository(BaseRepository):
         )
         return list(self.session.exec(statement).all())
 
-    def get_by_id_with_relations(self, producto_id: int) -> Producto | None:
-        statement = (
-            select(Producto)
-            .options(
-                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-                selectinload(Producto.ingredientes).selectinload(ProductoDetalle.ingrediente),
+    def list_for_catalog(
+        self,
+        *,
+        categoria_id: int | None = None,
+        search: str | None = None,
+        disponible: bool | None = None,
+        incluir_baja: bool = False,
+        page: int = 1,
+        size: int = 20,
+    ) -> list[Producto]:
+        statement = self._base_with_relations()
+
+        if not incluir_baja:
+            statement = statement.where(Producto.deleted_at.is_(None))
+
+        if categoria_id is not None:
+            statement = statement.join(
+                ProductoCategoria,
+                ProductoCategoria.producto_id == Producto.id,
+            ).where(ProductoCategoria.categoria_id == categoria_id)
+
+        if search:
+            term = f"%{search.lower()}%"
+            statement = statement.where(
+                (Producto.nombre.ilike(term)) | (Producto.codigo.ilike(term))
             )
-            .where(Producto.id == producto_id)
+
+        if disponible is True:
+            statement = statement.where(Producto.disponible.is_(True))
+        elif disponible is False:
+            statement = statement.where(Producto.disponible.is_(False))
+
+        statement = statement.offset((page - 1) * size).limit(size)
+        return list(self.session.exec(statement).unique().all())
+
+    def count_for_catalog(
+        self,
+        *,
+        categoria_id: int | None = None,
+        search: str | None = None,
+        disponible: bool | None = None,
+        incluir_baja: bool = False,
+    ) -> int:
+        return len(
+            self.list_for_catalog(
+                categoria_id=categoria_id,
+                search=search,
+                disponible=disponible,
+                incluir_baja=incluir_baja,
+                page=1,
+                size=100000,
+            )
+        )
+
+    def list_for_export(self, *, search: str | None = None, limit: int = 1000) -> list[Producto]:
+        statement = self._base_with_relations().where(Producto.deleted_at.is_(None)).order_by(Producto.created_at.desc()).limit(limit)
+        if search:
+            term = f"%{search.lower()}%"
+            statement = statement.where(
+                (Producto.nombre.ilike(term)) | (Producto.codigo.ilike(term))
+            )
+        return list(self.session.exec(statement).unique().all())
+
+    def get_by_id_with_relations(self, producto_id: int) -> Producto | None:
+        statement = self._base_with_relations().where(Producto.id == producto_id)
+        return self.session.exec(statement).first()
+
+    def get_active_by_id_with_relations(self, producto_id: int) -> Producto | None:
+        statement = self._base_with_relations().where(
+            (Producto.id == producto_id) & (Producto.deleted_at.is_(None))
         )
         return self.session.exec(statement).first()
 
@@ -76,6 +144,9 @@ class ProductoRepository(BaseRepository):
         for relation in existing_relations:
             self.delete(relation)
 
+        if existing_relations:
+            self.session.flush()
+
         for categoria_data in categorias_data:
             self.add(ProductoCategoria(producto_id=producto_id, **categoria_data))
 
@@ -85,6 +156,9 @@ class ProductoRepository(BaseRepository):
         ).all()
         for relation in existing_relations:
             self.delete(relation)
+
+        if existing_relations:
+            self.session.flush()
 
         for ingrediente_data in ingredientes_data:
             self.add(ProductoDetalle(producto_id=producto_id, **ingrediente_data))

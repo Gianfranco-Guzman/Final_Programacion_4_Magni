@@ -101,8 +101,7 @@ async def pedidos_websocket(
     current_user: Usuario = Depends(get_current_websocket_user),
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ):
-    session = uow.session
-    user_roles = get_user_role_names(session, current_user.id)
+    user_roles = get_user_role_names(uow, current_user.id)
     await manager.connect(websocket, user_roles)
 
     try:
@@ -115,7 +114,7 @@ async def pedidos_websocket(
                 await manager.send_json(websocket, "ERROR", {"detail": "order_id inválido"})
                 continue
 
-            pedido = session.get(Pedido, order_id)
+            pedido = uow.pedidos.get_by_id(order_id)
             if pedido is None:
                 await manager.send_json(websocket, "ERROR", {"detail": "Pedido no encontrado"})
                 continue

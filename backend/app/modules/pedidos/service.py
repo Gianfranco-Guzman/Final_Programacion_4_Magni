@@ -206,17 +206,23 @@ class PedidoService:
 
         now = datetime.now(timezone.utc)
         items_consolidados = PedidoService._consolidar_items(data.items)
-        detalles_data, consumo_por_ingrediente, total = PedidoService._preparar_detalles_y_consumo(
+        detalles_data, consumo_por_ingrediente, subtotal = PedidoService._preparar_detalles_y_consumo(
             items_consolidados,
             uow,
         )
         PedidoService._validar_stock_para_consumo(consumo_por_ingrediente, uow)
+        descuento = Decimal("0.00")
+        costo_envio = Decimal("0.00")
+        total = (subtotal - descuento + costo_envio).quantize(Decimal("0.01"))
 
         pedido = Pedido(
             usuario_id=current_user.id,
             direccion_entrega_id=data.direccion_entrega_id,
             forma_pago_id=data.forma_pago_id,
             estado_actual="PENDIENTE",
+            subtotal=subtotal,
+            descuento=descuento,
+            costo_envio=costo_envio,
             total=total,
             notas=data.notas,
             created_at=now,

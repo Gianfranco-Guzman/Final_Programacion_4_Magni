@@ -8,6 +8,7 @@ class FormaPago(SQLModel, table=True):
     __tablename__ = "forma_pago"
 
     id: Optional[int] = Field(default=None, primary_key=True)
+    codigo: Optional[str] = Field(default=None, index=True, unique=True, max_length=20)
     nombre: str = Field(index=True, unique=True, max_length=50)
     descripcion: Optional[str] = Field(default=None, max_length=255)
     activo: bool = Field(default=True)

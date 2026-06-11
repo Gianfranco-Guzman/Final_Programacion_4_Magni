@@ -2,7 +2,8 @@ from datetime import datetime, timezone
 from typing import Optional
 from decimal import Decimal
 
-from sqlalchemy import Column, Enum as SAEnum, Numeric
+from sqlalchemy import Column, Enum as SAEnum, Numeric, Text
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlmodel import SQLModel, Field, Relationship
 
 from app.db.models.enums import TipoProducto
@@ -45,6 +46,16 @@ class Producto(SQLModel, table=True):
             server_default=TipoProducto.FABRICADO.value,
         ),
         description="Tipo operativo del producto"
+    )
+    imagenes_url: Optional[list[str]] = Field(
+        default=None,
+        sa_column=Column(ARRAY(Text()), nullable=True),
+        description="Lista de URLs de imagenes del producto"
+    )
+    unidad_venta_id: Optional[int] = Field(
+        default=None,
+        foreign_key="unidad_medida.id",
+        description="Unidad de venta del producto"
     )
     categoria_id: int = Field(
         foreign_key="categoria.id",

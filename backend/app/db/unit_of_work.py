@@ -8,6 +8,7 @@ from app.core.repositories import (
     MovimientoStockIngredienteRepository,
     PedidoRepository,
     ProductoRepository,
+    RefreshTokenRepository,
     RolRepository,
     UsuarioRepository,
 )
@@ -27,6 +28,7 @@ class SqlModelUnitOfWork:
         self.movimientos_stock_ingredientes = MovimientoStockIngredienteRepository(session)
         self.productos = ProductoRepository(session)
         self.pedidos = PedidoRepository(session)
+        self.refresh_tokens = RefreshTokenRepository(session)
         self._after_commit_callbacks: list[callable] = []
 
     def commit(self) -> None:

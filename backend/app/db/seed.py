@@ -13,10 +13,12 @@ from app.db.models import (
     HistorialEstadoPedido,
     Ingrediente,
     Pedido,
+    Pago,
     Producto,
     ProductoCategoria,
     ProductoDetalle,
     Rol,
+    UnidadMedidaCatalogo,
     Usuario,
     UsuarioRol,
 )
@@ -33,7 +35,7 @@ ROLES_SEED = [
 USUARIOS_SEED = [
     {
         "email": "admin@foodstore.com",
-        "password": "admin123",
+        "password": "Admin1234!",
         "nombre": "Admin",
         "apellido": "FoodStore",
         "celular": "3510000001",
@@ -66,18 +68,26 @@ USUARIOS_SEED = [
 ]
 
 FORMAS_PAGO_SEED = [
-    {"nombre": "EFECTIVO", "descripcion": "Pago en efectivo al recibir el pedido", "activo": True},
-    {"nombre": "TARJETA", "descripcion": "Pago con tarjeta de débito o crédito", "activo": True},
-    {"nombre": "TRANSFERENCIA", "descripcion": "Transferencia bancaria o billetera virtual", "activo": True},
+    {"codigo": "MERCADOPAGO", "nombre": "MERCADOPAGO", "descripcion": "Pago mediante MercadoPago", "activo": True},
+    {"codigo": "EFECTIVO", "nombre": "EFECTIVO", "descripcion": "Pago en efectivo al recibir el pedido", "activo": True},
+    {"codigo": "TRANSFERENCIA", "nombre": "TRANSFERENCIA", "descripcion": "Transferencia bancaria o billetera virtual", "activo": True},
 ]
 
 ESTADOS_PEDIDO_SEED = [
-    {"nombre": "PENDIENTE", "descripcion": "Pedido recibido, pendiente de confirmación", "orden": 1},
-    {"nombre": "CONFIRMADO", "descripcion": "Pedido confirmado y esperando preparación", "orden": 2},
-    {"nombre": "EN_PREP", "descripcion": "Pedido en preparación", "orden": 3},
-    {"nombre": "EN_CAMINO", "descripcion": "Pedido en camino al cliente", "orden": 4},
-    {"nombre": "ENTREGADO", "descripcion": "Pedido entregado al cliente", "orden": 5},
-    {"nombre": "CANCELADO", "descripcion": "Pedido cancelado", "orden": 6},
+    {"codigo": "PENDIENTE", "nombre": "PENDIENTE", "descripcion": "Pedido recibido, pendiente de confirmación", "orden": 1, "es_terminal": False},
+    {"codigo": "CONFIRMADO", "nombre": "CONFIRMADO", "descripcion": "Pedido confirmado y esperando preparación", "orden": 2, "es_terminal": False},
+    {"codigo": "EN_PREP", "nombre": "EN_PREP", "descripcion": "Pedido en preparación", "orden": 3, "es_terminal": False},
+    {"codigo": "ENTREGADO", "nombre": "ENTREGADO", "descripcion": "Pedido entregado al cliente", "orden": 4, "es_terminal": True},
+    {"codigo": "CANCELADO", "nombre": "CANCELADO", "descripcion": "Pedido cancelado", "orden": 5, "es_terminal": True},
+]
+
+UNIDADES_MEDIDA_SEED = [
+    {"nombre": "kilogramo", "simbolo": "kg", "tipo": "peso"},
+    {"nombre": "gramo", "simbolo": "g", "tipo": "peso"},
+    {"nombre": "litro", "simbolo": "L", "tipo": "volumen"},
+    {"nombre": "mililitro", "simbolo": "ml", "tipo": "volumen"},
+    {"nombre": "unidad", "simbolo": "ud", "tipo": "contable"},
+    {"nombre": "porciones", "simbolo": "por", "tipo": "contable"},
 ]
 
 INGREDIENTES_SEED = [
@@ -117,6 +127,7 @@ def populate_seed_data() -> None:
         roles = _seed_roles(session)
         usuarios = _seed_usuarios(session, roles)
         direcciones = _seed_direcciones(session, usuarios)
+        _seed_unidades_medida(session)
         categorias = _seed_categorias(session)
         ingredientes = _seed_ingredientes(session)
         productos = _seed_productos(session, categorias)
@@ -588,6 +599,7 @@ def _seed_formas_pago(session: Session) -> dict[str, FormaPago]:
             session.add(forma_pago)
             session.flush()
         else:
+            forma_pago.codigo = forma_data["codigo"]
             forma_pago.descripcion = forma_data["descripcion"]
             forma_pago.activo = forma_data["activo"]
             forma_pago.updated_at = datetime.now(timezone.utc)
@@ -607,11 +619,28 @@ def _seed_estados_pedido(session: Session) -> None:
             session.add(estado)
             session.flush()
         else:
+            estado.codigo = estado_data["codigo"]
             estado.descripcion = estado_data["descripcion"]
             estado.orden = estado_data["orden"]
+            estado.es_terminal = estado_data["es_terminal"]
             estado.updated_at = datetime.now(timezone.utc)
             session.add(estado)
             session.flush()
+
+
+def _seed_unidades_medida(session: Session) -> None:
+    for data in UNIDADES_MEDIDA_SEED:
+        unidad = session.exec(
+            select(UnidadMedidaCatalogo).where(UnidadMedidaCatalogo.simbolo == data["simbolo"])
+        ).first()
+        if not unidad:
+            unidad = UnidadMedidaCatalogo(**data)
+        else:
+            unidad.nombre = data["nombre"]
+            unidad.tipo = data["tipo"]
+            unidad.updated_at = datetime.now(timezone.utc)
+        session.add(unidad)
+        session.flush()
 
 
 def _seed_pedidos_demo(
@@ -631,15 +660,14 @@ def _seed_pedidos_demo(
         {
             "nota": "SEED-DEMO-ORDER-1",
             "estado_actual": "ENTREGADO",
-            "forma_pago": "TARJETA",
+            "forma_pago": "MERCADOPAGO",
             "direccion": casa,
             "lineas": [("PIZZA-002", 1), ("BEB-001", 1), ("POST-001", 1)],
             "historial": [
                 (None, "PENDIENTE", cliente, "Pedido creado desde seed demo"),
                 ("PENDIENTE", "CONFIRMADO", admin, "Confirmado por administración"),
                 ("CONFIRMADO", "EN_PREP", operador, "Preparación iniciada"),
-                ("EN_PREP", "EN_CAMINO", operador, "Sale con repartidor"),
-                ("EN_CAMINO", "ENTREGADO", operador, "Pedido entregado correctamente"),
+                ("EN_PREP", "ENTREGADO", operador, "Pedido entregado correctamente"),
             ],
             "created_offset_hours": 6,
         },
@@ -662,7 +690,10 @@ def _seed_pedidos_demo(
             select(Pedido).where(Pedido.notas == pedido_seed["nota"])
         ).first()
         created_at = datetime.now(timezone.utc) - timedelta(hours=pedido_seed["created_offset_hours"])
-        total = sum(ProductoService.calcular_precio_final(productos[codigo]) * cantidad for codigo, cantidad in pedido_seed["lineas"])
+        subtotal = sum(ProductoService.calcular_precio_final(productos[codigo]) * cantidad for codigo, cantidad in pedido_seed["lineas"])
+        descuento = 0
+        costo_envio = 0
+        total = subtotal - descuento + costo_envio
 
         if not pedido:
             pedido = Pedido(
@@ -670,6 +701,9 @@ def _seed_pedidos_demo(
                 direccion_entrega_id=pedido_seed["direccion"].id,
                 forma_pago_id=formas_pago[pedido_seed["forma_pago"]].id,
                 estado_actual=pedido_seed["estado_actual"],
+                subtotal=round(subtotal, 2),
+                descuento=round(descuento, 2),
+                costo_envio=round(costo_envio, 2),
                 total=round(total, 2),
                 notas=pedido_seed["nota"],
                 created_at=created_at,
@@ -682,6 +716,9 @@ def _seed_pedidos_demo(
             pedido.direccion_entrega_id = pedido_seed["direccion"].id
             pedido.forma_pago_id = formas_pago[pedido_seed["forma_pago"]].id
             pedido.estado_actual = pedido_seed["estado_actual"]
+            pedido.subtotal = round(subtotal, 2)
+            pedido.descuento = round(descuento, 2)
+            pedido.costo_envio = round(costo_envio, 2)
             pedido.total = round(total, 2)
             pedido.created_at = created_at
             pedido.updated_at = datetime.now(timezone.utc)

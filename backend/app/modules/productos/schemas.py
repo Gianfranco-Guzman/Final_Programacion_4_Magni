@@ -90,6 +90,8 @@ class ProductoBase(BaseModel):
     disponible: bool = Field(default=True)
     tipo_producto: TipoProducto = Field(default=TipoProducto.FABRICADO)
     descuento_porcentaje: Decimal = Field(default=Decimal("0"), ge=0, le=100)
+    imagenes_url: Optional[list[str]] = None
+    unidad_venta_id: Optional[int] = Field(default=None, ge=1)
 
     @property
     def precio(self) -> Decimal:
@@ -143,6 +145,8 @@ class ProductoRead(BaseModel):
     categoria_principal_id: Optional[int] = None
     codigo: str
     disponible: bool
+    imagenes_url: Optional[list[str]] = None
+    unidad_venta_id: Optional[int] = None
     deleted_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

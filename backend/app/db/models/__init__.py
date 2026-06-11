@@ -5,6 +5,7 @@ from app.db.models.categoria import Categoria
 from app.db.models.producto import Producto
 from app.db.models.producto_categoria import ProductoCategoria
 from app.db.models.ingrediente import Ingrediente
+from app.db.models.unidad_medida import UnidadMedidaCatalogo
 from app.db.models.movimiento_stock_ingrediente import MovimientoStockIngrediente
 from app.db.models.producto_ingrediente import ProductoDetalle
 from app.db.models.forma_pago import FormaPago
@@ -12,6 +13,8 @@ from app.db.models.estado_pedido import EstadoPedido
 from app.db.models.pedido import Pedido
 from app.db.models.detalle_pedido import DetallePedido
 from app.db.models.historial_estado_pedido import HistorialEstadoPedido
+from app.db.models.pago import Pago
+from app.db.models.refresh_token import RefreshToken
 
 __all__ = [
     "Rol",
@@ -22,6 +25,7 @@ __all__ = [
     "Producto",
     "ProductoCategoria",
     "Ingrediente",
+    "UnidadMedidaCatalogo",
     "MovimientoStockIngrediente",
     "ProductoDetalle",
     "FormaPago",
@@ -29,4 +33,6 @@ __all__ = [
     "Pedido",
     "DetallePedido",
     "HistorialEstadoPedido",
+    "Pago",
+    "RefreshToken",
 ]

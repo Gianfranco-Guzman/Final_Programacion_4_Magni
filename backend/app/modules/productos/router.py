@@ -77,6 +77,8 @@ def _build_producto_read(producto: Producto) -> ProductoRead:
         categoria_principal_id=categoria_principal_id,
         codigo=producto.codigo,
         disponible=producto.disponible,
+        imagenes_url=producto.imagenes_url,
+        unidad_venta_id=producto.unidad_venta_id,
         deleted_at=producto.deleted_at,
         created_at=producto.created_at,
         updated_at=producto.updated_at,

@@ -19,12 +19,23 @@ class RegisterRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str = Field(..., description="JWT access token")
+    refresh_token: Optional[str] = Field(default=None, description="JWT refresh token")
     token_type: str = Field(default="bearer", description="Tipo de token")
     expires_in: int = Field(..., description="Segundos hasta expiración")
+    refresh_expires_in: Optional[int] = Field(default=None, description="Segundos hasta expiración del refresh token")
 
 
 class SessionResponse(BaseModel):
     message: str = Field(..., description="Mensaje informativo de sesión")
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
+    expires_in: Optional[int] = None
+    refresh_expires_in: Optional[int] = None
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: Optional[str] = Field(default=None, min_length=1)
 
 
 class RolResponse(BaseModel):

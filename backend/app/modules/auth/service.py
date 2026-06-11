@@ -1,6 +1,15 @@
+from datetime import datetime, timezone
+
 from fastapi import HTTPException, status
 
-from app.core.security import hash_password, verify_password
+from app.core.security import (
+    create_refresh_token,
+    decode_refresh_token,
+    hash_password,
+    hash_token,
+    verify_password,
+)
+from app.db.models.refresh_token import RefreshToken
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork
 from app.modules.auth.schemas import (
@@ -13,6 +22,60 @@ from app.modules.auth.schemas import (
 
 
 class AuthService:
+    @staticmethod
+    def crear_refresh_token(usuario: Usuario, uow: SqlModelUnitOfWork) -> str:
+        refresh_token = create_refresh_token({"sub": str(usuario.id)})
+        payload = decode_refresh_token(refresh_token)
+        if payload is None:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No se pudo generar refresh token")
+
+        token_record = RefreshToken(
+            usuario_id=usuario.id,
+            token_hash=hash_token(refresh_token),
+            jti=payload["jti"],
+            expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
+        )
+        uow.refresh_tokens.save(token_record)
+        uow.flush()
+        return refresh_token
+
+    @staticmethod
+    def rotar_refresh_token(refresh_token: str, uow: SqlModelUnitOfWork) -> tuple[Usuario, list[str], str]:
+        if not refresh_token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token requerido")
+
+        payload = decode_refresh_token(refresh_token)
+        if payload is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token inválido o expirado")
+
+        token_record = uow.refresh_tokens.get_active_by_token_hash(hash_token(refresh_token))
+        if token_record is None or token_record.jti != payload.get("jti"):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revocado o inválido")
+
+        usuario_id = payload.get("sub")
+        try:
+            usuario_id_int = int(usuario_id)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token inválido")
+
+        usuario = uow.usuarios.get_by_id(usuario_id_int)
+        if not usuario or not usuario.is_active or usuario.deleted_at is not None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inactivo o inexistente")
+
+        uow.refresh_tokens.revoke(token_record)
+        nuevo_refresh = AuthService.crear_refresh_token(usuario, uow)
+        roles = AuthService.obtener_roles_usuario(usuario, uow)
+        return usuario, roles, nuevo_refresh
+
+    @staticmethod
+    def revocar_refresh_token(refresh_token: str | None, uow: SqlModelUnitOfWork) -> None:
+        if not refresh_token:
+            return
+        token_record = uow.refresh_tokens.get_active_by_token_hash(hash_token(refresh_token))
+        if token_record is not None:
+            uow.refresh_tokens.revoke(token_record)
+            uow.flush()
+
     @staticmethod
     def obtener_roles_usuario(user: Usuario, uow: SqlModelUnitOfWork) -> list[str]:
         """Obtiene los nombres de los roles de un usuario."""

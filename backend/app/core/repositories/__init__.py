@@ -5,6 +5,7 @@ from app.core.repositories.ingrediente_repository import IngredienteRepository
 from app.core.repositories.movimiento_stock_ingrediente_repository import MovimientoStockIngredienteRepository
 from app.core.repositories.pedido_repository import PedidoRepository
 from app.core.repositories.producto_repository import ProductoRepository
+from app.core.repositories.refresh_token_repository import RefreshTokenRepository
 from app.core.repositories.rol_repository import RolRepository
 from app.core.repositories.usuario_repository import UsuarioRepository
 
@@ -16,6 +17,7 @@ __all__ = [
     "MovimientoStockIngredienteRepository",
     "PedidoRepository",
     "ProductoRepository",
+    "RefreshTokenRepository",
     "RolRepository",
     "UsuarioRepository",
 ]

@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.config import get_settings
 from app.core.dependencies import get_current_user, require_role
+from app.core.rate_limit import auth_rate_limiter
 from app.core.security import create_access_token
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
@@ -12,6 +13,7 @@ from app.modules.auth.schemas import (
     AdminActionResponse,
     AdminUserDetailResponse,
     LoginRequest,
+    RefreshTokenRequest,
     RegisterRequest,
     SessionResponse,
     UsuarioResponse,
@@ -34,6 +36,18 @@ def _set_auth_cookie(response: Response, access_token: str) -> None:  #fucion pa
     )
 
 
+def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    response.set_cookie(
+        key=settings.refresh_cookie_name,
+        value=refresh_token,
+        httponly=True,
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+        samesite=settings.auth_cookie_samesite,
+        secure=settings.auth_cookie_secure,
+        path="/",
+    )
+
+
 def _clear_auth_cookie(response: Response) -> None:
     response.delete_cookie(
         key=settings.auth_cookie_name,
@@ -41,6 +55,34 @@ def _clear_auth_cookie(response: Response) -> None:
         samesite=settings.auth_cookie_samesite,
         secure=settings.auth_cookie_secure,
         path="/",
+    )
+
+
+def _clear_refresh_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=settings.refresh_cookie_name,
+        httponly=True,
+        samesite=settings.auth_cookie_samesite,
+        secure=settings.auth_cookie_secure,
+        path="/",
+    )
+
+
+def _client_identifier(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _build_session_response(message: str, access_token: str, refresh_token: str) -> SessionResponse:
+    return SessionResponse(
+        message=message,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=settings.access_token_expire_minutes * 60,
+        refresh_expires_in=settings.refresh_token_expire_days * 24 * 60 * 60,
     )
 
 
@@ -56,14 +98,24 @@ def _clear_auth_cookie(response: Response) -> None:
 )
 async def login(
     request: LoginRequest,
+    http_request: Request,
     response: Response,
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> SessionResponse:
-    user, roles = AuthService.autenticar(request.email, request.password, uow)
+    identifier = _client_identifier(http_request)
+    auth_rate_limiter.ensure_allowed("login", identifier)
+    try:
+        user, roles = AuthService.autenticar(request.email, request.password, uow)
+    except Exception:
+        auth_rate_limiter.register_failure("login", identifier)
+        raise
+    auth_rate_limiter.clear("login", identifier)
     access_token = create_access_token({"sub": str(user.id), "roles": roles})
+    refresh_token = AuthService.crear_refresh_token(user, uow)
     _set_auth_cookie(response, access_token)
+    _set_refresh_cookie(response, refresh_token)
 
-    return SessionResponse(message="Login exitoso. Sesión iniciada.")
+    return _build_session_response("Login exitoso. Sesión iniciada.", access_token, refresh_token)
 
 
 @router.post(
@@ -78,15 +130,45 @@ async def login(
 )
 async def login_oauth2(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    http_request: Request,
     response: Response,
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> SessionResponse:
-    user, roles = AuthService.autenticar(
-        form_data.username, form_data.password, uow)
+    identifier = _client_identifier(http_request)
+    auth_rate_limiter.ensure_allowed("login", identifier)
+    try:
+        user, roles = AuthService.autenticar(
+            form_data.username, form_data.password, uow)
+    except Exception:
+        auth_rate_limiter.register_failure("login", identifier)
+        raise
+    auth_rate_limiter.clear("login", identifier)
+    access_token = create_access_token({"sub": str(user.id), "roles": roles})
+    refresh_token = AuthService.crear_refresh_token(user, uow)
+    _set_auth_cookie(response, access_token)
+    _set_refresh_cookie(response, refresh_token)
+
+    return _build_session_response("Login exitoso. Sesión iniciada.", access_token, refresh_token)
+
+
+@router.post(
+    "/refresh",
+    response_model=SessionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Renovar access token usando refresh token",
+)
+async def refresh_session(
+    request: Request,
+    response: Response,
+    body: RefreshTokenRequest | None = None,
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+) -> SessionResponse:
+    refresh_token = body.refresh_token if body and body.refresh_token else request.cookies.get(settings.refresh_cookie_name)
+    user, roles, new_refresh_token = AuthService.rotar_refresh_token(refresh_token, uow)
     access_token = create_access_token({"sub": str(user.id), "roles": roles})
     _set_auth_cookie(response, access_token)
-
-    return SessionResponse(message="Login exitoso. Sesión iniciada.")
+    _set_refresh_cookie(response, new_refresh_token)
+    return _build_session_response("Sesión renovada exitosamente.", access_token, new_refresh_token)
 
 
 @router.post(
@@ -95,8 +177,14 @@ async def login_oauth2(
     status_code=status.HTTP_200_OK,
     summary="Cerrar sesión y limpiar cookie",
 )
-async def logout(response: Response) -> SessionResponse:
+async def logout(
+    request: Request,
+    response: Response,
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+) -> SessionResponse:
+    AuthService.revocar_refresh_token(request.cookies.get(settings.refresh_cookie_name), uow)
     _clear_auth_cookie(response)
+    _clear_refresh_cookie(response)
     return SessionResponse(message="Sesión cerrada exitosamente")
 
 
@@ -112,9 +200,18 @@ async def logout(response: Response) -> SessionResponse:
 )
 async def register(
     request: RegisterRequest,
+    http_request: Request,
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ) -> UsuarioResponse:
-    return AuthService.crear_usuario(request, uow)
+    identifier = _client_identifier(http_request)
+    auth_rate_limiter.ensure_allowed("register", identifier)
+    try:
+        created = AuthService.crear_usuario(request, uow)
+    except Exception:
+        auth_rate_limiter.register_failure("register", identifier)
+        raise
+    auth_rate_limiter.clear("register", identifier)
+    return created
 
 
 @router.get(

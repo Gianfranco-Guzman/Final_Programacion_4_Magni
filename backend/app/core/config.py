@@ -16,8 +16,11 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
     auth_cookie_name: str = "access_token"
+    refresh_cookie_name: str = "refresh_token"
     auth_cookie_secure: bool = False
     auth_cookie_samesite: str = "lax"
+    auth_rate_limit_attempts: int = 5
+    auth_rate_limit_window_minutes: int = 15
 
 
     debug: bool = True

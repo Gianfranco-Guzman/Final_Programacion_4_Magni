@@ -10,6 +10,8 @@ class UsuarioRol(SQLModel, table=True):
 
     usuario_id: int = Field(foreign_key="usuario.id", primary_key=True)
     rol_id: int = Field(foreign_key="rol.id", primary_key=True)
+    asignado_por_id: Optional[int] = Field(default=None, foreign_key="usuario.id")
+    expires_at: Optional[datetime] = Field(default=None)
 
 
 class Usuario(SQLModel, table=True):

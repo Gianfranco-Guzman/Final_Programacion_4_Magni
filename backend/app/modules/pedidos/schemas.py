@@ -23,6 +23,7 @@ class DetallePedidoRead(BaseModel):
     precio_unitario_snapshot: float
     nombre_producto_snapshot: str
     subtotal: float
+    personalizacion: Optional[list[int]] = None
 
     model_config = {"from_attributes": True}
 
@@ -45,6 +46,9 @@ class PedidoRead(BaseModel):
     direccion_entrega_id: int
     forma_pago_id: int
     estado_actual: str
+    subtotal: float = 0
+    descuento: float = 0
+    costo_envio: float = 0
     total: float
     notas: Optional[str]
     created_at: datetime

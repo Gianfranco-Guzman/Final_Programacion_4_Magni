@@ -97,6 +97,8 @@ export interface Producto {
   categoria_principal_id?: number | null
   codigo: string
   disponible: boolean
+  imagenes_url?: string[] | null
+  unidad_venta_id?: number | null
   deleted_at?: string | null
   created_at: string
   updated_at: string
@@ -112,6 +114,7 @@ export interface DetallePedido {
   precio_unitario_snapshot: number
   nombre_producto_snapshot: string
   subtotal: number
+  personalizacion?: number[] | null
 }
 
 export interface HistorialEstadoPedido {
@@ -130,6 +133,9 @@ export interface Pedido {
   direccion_entrega_id: number
   forma_pago_id: number
   estado_actual: string
+  subtotal?: number
+  descuento?: number
+  costo_envio?: number
   total: number
   notas: string | null
   created_at: string
@@ -140,6 +146,7 @@ export interface Pedido {
 
 export interface FormaPago {
   id: number
+  codigo?: string | null
   nombre: string
   descripcion?: string | null
   activo: boolean
@@ -163,6 +170,11 @@ export interface LoginRequest {
 
 export interface SessionResponse {
   message: string
+  access_token?: string | null
+  refresh_token?: string | null
+  token_type?: string
+  expires_in?: number | null
+  refresh_expires_in?: number | null
 }
 
 export interface RegisterRequest {
@@ -180,4 +192,18 @@ export interface RegisterResponse {
   apellido: string
   celular?: string | null
   is_active: boolean
+}
+
+export interface Pago {
+  id: number
+  pedido_id: number
+  mp_payment_id?: number | null
+  mp_status: string
+  mp_status_detail?: string | null
+  transaction_amount: number
+  payment_method_id?: string | null
+  external_reference: string
+  idempotency_key: string
+  created_at: string
+  updated_at: string
 }

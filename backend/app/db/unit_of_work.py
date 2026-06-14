@@ -6,6 +6,7 @@ from app.core.repositories import (
     FormaPagoRepository,
     IngredienteRepository,
     MovimientoStockIngredienteRepository,
+    PagoRepository,
     PedidoRepository,
     ProductoRepository,
     RefreshTokenRepository,
@@ -26,6 +27,7 @@ class SqlModelUnitOfWork:
         self.roles = RolRepository(session)
         self.ingredientes = IngredienteRepository(session)
         self.movimientos_stock_ingredientes = MovimientoStockIngredienteRepository(session)
+        self.pagos = PagoRepository(session)
         self.productos = ProductoRepository(session)
         self.pedidos = PedidoRepository(session)
         self.refresh_tokens = RefreshTokenRepository(session)

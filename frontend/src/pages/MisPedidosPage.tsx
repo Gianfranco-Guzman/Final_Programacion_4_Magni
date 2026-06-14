@@ -51,9 +51,14 @@ export const MisPedidosPage: React.FC = () => {
 
   const handleCancelar = (id: number) => {
     if (!window.confirm('¿Cancelar este pedido?')) return
+    const observacion = window.prompt('Ingresá el motivo de cancelación:')?.trim()
+    if (!observacion) {
+      setActionError('Debés ingresar un motivo para cancelar el pedido.')
+      return
+    }
     setActionError('')
     cancelarMutation.mutate(
-      { id },
+      { id, observacion },
       { onError: (err: unknown) => setActionError(err instanceof Error ? err.message : 'Error al cancelar') },
     )
   }

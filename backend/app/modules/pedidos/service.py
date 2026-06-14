@@ -274,7 +274,24 @@ class PedidoService:
         if not es_privilegiado and pedido.usuario_id != current_user.id:
             raise HTTPException(status_code=403, detail="No tenés acceso a este pedido")
 
+        pedido.historial = sorted(list(pedido.historial), key=lambda item: (item.fecha, item.id or 0))
         return pedido
+
+    @staticmethod
+    def obtener_historial_pedido(
+        pedido_id: int,
+        current_user: Usuario,
+        uow: SqlModelUnitOfWork,
+    ) -> list[HistorialEstadoPedido]:
+        pedido = uow.pedidos.get_by_id(pedido_id)
+        if not pedido:
+            raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+        es_privilegiado = uow.roles.user_has_any_role(current_user.id, PRIVILEGED_ROLES)
+        if not es_privilegiado and pedido.usuario_id != current_user.id:
+            raise HTTPException(status_code=403, detail="No tenés acceso a este pedido")
+
+        return uow.pedidos.list_historial_ordered_by_fecha(pedido_id)
 
     @staticmethod
     def avanzar_estado(
@@ -338,6 +355,12 @@ class PedidoService:
                 detail=f"El pedido en estado '{pedido.estado_actual}' no puede cancelarse",
             )
 
+        if not observacion or not observacion.strip():
+            raise HTTPException(
+                status_code=422,
+                detail="El motivo es obligatorio para cancelar un pedido",
+            )
+
         estado_anterior = pedido.estado_actual
         historial = HistorialEstadoPedido(
             pedido_id=pedido.id,
@@ -345,7 +368,7 @@ class PedidoService:
             estado_nuevo="CANCELADO",
             fecha=datetime.now(timezone.utc),
             usuario_id=current_user.id,
-            observacion=observacion,
+            observacion=observacion.strip(),
         )
         uow.pedidos.add_historial(historial)
 

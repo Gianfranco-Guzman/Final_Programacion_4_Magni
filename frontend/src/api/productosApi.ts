@@ -40,6 +40,8 @@ export interface ProductoCreateInput {
   disponible: boolean
   tipo_producto: TipoProducto
   descuento_porcentaje: number
+  imagenes_url?: string[]
+  unidad_venta_id?: number
   categorias: ProductoCategoriaInput[]
   ingredientes: ProductoDetalleInput[]
 }
@@ -52,6 +54,8 @@ export interface ProductoUpdateInput {
   disponible?: boolean
   tipo_producto?: TipoProducto
   descuento_porcentaje?: number
+  imagenes_url?: string[]
+  unidad_venta_id?: number
   categorias?: ProductoCategoriaInput[]
   ingredientes?: ProductoDetalleInput[]
 }

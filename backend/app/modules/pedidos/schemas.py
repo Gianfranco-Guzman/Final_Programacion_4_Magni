@@ -67,4 +67,4 @@ class AvanzarEstadoRequest(BaseModel):
 
 
 class CancelarPedidoRequest(BaseModel):
-    observacion: Optional[str] = Field(None, max_length=255)
+    observacion: str = Field(..., min_length=1, max_length=255)

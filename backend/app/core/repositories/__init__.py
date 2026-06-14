@@ -3,6 +3,7 @@ from app.core.repositories.direccion_repository import DireccionRepository
 from app.core.repositories.forma_pago_repository import FormaPagoRepository
 from app.core.repositories.ingrediente_repository import IngredienteRepository
 from app.core.repositories.movimiento_stock_ingrediente_repository import MovimientoStockIngredienteRepository
+from app.core.repositories.pago_repository import PagoRepository
 from app.core.repositories.pedido_repository import PedidoRepository
 from app.core.repositories.producto_repository import ProductoRepository
 from app.core.repositories.refresh_token_repository import RefreshTokenRepository
@@ -15,6 +16,7 @@ __all__ = [
     "FormaPagoRepository",
     "IngredienteRepository",
     "MovimientoStockIngredienteRepository",
+    "PagoRepository",
     "PedidoRepository",
     "ProductoRepository",
     "RefreshTokenRepository",

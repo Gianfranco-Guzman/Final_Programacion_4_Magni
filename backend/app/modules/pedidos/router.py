@@ -10,6 +10,7 @@ from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.pedidos.schemas import (
     AvanzarEstadoRequest,
     CancelarPedidoRequest,
+    HistorialEstadoPedidoRead,
     PedidoCreate,
     PedidoDetalle,
     PedidoRead,
@@ -63,6 +64,20 @@ def obtener_pedido(
 ):
     pedido = PedidoService.obtener_pedido(pedido_id, current_user, uow)
     return PedidoDetalle.model_validate(pedido)
+
+
+@router.get(
+    "/{pedido_id}/historial",
+    response_model=list[HistorialEstadoPedidoRead],
+    summary="Obtener historial completo del pedido ordenado ascendente",
+)
+def obtener_historial_pedido(
+    pedido_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+):
+    historial = PedidoService.obtener_historial_pedido(pedido_id, current_user, uow)
+    return [HistorialEstadoPedidoRead.model_validate(item) for item in historial]
 
 
 @router.patch(

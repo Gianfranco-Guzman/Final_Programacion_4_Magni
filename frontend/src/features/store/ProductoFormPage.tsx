@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Categoria, Ingrediente, Producto, ProductoDetalleConfig, TipoProducto } from '@models/index'
 import { useCreateProducto, useUpdateProducto } from '@hooks/useProductos'
+import { useDeleteImagen, useUploadImagen } from '@hooks/useUploads'
 import { ProductoCreateInput, ProductoDetalleInput, ProductoUpdateInput } from '@api/productosApi'
 import { calcularCostoProducto, calcularStockMaximoProducto } from '@/utils/producto'
 
@@ -20,8 +21,27 @@ const empty: ProductoCreateInput = {
   disponible: true,
   tipo_producto: 'FABRICADO',
   descuento_porcentaje: 0,
+  imagenes_url: [],
   categorias: [],
   ingredientes: [],
+}
+
+const deriveCloudinaryPublicId = (url: string): string | null => {
+  const marker = '/upload/'
+  const uploadIndex = url.indexOf(marker)
+  if (uploadIndex === -1) return null
+
+  const afterUpload = url.slice(uploadIndex + marker.length)
+  const segments = afterUpload.split('/').filter(Boolean)
+  if (segments.length === 0) return null
+
+  const cleanedSegments = segments[0].startsWith('v') && /^v\d+$/.test(segments[0])
+    ? segments.slice(1)
+    : segments
+  if (cleanedSegments.length === 0) return null
+
+  const fileName = cleanedSegments[cleanedSegments.length - 1].replace(/\.[^.]+$/, '')
+  return [...cleanedSegments.slice(0, -1), fileName].join('/')
 }
 
 const buildIngredienteInput = (ingrediente: Ingrediente, orden: number): ProductoDetalleInput => ({
@@ -41,7 +61,9 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
 
   const createMutation = useCreateProducto()
   const updateMutation = useUpdateProducto()
-  const isPending = createMutation.isPending || updateMutation.isPending
+  const uploadMutation = useUploadImagen()
+  const deleteImagenMutation = useDeleteImagen()
+  const isPending = createMutation.isPending || updateMutation.isPending || uploadMutation.isPending || deleteImagenMutation.isPending
 
   useEffect(() => {
     if (producto) {
@@ -53,6 +75,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
         disponible: producto.disponible,
         tipo_producto: producto.tipo_producto,
         descuento_porcentaje: Number(producto.descuento_porcentaje) || 0,
+        imagenes_url: producto.imagenes_url || [],
         categorias: producto.categorias?.map((item) => ({ categoria_id: item.categoria_id, es_principal: item.es_principal })) || [],
         ingredientes: producto.ingredientes?.map((item) => ({
           ingrediente_id: item.ingrediente_id,
@@ -87,6 +110,41 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
   const setField = (field: keyof ProductoCreateInput) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = e.target.type === 'number' ? Number(e.target.value) : e.target.value
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleUploadImagen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError('')
+
+    try {
+      const uploaded = await uploadMutation.mutateAsync({ file, folder: 'foodstore/productos' })
+      setForm((prev) => ({
+        ...prev,
+        imagenes_url: [...(prev.imagenes_url || []), uploaded.secure_url],
+      }))
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al subir la imagen')
+    } finally {
+      e.target.value = ''
+    }
+  }
+
+  const handleRemoveImagen = async (url: string) => {
+    setError('')
+    const publicId = deriveCloudinaryPublicId(url)
+
+    try {
+      if (publicId) {
+        await deleteImagenMutation.mutateAsync(publicId)
+      }
+      setForm((prev) => ({
+        ...prev,
+        imagenes_url: (prev.imagenes_url || []).filter((item) => item !== url),
+      }))
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar la imagen')
+    }
   }
 
   const toggleCategoria = (categoriaId: number) => {
@@ -175,6 +233,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
       if (isEdit) {
         const updateData: ProductoUpdateInput = {
           ...form,
+          imagenes_url: form.imagenes_url || [],
           ingredientes: form.ingredientes?.map((item) => {
             const ing = ingredientes.find((i) => i.id === item.ingrediente_id)
             return { ...item, unidad_medida: ing?.unidad_medida || item.unidad_medida }
@@ -182,7 +241,10 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
         }
         await updateMutation.mutateAsync({ id: producto!.id, data: updateData })
       } else {
-        await createMutation.mutateAsync(form)
+        await createMutation.mutateAsync({
+          ...form,
+          imagenes_url: form.imagenes_url || [],
+        })
       }
       navigate('/catalogo')
     } catch (err: unknown) {
@@ -241,6 +303,39 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
               <textarea rows={2} value={form.descripcion} onChange={setField('descripcion')} className="w-full rounded border border-gray-300 px-3 py-2 text-sm resize-none" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Imágenes del producto</label>
+              <div className="rounded border border-gray-300 p-3 flex flex-col gap-3">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleUploadImagen}
+                  disabled={uploadMutation.isPending}
+                  className="block w-full text-sm text-gray-700"
+                />
+                <p className="text-xs text-gray-500">
+                  Formatos permitidos: JPG, PNG, WEBP. Máximo 5 MB.
+                </p>
+                {(form.imagenes_url || []).length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {(form.imagenes_url || []).map((url) => (
+                      <div key={url} className="rounded border border-gray-200 p-2">
+                        <img src={url} alt="Producto" className="w-full h-28 object-cover rounded" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImagen(url)}
+                          disabled={deleteImagenMutation.isPending}
+                          className="mt-2 w-full text-xs text-red-600 hover:text-red-800 disabled:opacity-50"
+                        >
+                          Eliminar imagen
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>

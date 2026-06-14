@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     auth_rate_limit_attempts: int = 5
     auth_rate_limit_window_minutes: int = 15
 
+    mp_access_token: str = ""
+    mp_public_key: str = ""
+    mp_notification_url: str = ""
+    cloudinary_cloud_name: str = ""
+    cloudinary_api_key: str = ""
+    cloudinary_api_secret: str = ""
+
 
     debug: bool = True
     app_name: str = "Food Store API"

@@ -77,8 +77,9 @@ ESTADOS_PEDIDO_SEED = [
     {"codigo": "PENDIENTE", "nombre": "PENDIENTE", "descripcion": "Pedido recibido, pendiente de confirmación", "orden": 1, "es_terminal": False},
     {"codigo": "CONFIRMADO", "nombre": "CONFIRMADO", "descripcion": "Pedido confirmado y esperando preparación", "orden": 2, "es_terminal": False},
     {"codigo": "EN_PREP", "nombre": "EN_PREP", "descripcion": "Pedido en preparación", "orden": 3, "es_terminal": False},
-    {"codigo": "ENTREGADO", "nombre": "ENTREGADO", "descripcion": "Pedido entregado al cliente", "orden": 4, "es_terminal": True},
-    {"codigo": "CANCELADO", "nombre": "CANCELADO", "descripcion": "Pedido cancelado", "orden": 5, "es_terminal": True},
+    {"codigo": "EN_CAMINO", "nombre": "EN_CAMINO", "descripcion": "Pedido en camino al cliente", "orden": 4, "es_terminal": False},
+    {"codigo": "ENTREGADO", "nombre": "ENTREGADO", "descripcion": "Pedido entregado al cliente", "orden": 5, "es_terminal": True},
+    {"codigo": "CANCELADO", "nombre": "CANCELADO", "descripcion": "Pedido cancelado", "orden": 6, "es_terminal": True},
 ]
 
 UNIDADES_MEDIDA_SEED = [
@@ -667,7 +668,8 @@ def _seed_pedidos_demo(
                 (None, "PENDIENTE", cliente, "Pedido creado desde seed demo"),
                 ("PENDIENTE", "CONFIRMADO", admin, "Confirmado por administración"),
                 ("CONFIRMADO", "EN_PREP", operador, "Preparación iniciada"),
-                ("EN_PREP", "ENTREGADO", operador, "Pedido entregado correctamente"),
+                ("EN_PREP", "EN_CAMINO", operador, "Sale con repartidor"),
+                ("EN_CAMINO", "ENTREGADO", operador, "Pedido entregado correctamente"),
             ],
             "created_offset_hours": 6,
         },

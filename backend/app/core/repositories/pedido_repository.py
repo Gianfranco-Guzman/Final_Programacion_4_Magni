@@ -53,3 +53,11 @@ class PedidoRepository(BaseRepository):
 
     def add_historial(self, historial: HistorialEstadoPedido) -> HistorialEstadoPedido:
         return self.add(historial)
+
+    def list_historial_ordered_by_fecha(self, pedido_id: int) -> list[HistorialEstadoPedido]:
+        statement = (
+            select(HistorialEstadoPedido)
+            .where(HistorialEstadoPedido.pedido_id == pedido_id)
+            .order_by(HistorialEstadoPedido.fecha.asc(), HistorialEstadoPedido.id.asc())
+        )
+        return list(self.session.exec(statement).all())

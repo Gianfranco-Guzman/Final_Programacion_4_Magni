@@ -9,6 +9,7 @@ from app.db.models.pago import Pago
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork
 from app.modules.pagos.schemas import PagoCreateRequest
+from app.modules.pedidos.realtime import PedidoRealtimePublisher
 from app.modules.pedidos.service import PedidoService
 
 
@@ -171,5 +172,7 @@ class PagosService:
                     uow,
                     observacion="Confirmado automáticamente por webhook de MercadoPago",
                 )
+
+        PedidoRealtimePublisher.queue_event(uow, "PAGO_CONFIRMED", pago.pedido_id)
 
         return pago

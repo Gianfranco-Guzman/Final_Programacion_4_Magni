@@ -21,6 +21,9 @@ from app.modules.pedidos.service import PedidoService
 router = APIRouter(tags=["pedidos"])
 
 
+ADMIN_FEED_ACTIONS = {"subscribe-admin-feed", "unsubscribe-admin-feed"}
+
+
 @router.post(
     "/",
     response_model=PedidoRead,
@@ -124,6 +127,18 @@ async def pedidos_websocket(
             message = await websocket.receive_json()
             action = message.get("action")
             order_id = message.get("order_id")
+
+            if action in ADMIN_FEED_ACTIONS:
+                is_staff = any(role in STAFF_ROLES for role in user_roles)
+                if not is_staff:
+                    await manager.send_json(websocket, "ERROR", {"detail": "No autorizado para feed admin"})
+                    continue
+
+                if action == "subscribe-admin-feed":
+                    await manager.send_json(websocket, "SUBSCRIBED", {"room": "role-feed"})
+                else:
+                    await manager.send_json(websocket, "UNSUBSCRIBED", {"room": "role-feed"})
+                continue
 
             if not isinstance(order_id, int):
                 await manager.send_json(websocket, "ERROR", {"detail": "order_id inválido"})

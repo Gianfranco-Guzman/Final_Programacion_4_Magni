@@ -9,6 +9,7 @@ export interface WsMessage {
 interface UseWebSocketOptions {
   enabled?: boolean
   onMessage?: (message: WsMessage) => void
+  adminFeed?: boolean
 }
 
 const buildWsUrl = () => {
@@ -18,7 +19,7 @@ const buildWsUrl = () => {
   return `${protocol}//${apiUrl.host}${path}/pedidos/ws`
 }
 
-export const useWebSocket = ({ enabled = true, onMessage }: UseWebSocketOptions = {}) => {
+export const useWebSocket = ({ enabled = true, onMessage, adminFeed = false }: UseWebSocketOptions = {}) => {
   const wsRef = useRef<WebSocket | null>(null)
   const onMessageRef = useRef(onMessage)
   const subscribedOrdersRef = useRef<Set<number>>(new Set())
@@ -36,6 +37,9 @@ export const useWebSocket = ({ enabled = true, onMessage }: UseWebSocketOptions 
     let currentSocket: WebSocket | null = null
 
     const replaySubscriptions = (socket: WebSocket) => {
+      if (adminFeed) {
+        socket.send(JSON.stringify({ action: 'subscribe-admin-feed' }))
+      }
       subscribedOrdersRef.current.forEach((orderId) => {
         socket.send(JSON.stringify({ action: 'subscribe-order', order_id: orderId }))
       })
@@ -98,7 +102,7 @@ export const useWebSocket = ({ enabled = true, onMessage }: UseWebSocketOptions 
       if (currentSocket) closeCleanly(currentSocket)
       wsRef.current = null
     }
-  }, [enabled])
+  }, [adminFeed, enabled])
 
   const subscribeToOrder = useCallback((orderId: number) => {
     subscribedOrdersRef.current.add(orderId)

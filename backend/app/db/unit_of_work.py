@@ -3,6 +3,7 @@ from sqlmodel import Session
 from app.core.repositories import (
     CategoriaRepository,
     DireccionRepository,
+    EstadisticaRepository,
     FormaPagoRepository,
     IngredienteRepository,
     MovimientoStockIngredienteRepository,
@@ -22,6 +23,7 @@ class SqlModelUnitOfWork:
         self.session = session
         self.formas_pago = FormaPagoRepository(session)
         self.direcciones = DireccionRepository(session)
+        self.estadisticas = EstadisticaRepository(session)
         self.categorias = CategoriaRepository(session)
         self.usuarios = UsuarioRepository(session)
         self.roles = RolRepository(session)

@@ -43,13 +43,17 @@ export const CajeroPage: React.FC = () => {
   const cancelarMutation = useCancelarPedido()
 
   const handleWsMessage = useCallback((message: WsMessage) => {
-    if (message.event === 'WS_CONNECTED' || message.event.startsWith('PEDIDO_')) {
+    if (
+      message.event === 'WS_CONNECTED' ||
+      ['pedido_creado', 'estado_cambiado', 'pedido_cancelado', 'pago_confirmado'].includes(message.event)
+    ) {
       void refetch()
     }
   }, [refetch])
 
   useWebSocket({
     enabled: !!usuario && hasAnyRole(usuario.roles, ['PEDIDOS', 'ADMIN']),
+    adminFeed: true,
     onMessage: handleWsMessage,
   })
 

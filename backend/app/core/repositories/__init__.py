@@ -1,5 +1,6 @@
 from app.core.repositories.categoria_repository import CategoriaRepository
 from app.core.repositories.direccion_repository import DireccionRepository
+from app.core.repositories.estadistica_repository import EstadisticaRepository
 from app.core.repositories.forma_pago_repository import FormaPagoRepository
 from app.core.repositories.ingrediente_repository import IngredienteRepository
 from app.core.repositories.movimiento_stock_ingrediente_repository import MovimientoStockIngredienteRepository
@@ -13,6 +14,7 @@ from app.core.repositories.usuario_repository import UsuarioRepository
 __all__ = [
     "CategoriaRepository",
     "DireccionRepository",
+    "EstadisticaRepository",
     "FormaPagoRepository",
     "IngredienteRepository",
     "MovimientoStockIngredienteRepository",

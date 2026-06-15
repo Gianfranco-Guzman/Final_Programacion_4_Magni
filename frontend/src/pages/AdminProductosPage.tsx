@@ -6,7 +6,7 @@ import { Button } from '@components/Button'
 import { Producto } from '@models/index'
 import { useAuthStore } from '@store/authStore'
 import { hasAnyRole } from '@/auth/permissions'
-import { getProductoPrecioFinal, getProductoStockDisponible } from '@/utils/producto'
+import { getCloudinaryProductImageUrl, getProductoImagenPrincipal, getProductoPrecioFinal, getProductoStockDisponible } from '@/utils/producto'
 
 export const AdminProductosPage: React.FC = () => {
   const usuario = useAuthStore((state) => state.usuario)
@@ -115,9 +115,12 @@ export const AdminProductosPage: React.FC = () => {
                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                      ID
                    </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Estado
-                   </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Imagen
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                      Disponible
                    </th>
@@ -137,10 +140,23 @@ export const AdminProductosPage: React.FC = () => {
                </thead>
                <tbody className="bg-white divide-y divide-gray-200">
                  {productos.map((producto) => (
-                   <tr key={producto.id} className="hover:bg-gray-50">
-                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                       {producto.id}
-                     </td>
+                    <tr key={producto.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {getProductoImagenPrincipal(producto) ? (
+                          <img
+                            src={getCloudinaryProductImageUrl(getProductoImagenPrincipal(producto), 'f_auto,q_auto,c_fill,w_160,h_96') || ''}
+                            alt={producto.nombre}
+                            className="h-14 w-20 rounded object-cover border border-gray-200"
+                          />
+                        ) : (
+                          <div className="h-14 w-20 rounded border border-dashed border-gray-300 flex items-center justify-center text-[10px] text-gray-400">
+                            Sin imagen
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {producto.id}
+                      </td>
                      <td className="px-6 py-4 whitespace-nowrap text-sm">
                        {producto.deleted_at ? (
                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">

@@ -2,6 +2,7 @@ import React from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { useUIStore } from '@store/uiStore'
+import { useWsStore } from '@store/wsStore'
 import { useCartStore, selectCartItemCount } from '@store/cartStore'
 import { useAuth } from '@hooks/useAuth'
 import { Button } from '@components/Button'
@@ -19,11 +20,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
   const toggleCart = useCartStore((state) => state.toggleCart)
   const cartCount = useCartStore(selectCartItemCount)
+  const wsStatus = useWsStore((state) => state.status)
   const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
   const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
   const isCajero = hasAnyRole(usuario?.roles, ['PEDIDOS'])
   const isClient = hasAnyRole(usuario?.roles, ['CLIENT'])
   const displayName = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ')
+
+  const wsBadge = (() => {
+    if (wsStatus === 'connected') return { label: 'Tiempo real activo', className: 'bg-green-100 text-green-700' }
+    if (wsStatus === 'reconnecting' || wsStatus === 'connecting') return { label: 'Reconectando tiempo real', className: 'bg-amber-100 text-amber-700' }
+    if (wsStatus === 'error') return { label: 'Tiempo real con error', className: 'bg-red-100 text-red-700' }
+    return { label: 'Tiempo real inactivo', className: 'bg-gray-100 text-gray-600' }
+  })()
 
   const handleLogout = async () => {
     await logout()
@@ -49,6 +58,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center gap-3">
+              <span className={`hidden md:inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${wsBadge.className}`}>
+                {wsBadge.label}
+              </span>
               {usuario && (
                 <span className="text-sm text-gray-700 font-medium hidden sm:inline">{displayName}</span>
               )}
@@ -121,6 +133,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <>
               {isAdmin && (
                 <>
+                  <Link to="/admin/dashboard" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+                    Dashboard admin
+                  </Link>
                   <Link to="/admin/productos" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
                     Admin productos
                   </Link>

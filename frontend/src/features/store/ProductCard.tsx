@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Card } from '@components/Card'
 import { Producto } from '@models/index'
-import { getProductoEtiquetaStock, getProductoPrecioBase, getProductoPrecioFinal, getProductoStockDisponible, isProductoOperativamenteDisponible } from '@/utils/producto'
+import { getCloudinaryProductImageUrl, getProductoEtiquetaStock, getProductoImagenPrincipal, getProductoPrecioBase, getProductoPrecioFinal, getProductoStockDisponible, isProductoOperativamenteDisponible } from '@/utils/producto'
 
 interface ProductCardProps {
   producto: Producto
@@ -21,9 +21,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
   const precioFinal = getProductoPrecioFinal(producto)
   const precioBase = getProductoPrecioBase(producto)
   const stockDisponible = getProductoStockDisponible(producto)
+  const imagenPrincipal = getCloudinaryProductImageUrl(getProductoImagenPrincipal(producto), 'f_auto,q_auto,c_fill,w_600,h_320')
 
   return (
     <Card className={`h-full flex flex-col ${isDeleted ? 'bg-red-50 border-red-300' : ''}`}>
+      {imagenPrincipal && (
+        <div className="mb-3 overflow-hidden rounded-lg border border-gray-100">
+          <img src={imagenPrincipal} alt={producto.nombre} className="h-40 w-full object-cover" />
+        </div>
+      )}
       {isDeleted && (
         <div className="flex items-center justify-between mb-2">
           <span className="inline-block bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">

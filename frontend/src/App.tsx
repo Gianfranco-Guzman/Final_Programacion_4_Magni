@@ -12,6 +12,7 @@ import { CategoriasPage } from '@pages/CategoriasPage'
 import { DireccionesPage } from '@pages/DireccionesPage'
 import { IngredientesPage } from '@pages/IngredientesPage'
 import { AdminProductosPage } from '@pages/AdminProductosPage'
+import { AdminDashboardPage } from '@pages/AdminDashboardPage'
 import { AdminUsuariosPage } from '@pages/AdminUsuariosPage'
 import { MisPedidosPage } from '@pages/MisPedidosPage'
 import { PedidoDetallePage } from '@pages/PedidoDetallePage'
@@ -125,6 +126,16 @@ function App() {
               <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                 <MainLayout>
                   <IngredientesPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+                <MainLayout>
+                  <AdminDashboardPage />
                 </MainLayout>
               </ProtectedRoute>
             }

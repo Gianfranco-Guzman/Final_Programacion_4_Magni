@@ -1,5 +1,16 @@
 import { Producto, ProductoDetalleConfig } from '@models/index'
 
+export const getProductoImagenPrincipal = (producto: Producto) =>
+  producto.imagenes_url?.find(Boolean) || null
+
+export const getCloudinaryProductImageUrl = (url: string | null, transformation = 'f_auto,q_auto,c_fill,w_640,h_360') => {
+  if (!url) return null
+  const marker = '/upload/'
+  const index = url.indexOf(marker)
+  if (index === -1) return url
+  return `${url.slice(0, index + marker.length)}${transformation}/${url.slice(index + marker.length)}`
+}
+
 export const getProductoPrecioBase = (producto: Producto) => Number(producto.precio_venta) || 0
 
 export const getProductoPrecioFinal = (producto: Producto) => {

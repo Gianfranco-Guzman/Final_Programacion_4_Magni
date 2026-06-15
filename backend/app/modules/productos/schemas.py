@@ -123,6 +123,8 @@ class ProductoUpdate(BaseModel):
     disponible: Optional[bool] = None
     tipo_producto: Optional[TipoProducto] = None
     descuento_porcentaje: Optional[Decimal] = Field(None, ge=0, le=100)
+    imagenes_url: Optional[list[str]] = None
+    unidad_venta_id: Optional[int] = Field(default=None, ge=1)
     categorias: Optional[list[ProductoCategoriaPayload]] = None
     ingredientes: Optional[list[ProductoDetallePayload]] = None
 

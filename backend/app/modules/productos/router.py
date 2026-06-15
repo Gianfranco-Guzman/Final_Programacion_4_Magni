@@ -13,6 +13,7 @@ from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
 from app.modules.productos.schemas import (
     CategoriaRead,
+    IngredienteRead,
     PaginatedResponse,
     ProductoCategoriaRead,
     ProductoCreate,
@@ -175,6 +176,19 @@ def obtener_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow
     return _build_producto_read(producto)
 
 
+@router.get(
+    "/{producto_id}/ingredientes",
+    response_model=list[IngredienteRead],
+    summary="Listar ingredientes del producto",
+)
+def listar_ingredientes_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
+    producto = uow.productos.get_active_by_id_with_relations(producto_id)
+    if not producto:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    ingredientes = [detalle.ingrediente for detalle in producto.ingredientes if detalle.ingrediente is not None]
+    return [IngredienteRead.model_validate(ingrediente) for ingrediente in ingredientes]
+
+
 @router.post(
     "/",
     response_model=ProductoRead,
@@ -202,6 +216,25 @@ def actualizar_producto(
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.actualizar_producto(producto_id, data, uow)
+    return _build_producto_read(producto)
+
+
+@router.patch(
+    "/{producto_id}/imagenes",
+    response_model=ProductoRead,
+    summary="Actualizar imágenes del producto",
+)
+def actualizar_imagenes_producto(
+    producto_id: int,
+    data: ProductoUpdate,
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+    _user: Usuario = Depends(require_role(["ADMIN"])),
+):
+    producto = ProductoService.actualizar_producto(
+        producto_id,
+        ProductoUpdate(imagenes_url=data.imagenes_url),
+        uow,
+    )
     return _build_producto_read(producto)
 
 

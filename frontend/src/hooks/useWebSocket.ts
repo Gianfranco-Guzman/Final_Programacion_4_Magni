@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { API_BASE_URL } from '@api/axiosClient'
+import { useWsStore } from '@store/wsStore'
 
 export interface WsMessage {
   event: string
@@ -23,13 +24,28 @@ export const useWebSocket = ({ enabled = true, onMessage, adminFeed = false }: U
   const wsRef = useRef<WebSocket | null>(null)
   const onMessageRef = useRef(onMessage)
   const subscribedOrdersRef = useRef<Set<number>>(new Set())
+  const setStatus = useWsStore((state) => state.setStatus)
+  const markEvent = useWsStore((state) => state.markEvent)
+  const setOrderSubscribed = useWsStore((state) => state.setOrderSubscribed)
+  const setOrderUnsubscribed = useWsStore((state) => state.setOrderUnsubscribed)
+  const setAdminFeedActive = useWsStore((state) => state.setAdminFeedActive)
 
   useEffect(() => {
     onMessageRef.current = onMessage
   }, [onMessage])
 
   useEffect(() => {
-    if (!enabled) return
+    setAdminFeedActive(adminFeed && enabled)
+    return () => {
+      setAdminFeedActive(false)
+    }
+  }, [adminFeed, enabled, setAdminFeedActive])
+
+  useEffect(() => {
+    if (!enabled) {
+      setStatus('idle')
+      return
+    }
 
     let cancelled = false
     let retryCount = 0
@@ -56,6 +72,8 @@ export const useWebSocket = ({ enabled = true, onMessage, adminFeed = false }: U
     const connect = () => {
       if (cancelled) return
 
+      setStatus(retryCount > 0 ? 'reconnecting' : 'connecting')
+
       const socket = new WebSocket(buildWsUrl())
       currentSocket = socket
       wsRef.current = socket
@@ -67,12 +85,15 @@ export const useWebSocket = ({ enabled = true, onMessage, adminFeed = false }: U
         }
         retryCount = 0
         replaySubscriptions(socket)
+        setStatus('connected')
+        markEvent()
         onMessageRef.current?.({ event: 'WS_CONNECTED', data: null })
       }
 
       socket.onmessage = (event) => {
         if (cancelled) return
         try {
+          markEvent()
           onMessageRef.current?.(JSON.parse(event.data) as WsMessage)
         } catch {
           // noop
@@ -86,7 +107,10 @@ export const useWebSocket = ({ enabled = true, onMessage, adminFeed = false }: U
         currentSocket = null
 
         const shouldReconnect = !cancelled && event.code !== 1000 && event.code !== 1008
-        if (!shouldReconnect) return
+        if (!shouldReconnect) {
+          setStatus(event.code === 1008 ? 'error' : 'disconnected')
+          return
+        }
 
         retryCount += 1
         const delay = Math.min(1000 * 2 ** retryCount, 30_000)
@@ -100,23 +124,26 @@ export const useWebSocket = ({ enabled = true, onMessage, adminFeed = false }: U
       cancelled = true
       if (retryTimer) clearTimeout(retryTimer)
       if (currentSocket) closeCleanly(currentSocket)
+      setStatus('disconnected')
       wsRef.current = null
     }
-  }, [adminFeed, enabled])
+  }, [adminFeed, enabled, markEvent, setStatus])
 
   const subscribeToOrder = useCallback((orderId: number) => {
     subscribedOrdersRef.current.add(orderId)
+    setOrderSubscribed(orderId)
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ action: 'subscribe-order', order_id: orderId }))
     }
-  }, [])
+  }, [setOrderSubscribed])
 
   const unsubscribeFromOrder = useCallback((orderId: number) => {
     subscribedOrdersRef.current.delete(orderId)
+    setOrderUnsubscribed(orderId)
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ action: 'unsubscribe-order', order_id: orderId }))
     }
-  }, [])
+  }, [setOrderUnsubscribed])
 
   return { subscribeToOrder, unsubscribeFromOrder }
 }

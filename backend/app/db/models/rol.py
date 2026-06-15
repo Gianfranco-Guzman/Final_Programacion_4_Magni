@@ -31,9 +31,13 @@ class Rol(SQLModel, table=True):
         description="Fecha de ultima actualización"
     )
 
-    usuarios: list["Usuario"] = Relationship(          #se conecta con usuario por la tabla intermedia UsuarioRol
+    usuarios: list["Usuario"] = Relationship(
         back_populates="roles",
         link_model=UsuarioRol,
+        sa_relationship_kwargs={
+            "primaryjoin": "Rol.id == UsuarioRol.rol_id",
+            "secondaryjoin": "UsuarioRol.usuario_id == Usuario.id",
+        },
     )
 
     def __repr__(self) -> str:

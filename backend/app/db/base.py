@@ -4,8 +4,6 @@ from sqlmodel import SQLModel, Session, create_engine
 from app.core.config import get_settings
 from app.db import models as db_models  # noqa: F401
 
-#Este modulo sirve para crear la conexion a la base de datos y para crear las tablas si no existen
-
 settings = get_settings()
 
 engine = create_engine(
@@ -19,8 +17,10 @@ engine = create_engine(
 def create_all_tables() -> None:
     SQLModel.metadata.create_all(engine)
     _ensure_identity_schema()
+    _ensure_roles_schema()
     _ensure_category_schema()
     _ensure_product_schema()
+    _ensure_pedido_schema()
     _backfill_producto_categoria()
 
 
@@ -30,6 +30,16 @@ def _ensure_identity_schema() -> None:
         "ALTER TABLE usuario ADD COLUMN IF NOT EXISTS celular VARCHAR(20)",
     ]
 
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
+def _ensure_roles_schema() -> None:
+    statements = [
+        "ALTER TABLE usuario_rol ADD COLUMN IF NOT EXISTS asignado_por_id INTEGER REFERENCES usuario(id)",
+        "ALTER TABLE usuario_rol ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE",
+    ]
     with engine.begin() as connection:
         for statement in statements:
             connection.execute(text(statement))
@@ -50,10 +60,14 @@ def _ensure_category_schema() -> None:
 
 def _ensure_product_schema() -> None:
     statements = [
+        "ALTER TABLE forma_pago ADD COLUMN IF NOT EXISTS codigo VARCHAR(20)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_forma_pago_codigo ON forma_pago(codigo) WHERE codigo IS NOT NULL",
         "ALTER TABLE producto ADD COLUMN IF NOT EXISTS disponible BOOLEAN NOT NULL DEFAULT true",
         "ALTER TABLE producto ADD COLUMN IF NOT EXISTS precio_costo_calculado NUMERIC(12,2) NOT NULL DEFAULT 0",
         "ALTER TABLE producto ADD COLUMN IF NOT EXISTS descuento_porcentaje NUMERIC(5,2) NOT NULL DEFAULT 0",
         "ALTER TABLE producto ADD COLUMN IF NOT EXISTS tipo_producto VARCHAR(20) NOT NULL DEFAULT 'FABRICADO'",
+        "ALTER TABLE producto ADD COLUMN IF NOT EXISTS imagenes_url TEXT[]",
+        "ALTER TABLE producto ADD COLUMN IF NOT EXISTS unidad_venta_id INTEGER REFERENCES unidad_medida(id)",
         "ALTER TABLE ingrediente ADD COLUMN IF NOT EXISTS unidad_medida VARCHAR(20) NOT NULL DEFAULT 'UNIDAD'",
         "ALTER TABLE ingrediente ADD COLUMN IF NOT EXISTS stock_actual NUMERIC(12,3) NOT NULL DEFAULT 0",
         "ALTER TABLE ingrediente ADD COLUMN IF NOT EXISTS stock_minimo NUMERIC(12,3) NOT NULL DEFAULT 0",
@@ -67,6 +81,21 @@ def _ensure_product_schema() -> None:
         "ALTER TABLE producto_ingrediente ADD COLUMN IF NOT EXISTS es_opcional BOOLEAN NOT NULL DEFAULT false",
     ]
 
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
+def _ensure_pedido_schema() -> None:
+    statements = [
+        "ALTER TABLE estado_pedido ADD COLUMN IF NOT EXISTS codigo VARCHAR(20)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_estado_pedido_codigo ON estado_pedido(codigo) WHERE codigo IS NOT NULL",
+        "ALTER TABLE estado_pedido ADD COLUMN IF NOT EXISTS es_terminal BOOLEAN NOT NULL DEFAULT false",
+        "ALTER TABLE pedido ADD COLUMN IF NOT EXISTS subtotal NUMERIC(12,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE pedido ADD COLUMN IF NOT EXISTS descuento NUMERIC(12,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE pedido ADD COLUMN IF NOT EXISTS costo_envio NUMERIC(12,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE detalle_pedido ADD COLUMN IF NOT EXISTS personalizacion INTEGER[]",
+    ]
     with engine.begin() as connection:
         for statement in statements:
             connection.execute(text(statement))

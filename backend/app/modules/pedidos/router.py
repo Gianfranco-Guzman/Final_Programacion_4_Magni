@@ -105,7 +105,7 @@ def avanzar_estado(
 )
 def cancelar_pedido(
     pedido_id: int,
-    body: CancelarPedidoRequest = CancelarPedidoRequest(),
+    body: CancelarPedidoRequest,
     current_user: Usuario = Depends(get_current_user),
     uow: SqlModelUnitOfWork = Depends(get_uow),
 ):

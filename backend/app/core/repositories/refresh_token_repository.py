@@ -16,7 +16,7 @@ class RefreshTokenRepository(BaseRepository):
             & (RefreshToken.revoked_at.is_(None))
         )
         token = self.session.exec(statement).first()
-        if token and token.expires_at <= datetime.now(timezone.utc):
+        if token and token.expires_at.replace(tzinfo=timezone.utc) <= datetime.now(timezone.utc):
             return None
         return token
 

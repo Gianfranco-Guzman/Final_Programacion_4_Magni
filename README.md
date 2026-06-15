@@ -16,29 +16,23 @@ Sistema de gestion de pedidos de comida construido con:
 
 - https://youtu.be/u8AqXBbrxMg
 
-## Estado actual del repo
+## Implementado
 
-Implementado de forma sustancial:
-
-- autenticacion JWT con roles
+- Autenticacion JWT con refresh token y revocacion
+- RBAC con roles ADMIN, CLIENT, STOCK, PEDIDOS
 - CRUD de productos, categorias, ingredientes, direcciones y formas de pago
-- modulo admin base
-- pedidos con historial y websocket base
-- frontend cliente/admin base
+- Imagenes con Cloudinary (upload y delete)
+- Pedidos con FSM completa y websocket realtime
+- Pagos con MercadoPago (checkout, webhook)
+- Estadisticas administrativas (resumen, ventas, productos top, ingresos)
+- Dashboard admin con graficos (recharts)
+- Rate limiting en auth (5 intentos / 15 min)
+- Tests de integracion backend (pytest)
 
-Pendiente respecto de la especificacion v6:
-
-- MercadoPago
-- Cloudinary
-- Estadisticas
-- tests backend de integracion
-- cierre completo de entrega
-
-Ver tambien:
+## Especificacion y roadmap
 
 - `TPI_PROG4_FOOD_STORE_v6.md` — especificacion tecnica objetivo
 - `CHANGES.md` — roadmap operativo de implementacion
-- `backend/README.md` — setup especifico del backend
 
 ## Requisitos
 
@@ -47,18 +41,18 @@ Ver tambien:
 - PostgreSQL 15+
 - npm
 
-## Estructura real del proyecto
+## Estructura del proyecto
 
 ```text
 .
 ├── README.md
 ├── CHANGES.md
 ├── TPI_PROG4_FOOD_STORE_v6.md
-├── .env.example
 ├── backend/
 │   ├── README.md
 │   ├── .env.example
 │   ├── requirements.txt
+│   ├── pytest.ini
 │   ├── alembic/
 │   ├── app/
 │   └── tests/
@@ -68,47 +62,28 @@ Ver tambien:
     └── src/
 ```
 
-## Variables de entorno
-
-### Raiz del proyecto
-
-`/.env.example` existe como referencia general del proyecto y para setup global/local.
+## Configuracion de entorno
 
 ### Backend
 
-Copiar:
+Copiar y completar variables:
 
 ```powershell
 Copy-Item backend/.env.example backend/.env
 ```
 
-Variables activamente usadas hoy por backend:
+Variables requeridas para funcionalidad completa:
 
-- `POSTGRES_USER`
-- `POSTGRES_PASSWORD`
-- `POSTGRES_DB`
-- `DATABASE_URL`
-- `SECRET_KEY`
-- `ALGORITHM`
-- `ACCESS_TOKEN_EXPIRE_MINUTES`
-- `REFRESH_TOKEN_EXPIRE_DAYS`
-- `DEBUG`
-- `APP_NAME`
-- `APP_VERSION`
-- `API_PREFIX`
-- `CORS_ORIGINS`
-- `AUTH_COOKIE_NAME`
-- `AUTH_COOKIE_SECURE`
-- `AUTH_COOKIE_SAMESITE`
-
-Variables reservadas para fases futuras de la especificacion:
-
-- `MP_ACCESS_TOKEN`
-- `MP_PUBLIC_KEY`
-- `MP_NOTIFICATION_URL`
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/foodstore
+SECRET_KEY=una-clave-secreta-minimo-32-caracteres
+MP_ACCESS_TOKEN=APP_USR-...         # cuenta MercadoPago sandbox
+MP_PUBLIC_KEY=APP_USR-...           # clave publica MercadoPago
+MP_NOTIFICATION_URL=https://...     # URL publica para webhooks (ngrok en local)
+CLOUDINARY_CLOUD_NAME=nombre
+CLOUDINARY_API_KEY=123456789
+CLOUDINARY_API_SECRET=secreto
+```
 
 ### Frontend
 
@@ -118,9 +93,12 @@ Copiar:
 Copy-Item frontend/.env.example frontend/.env
 ```
 
-Variable principal actual:
+Variable principal:
 
-- `VITE_API_URL`
+```env
+VITE_API_URL=http://localhost:8000
+VITE_MP_PUBLIC_KEY=APP_USR-...     # misma clave publica que el backend
+```
 
 ## Ejecucion local
 
@@ -155,38 +133,49 @@ Frontend disponible en:
 
 - `http://localhost:5173`
 
-## Seed y credenciales base
+## Seed y credenciales
 
-El proyecto espera seed de datos para roles, estados, formas de pago y usuario admin.
+El seed corre automaticamente al iniciar el backend. Credenciales de acceso:
 
-Credencial administrativa historicamente usada en el proyecto:
+| Rol     | Email                    | Password     |
+|---------|--------------------------|--------------|
+| ADMIN   | admin@foodstore.com      | Admin1234!   |
+| CLIENT  | cliente@foodstore.com    | cliente123   |
+| STOCK   | stock@foodstore.com      | stock123     |
+| PEDIDOS | pedidos@foodstore.com    | pedidos123   |
 
-- `admin@foodstore.com`
+## Tests de integracion
 
-La contraseña exacta puede depender del estado actual de la base local/seed ejecutado. Si no funciona, regenerar la BD y correr seed nuevamente.
+Los tests requieren una base de datos PostgreSQL accesible. Por defecto usan `DATABASE_URL`. Para usar una base dedicada:
 
-## Tests
+```powershell
+$env:TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/foodstore_test"
+cd backend
+.\venv\Scripts\Activate.ps1
+pytest
+```
 
-Politica acordada para este proyecto:
+Politica de tests:
 
-- solo backend
-- solo tests de integracion
-- no agregar tests unitarios
-- objetivo: entre 5 y 10 tests por modulo backend cubierto
+- Solo backend
+- Solo tests de integracion
+- No tests unitarios
+- Entre 5 y 10 tests por modulo critico
 
-La carpeta base esperada para esta fase es:
+Modulos cubiertos: `auth`, `pedidos`, `pagos`, `uploads`, `estadisticas`
 
-- `backend/tests/`
+## MercadoPago sandbox
 
-## Verificacion minima antes de continuar
+1. Crear cuenta en https://www.mercadopago.com.ar/developers
+2. Obtener credenciales de prueba (Access Token y Public Key de sandbox)
+3. Configurar `MP_ACCESS_TOKEN` y `MP_PUBLIC_KEY` en `backend/.env`
+4. Configurar `VITE_MP_PUBLIC_KEY` en `frontend/.env`
+5. Para webhooks locales: usar ngrok y configurar `MP_NOTIFICATION_URL`
 
-- backend levanta sin errores
-- frontend levanta sin errores
-- `/docs` responde
-- login responde
-- `CHANGES.md` refleja el plan vigente
+Tarjetas de prueba disponibles en la documentacion de MercadoPago Developers.
 
-## Notas
+## Cloudinary
 
-- El roadmap oficial de trabajo actual esta en `CHANGES.md`.
-- La especificacion objetivo completa esta en `TPI_PROG4_FOOD_STORE_v6.md`.
+1. Crear cuenta en https://cloudinary.com
+2. Obtener `Cloud Name`, `API Key` y `API Secret` desde el dashboard
+3. Configurar las tres variables en `backend/.env`

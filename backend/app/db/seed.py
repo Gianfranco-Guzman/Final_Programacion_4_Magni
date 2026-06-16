@@ -389,22 +389,22 @@ def _seed_ingredientes(session: Session) -> dict[str, Ingrediente]:
 
 def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[str, Producto]:
     productos_seed = [
-        {"codigo": "PIZZA-001", "nombre": "Pizza Clásica", "descripcion": "Pizza con salsa, queso y orégano", "precio": 299.99, "categoria": "Pizzas Clásicas", "disponible": True},
-        {"codigo": "PIZZA-002", "nombre": "Pizza Pepperoni", "descripcion": "Pizza con queso mozzarella y pepperoni", "precio": 349.99, "categoria": "Pizzas Especiales", "disponible": True},
-        {"codigo": "PIZZA-003", "nombre": "Pizza Vegetariana", "descripcion": "Pizza con verduras frescas: tomate, cebolla y morrón", "precio": 329.99, "categoria": "Pizzas Clásicas", "disponible": True},
-        {"codigo": "PIZZA-004", "nombre": "Pizza BBQ", "descripcion": "Pizza con pollo, salsa BBQ y cebolla", "precio": 379.99, "categoria": "Pizzas Especiales", "disponible": True},
-        {"codigo": "PIZZA-005", "nombre": "Pizza 4 Quesos", "descripcion": "Pizza con mozzarella, brie, parmesano y roquefort", "precio": 399.99, "categoria": "Pizzas Especiales", "disponible": True},
-        {"codigo": "BEB-001", "nombre": "Coca Cola 2L", "descripcion": "Bebida gaseosa, botella de 2 litros", "precio": 89.99, "categoria": "Bebidas Frías", "disponible": True, "tipo_producto": "REVENTA"},
-        {"codigo": "BEB-002", "nombre": "Agua Mineral", "descripcion": "Agua mineral sin gas, 1.5L", "precio": 49.99, "categoria": "Bebidas Frías", "disponible": True, "tipo_producto": "REVENTA"},
-        {"codigo": "BEB-003", "nombre": "Cerveza Artesanal", "descripcion": "Cerveza artesanal premium, 355ml", "precio": 129.99, "categoria": "Bebidas Frías", "disponible": True, "tipo_producto": "REVENTA"},
-        {"codigo": "BEB-004", "nombre": "Jugo de Naranja", "descripcion": "Jugo natural exprimido, 500ml", "precio": 79.99, "categoria": "Bebidas Frías", "disponible": False, "tipo_producto": "REVENTA"},
-        {"codigo": "POST-001", "nombre": "Tiramisú", "descripcion": "Postre italiano clásico con mascarpone", "precio": 149.99, "categoria": "Postres Fríos", "disponible": True},
-        {"codigo": "POST-002", "nombre": "Helado Vainilla", "descripcion": "Helado de vainilla artesanal, 500ml", "precio": 99.99, "categoria": "Postres Fríos", "disponible": True},
-        {"codigo": "POST-003", "nombre": "Brownie de Chocolate", "descripcion": "Brownie casero con nueces", "precio": 79.99, "categoria": "Postres", "disponible": True},
-        {"codigo": "POST-004", "nombre": "Cheesecake", "descripcion": "Cheesecake de frutos rojos", "precio": 169.99, "categoria": "Postres Fríos", "disponible": True},
-        {"codigo": "ENT-001", "nombre": "Empanadas x6", "descripcion": "Empanadas de carne cortada a cuchillo", "precio": 199.99, "categoria": "Entradas", "disponible": True},
-        {"codigo": "ENT-002", "nombre": "Papas Fritas", "descripcion": "Papas fritas crocantes con ketchup y mayo", "precio": 89.99, "categoria": "Entradas", "disponible": True},
-        {"codigo": "ENT-003", "nombre": "Tabla de Fiambres", "descripcion": "Selección de fiambres y quesos importados", "precio": 349.99, "categoria": "Entradas", "disponible": False},
+        {"codigo": "PIZZA-001", "nombre": "Pizza Clásica", "descripcion": "Pizza con salsa, queso y orégano", "precio": 299.99, "categoria": "Pizzas Clásicas", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636987/foodstore/productos/iupxojomgnoweij6yhkg.jpg"]},
+        {"codigo": "PIZZA-002", "nombre": "Pizza Pepperoni", "descripcion": "Pizza con queso mozzarella y pepperoni", "precio": 349.99, "categoria": "Pizzas Especiales", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636993/foodstore/productos/qmxuupsciykcoy0ycpsa.jpg"]},
+        {"codigo": "PIZZA-003", "nombre": "Pizza Vegetariana", "descripcion": "Pizza con verduras frescas: tomate, cebolla y morrón", "precio": 329.99, "categoria": "Pizzas Clásicas", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636998/foodstore/productos/gtnxgjs1oepcklh1xdg0.jpg"]},
+        {"codigo": "PIZZA-004", "nombre": "Pizza BBQ", "descripcion": "Pizza con pollo, salsa BBQ y cebolla", "precio": 379.99, "categoria": "Pizzas Especiales", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636989/foodstore/productos/jy1xq2c9b5i4sov6e5su.jpg"]},
+        {"codigo": "PIZZA-005", "nombre": "Pizza 4 Quesos", "descripcion": "Pizza con mozzarella, brie, parmesano y roquefort", "precio": 399.99, "categoria": "Pizzas Especiales", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636997/foodstore/productos/lddggvp0bthwvybsph22.jpg"]},
+        {"codigo": "BEB-001", "nombre": "Coca Cola 2L", "descripcion": "Bebida gaseosa, botella de 2 litros", "precio": 89.99, "categoria": "Bebidas Frías", "disponible": True, "tipo_producto": "REVENTA", "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636992/foodstore/productos/gy0h1hmuewqyqbflosjv.jpg"]},
+        {"codigo": "BEB-002", "nombre": "Agua Mineral", "descripcion": "Agua mineral sin gas, 1.5L", "precio": 49.99, "categoria": "Bebidas Frías", "disponible": True, "tipo_producto": "REVENTA", "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781637005/foodstore/productos/jjifcfnc5vvacncq1cq0.jpg"]},
+        {"codigo": "BEB-003", "nombre": "Cerveza Artesanal", "descripcion": "Cerveza artesanal premium, 355ml", "precio": 129.99, "categoria": "Bebidas Frías", "disponible": True, "tipo_producto": "REVENTA", "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781637000/foodstore/productos/ezxuflv19r5i2uvre60g.jpg"]},
+        {"codigo": "BEB-004", "nombre": "Jugo de Naranja", "descripcion": "Jugo natural exprimido, 500ml", "precio": 79.99, "categoria": "Bebidas Frías", "disponible": False, "tipo_producto": "REVENTA", "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636996/foodstore/productos/usldradzcdwmq48welqu.jpg"]},
+        {"codigo": "POST-001", "nombre": "Tiramisú", "descripcion": "Postre italiano clásico con mascarpone", "precio": 149.99, "categoria": "Postres Fríos", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781637006/foodstore/productos/pfnxtjhp3uvtmecoffsg.jpg"]},
+        {"codigo": "POST-002", "nombre": "Helado Vainilla", "descripcion": "Helado de vainilla artesanal, 500ml", "precio": 99.99, "categoria": "Postres Fríos", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781637001/foodstore/productos/skvmlm8fvaolueas3ags.jpg"]},
+        {"codigo": "POST-003", "nombre": "Brownie de Chocolate", "descripcion": "Brownie casero con nueces", "precio": 79.99, "categoria": "Postres", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636991/foodstore/productos/wgm6kg5ronbvieeimdqe.jpg"]},
+        {"codigo": "POST-004", "nombre": "Cheesecake", "descripcion": "Cheesecake de frutos rojos", "precio": 169.99, "categoria": "Postres Fríos", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781637002/foodstore/productos/gvav4gvjlrkrfvkdbgjm.jpg"]},
+        {"codigo": "ENT-001", "nombre": "Empanadas x6", "descripcion": "Empanadas de carne cortada a cuchillo", "precio": 199.99, "categoria": "Entradas", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636994/foodstore/productos/iu9yokzi9ztnm9bxqmtq.jpg"]},
+        {"codigo": "ENT-002", "nombre": "Papas Fritas", "descripcion": "Papas fritas crocantes con ketchup y mayo", "precio": 89.99, "categoria": "Entradas", "disponible": True, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781637004/foodstore/productos/ozhw1wjwssatpb5a6unp.jpg"]},
+        {"codigo": "ENT-003", "nombre": "Tabla de Fiambres", "descripcion": "Selección de fiambres y quesos importados", "precio": 349.99, "categoria": "Entradas", "disponible": False, "imagenes_url": ["https://res.cloudinary.com/djk6rvseu/image/upload/v1781636986/foodstore/productos/va06he7jg2yiadkm1eaz.jpg"]},
     ]
 
     productos: dict[str, Producto] = {}
@@ -424,6 +424,7 @@ def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[
                 codigo=producto_data["codigo"],
                 disponible=producto_data["disponible"],
                 tipo_producto=tipo_producto,
+                imagenes_url=producto_data.get("imagenes_url"),
                 deleted_at=None,
             )
             session.add(producto)
@@ -436,6 +437,7 @@ def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[
             producto.codigo = producto_data["codigo"]
             producto.disponible = producto_data["disponible"]
             producto.tipo_producto = tipo_producto
+            producto.imagenes_url = producto_data.get("imagenes_url")
             producto.deleted_at = None
             producto.updated_at = datetime.now(timezone.utc)
             session.add(producto)

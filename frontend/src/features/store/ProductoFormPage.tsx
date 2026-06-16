@@ -246,7 +246,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
           imagenes_url: form.imagenes_url || [],
         })
       }
-      navigate('/catalogo')
+      navigate('/admin/productos')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al guardar el producto')
     }

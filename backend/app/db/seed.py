@@ -22,6 +22,7 @@ from app.db.models import (
     Usuario,
     UsuarioRol,
 )
+from app.db.models.enums import TipoProducto
 from app.modules.productos.service import ProductoService
 
 
@@ -118,6 +119,10 @@ INGREDIENTES_SEED = [
     {"nombre": "Mayonesa", "descripcion": "Mayonesa casera", "es_alergeno": True, "stock_actual": 2000, "stock_minimo": 500, "costo_unitario": 8.00, "unidad_medida": "MILILITRO", "permite_fraccion": True},
     {"nombre": "Fiambres", "descripcion": "Selección de fiambres", "es_alergeno": False, "stock_actual": 3000, "stock_minimo": 500, "costo_unitario": 28.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
     {"nombre": "Quesos Importados", "descripcion": "Variedad de quesos importados", "es_alergeno": True, "stock_actual": 2000, "stock_minimo": 500, "costo_unitario": 45.00, "unidad_medida": "GRAMO", "permite_fraccion": True},
+    {"nombre": "Coca Cola 2L", "descripcion": "Botella de Coca Cola 2L para reventa", "es_alergeno": False, "stock_actual": 100, "stock_minimo": 10, "costo_unitario": 45.00, "unidad_medida": "UNIDAD", "permite_fraccion": False},
+    {"nombre": "Agua Mineral", "descripcion": "Botella de agua mineral 1.5L para reventa", "es_alergeno": False, "stock_actual": 100, "stock_minimo": 10, "costo_unitario": 22.00, "unidad_medida": "UNIDAD", "permite_fraccion": False},
+    {"nombre": "Cerveza Artesanal", "descripcion": "Botella de cerveza artesanal 355ml para reventa", "es_alergeno": False, "stock_actual": 100, "stock_minimo": 10, "costo_unitario": 70.00, "unidad_medida": "UNIDAD", "permite_fraccion": False},
+    {"nombre": "Jugo de Naranja", "descripcion": "Botella de jugo de naranja 500ml para reventa", "es_alergeno": False, "stock_actual": 100, "stock_minimo": 10, "costo_unitario": 35.00, "unidad_medida": "UNIDAD", "permite_fraccion": False},
 ]
 
 
@@ -389,10 +394,10 @@ def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[
         {"codigo": "PIZZA-003", "nombre": "Pizza Vegetariana", "descripcion": "Pizza con verduras frescas: tomate, cebolla y morrón", "precio": 329.99, "categoria": "Pizzas Clásicas", "disponible": True},
         {"codigo": "PIZZA-004", "nombre": "Pizza BBQ", "descripcion": "Pizza con pollo, salsa BBQ y cebolla", "precio": 379.99, "categoria": "Pizzas Especiales", "disponible": True},
         {"codigo": "PIZZA-005", "nombre": "Pizza 4 Quesos", "descripcion": "Pizza con mozzarella, brie, parmesano y roquefort", "precio": 399.99, "categoria": "Pizzas Especiales", "disponible": True},
-        {"codigo": "BEB-001", "nombre": "Coca Cola 2L", "descripcion": "Bebida gaseosa, botella de 2 litros", "precio": 89.99, "categoria": "Bebidas Frías", "disponible": True},
-        {"codigo": "BEB-002", "nombre": "Agua Mineral", "descripcion": "Agua mineral sin gas, 1.5L", "precio": 49.99, "categoria": "Bebidas Frías", "disponible": True},
-        {"codigo": "BEB-003", "nombre": "Cerveza Artesanal", "descripcion": "Cerveza artesanal premium, 355ml", "precio": 129.99, "categoria": "Bebidas Frías", "disponible": True},
-        {"codigo": "BEB-004", "nombre": "Jugo de Naranja", "descripcion": "Jugo natural exprimido, 500ml", "precio": 79.99, "categoria": "Bebidas Frías", "disponible": False},
+        {"codigo": "BEB-001", "nombre": "Coca Cola 2L", "descripcion": "Bebida gaseosa, botella de 2 litros", "precio": 89.99, "categoria": "Bebidas Frías", "disponible": True, "tipo_producto": "REVENTA"},
+        {"codigo": "BEB-002", "nombre": "Agua Mineral", "descripcion": "Agua mineral sin gas, 1.5L", "precio": 49.99, "categoria": "Bebidas Frías", "disponible": True, "tipo_producto": "REVENTA"},
+        {"codigo": "BEB-003", "nombre": "Cerveza Artesanal", "descripcion": "Cerveza artesanal premium, 355ml", "precio": 129.99, "categoria": "Bebidas Frías", "disponible": True, "tipo_producto": "REVENTA"},
+        {"codigo": "BEB-004", "nombre": "Jugo de Naranja", "descripcion": "Jugo natural exprimido, 500ml", "precio": 79.99, "categoria": "Bebidas Frías", "disponible": False, "tipo_producto": "REVENTA"},
         {"codigo": "POST-001", "nombre": "Tiramisú", "descripcion": "Postre italiano clásico con mascarpone", "precio": 149.99, "categoria": "Postres Fríos", "disponible": True},
         {"codigo": "POST-002", "nombre": "Helado Vainilla", "descripcion": "Helado de vainilla artesanal, 500ml", "precio": 99.99, "categoria": "Postres Fríos", "disponible": True},
         {"codigo": "POST-003", "nombre": "Brownie de Chocolate", "descripcion": "Brownie casero con nueces", "precio": 79.99, "categoria": "Postres", "disponible": True},
@@ -408,6 +413,8 @@ def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[
         producto = session.exec(
             select(Producto).where(Producto.codigo == producto_data["codigo"])
         ).first()
+        tipo_producto = TipoProducto(producto_data.get("tipo_producto", TipoProducto.FABRICADO.value))
+
         if not producto:
             producto = Producto(
                 nombre=producto_data["nombre"],
@@ -416,6 +423,7 @@ def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[
                 categoria_id=categoria.id,
                 codigo=producto_data["codigo"],
                 disponible=producto_data["disponible"],
+                tipo_producto=tipo_producto,
                 deleted_at=None,
             )
             session.add(producto)
@@ -427,6 +435,7 @@ def _seed_productos(session: Session, categorias: dict[str, Categoria]) -> dict[
             producto.categoria_id = categoria.id
             producto.codigo = producto_data["codigo"]
             producto.disponible = producto_data["disponible"]
+            producto.tipo_producto = tipo_producto
             producto.deleted_at = None
             producto.updated_at = datetime.now(timezone.utc)
             session.add(producto)
@@ -550,6 +559,10 @@ def _seed_producto_ingredientes(
             ("Fiambres", True, False),
             ("Quesos Importados", True, False),
         ],
+        "BEB-001": [("Coca Cola 2L", False, False)],
+        "BEB-002": [("Agua Mineral", False, False)],
+        "BEB-003": [("Cerveza Artesanal", False, False)],
+        "BEB-004": [("Jugo de Naranja", False, False)],
     }
 
     for codigo, ingredient_rows in relaciones.items():

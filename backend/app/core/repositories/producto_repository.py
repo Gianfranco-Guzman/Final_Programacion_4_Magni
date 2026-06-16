@@ -92,7 +92,7 @@ class ProductoRepository(BaseRepository):
         elif disponible is False:
             statement = statement.where(Producto.disponible.is_(False))
 
-        statement = statement.offset((page - 1) * size).limit(size)
+        statement = statement.order_by(Producto.id).offset((page - 1) * size).limit(size)
         return list(self.session.exec(statement).unique().all())
 
     def count_for_catalog(

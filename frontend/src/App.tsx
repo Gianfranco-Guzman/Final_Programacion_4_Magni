@@ -4,6 +4,7 @@ import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@store/authStore'
 import { ProductosProvider } from '@context/ProductosContext'
 import { ProtectedRoute } from '@features/auth/ProtectedRoute'
+import { ScrollToTop } from '@components/ScrollToTop'
 import { LoginPage } from '@features/auth/LoginPage'
 import { ListaPage } from '@pages/ListaPage'
 import { NuevoProductoPage } from '@pages/NuevoProductoPage'
@@ -45,6 +46,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 

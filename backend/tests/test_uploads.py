@@ -1,5 +1,13 @@
 import io
 
+from app.modules.uploads import service as uploads_service
+
+
+class _EmptyCloudinarySettings:
+    cloudinary_cloud_name = ""
+    cloudinary_api_key = ""
+    cloudinary_api_secret = ""
+
 
 def test_subir_imagen_sin_autenticacion(client):
     content = io.BytesIO(b"fake image data")
@@ -41,7 +49,8 @@ def test_subir_imagen_vacia(client, admin_headers):
     assert resp.status_code == 400
 
 
-def test_subir_imagen_sin_cloudinary_configurado(client, admin_headers):
+def test_subir_imagen_sin_cloudinary_configurado(client, admin_headers, monkeypatch):
+    monkeypatch.setattr(uploads_service, "get_settings", lambda: _EmptyCloudinarySettings())
     content = io.BytesIO(b"fake jpeg content" * 50)
     resp = client.post(
         "/api/v1/uploads/imagen",
@@ -57,6 +66,7 @@ def test_eliminar_imagen_sin_autenticacion(client):
     assert resp.status_code == 401
 
 
-def test_eliminar_imagen_sin_cloudinary_configurado(client, admin_headers):
+def test_eliminar_imagen_sin_cloudinary_configurado(client, admin_headers, monkeypatch):
+    monkeypatch.setattr(uploads_service, "get_settings", lambda: _EmptyCloudinarySettings())
     resp = client.delete("/api/v1/uploads/imagen/test/public_id", headers=admin_headers)
     assert resp.status_code == 500

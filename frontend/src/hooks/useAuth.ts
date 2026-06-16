@@ -1,11 +1,12 @@
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { authApi } from '@api/authApi'
 import { LoginRequest, RegisterRequest } from '@models/index'
 
 export const useAuth = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login: storeLogin, logout: storeLogout } = useAuthStore()
 
   const loginMutation = useMutation({
@@ -13,7 +14,8 @@ export const useAuth = () => {
       await storeLogin(credentials.email, credentials.password)
     },
     onSuccess: () => {
-      navigate('/catalogo')
+      const from = (location.state as { from?: { pathname: string; search: string } } | null)?.from
+      navigate(from ? `${from.pathname}${from.search}` : '/catalogo', { replace: true })
     },
   })
 

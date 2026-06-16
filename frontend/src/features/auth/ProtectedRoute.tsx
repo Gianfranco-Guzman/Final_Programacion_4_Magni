@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { Spinner } from '@components/Spinner'
 import { hasAnyRole } from '@/auth/permissions'
@@ -18,6 +18,7 @@ function FullScreenSpinner() {
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
+  const location = useLocation()
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const initialized = useAuthStore((state) => state.initialized)
   const loading = useAuthStore((state) => state.loading)
@@ -28,7 +29,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" state={{ from: location }} replace />
   }
 
   if (allowedRoles?.length && !usuario) {

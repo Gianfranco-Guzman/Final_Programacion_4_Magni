@@ -8,6 +8,7 @@ import { useAuth } from '@hooks/useAuth'
 import { Button } from '@components/Button'
 import { hasAnyRole } from '@/auth/permissions'
 import { CarritoDrawer } from '@features/store/carrito/CarritoDrawer'
+import { ToastContainer } from '@components/ToastContainer'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -179,6 +180,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       </aside>
 
       <CarritoDrawer />
+      <ToastContainer />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         {children}

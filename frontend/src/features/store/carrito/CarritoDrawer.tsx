@@ -6,16 +6,20 @@ import { ResumenCarrito } from './ResumenCarrito'
 export const CarritoDrawer: React.FC = () => {
   const { items, isOpen, closeCart, clearCart } = useCartStore()
 
-  if (!isOpen) return null
-
   return (
     <>
       <div
-        className="fixed inset-0 bg-black bg-opacity-30 z-40"
+        className={`fixed inset-0 bg-black z-40 transition-opacity duration-200 ${
+          isOpen ? 'opacity-30 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
         onClick={closeCart}
       />
 
-      <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 flex flex-col">
+      <div
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 flex flex-col transform transition-transform duration-200 ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
         <div className="flex items-center justify-between px-4 h-16 border-b border-gray-200">
           <h2 className="text-lg font-bold text-gray-800">Tu carrito</h2>
           <button

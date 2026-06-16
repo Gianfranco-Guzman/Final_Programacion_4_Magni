@@ -8,6 +8,7 @@ import { Spinner } from '@components/Spinner'
 import { Button } from '@components/Button'
 import { useAuthStore } from '@store/authStore'
 import { useCartStore } from '@store/cartStore'
+import { useToastStore } from '@store/toastStore'
 import { hasAnyRole } from '@/auth/permissions'
 import { Producto } from '@models/index'
 
@@ -15,11 +16,13 @@ export const ListaPage: React.FC = () => {
   const { state, dispatch } = useProductosContext()
   const usuario = useAuthStore((currentState) => currentState.usuario)
   const addItem = useCartStore((state) => state.addItem)
+  const showToast = useToastStore((state) => state.showToast)
   const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
   const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
 
   const handleAgregarAlCarrito = (producto: Producto) => {
     addItem(producto)
+    showToast(`${producto.nombre} agregado al carrito`)
   }
 
   const { data: productosData, isLoading, error } = useProductos({

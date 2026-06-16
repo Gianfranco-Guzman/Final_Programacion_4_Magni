@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { CardPayment, initMercadoPago } from '@mercadopago/sdk-react'
 
 import { Spinner } from '@components/Spinner'
+import { ItemCarrito } from '@features/store/carrito/ItemCarrito'
 import { useCheckout } from '@hooks/useCheckout'
 import { useDirecciones } from '@hooks/useDirecciones'
 import { useFormasPago } from '@hooks/useFormasPago'
@@ -276,19 +277,31 @@ export const CheckoutPage: React.FC = () => {
 
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow p-5 sticky top-4">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Resumen</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">Resumen</h2>
+              {!pedidoCreado && (
+                <button
+                  onClick={() => navigate('/catalogo')}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  + Agregar productos
+                </button>
+              )}
+            </div>
 
-            <div className="flex flex-col gap-2 mb-4">
-              {items.map((item) => (
-                <div key={item.producto.id} className="flex justify-between text-sm">
-                  <span className="text-gray-700 truncate pr-2">
-                    {item.producto.nombre} <span className="text-gray-400">x{item.cantidad}</span>
-                  </span>
-                  <span className="font-medium text-gray-800 flex-shrink-0">
-                    ${(getProductoPrecioFinal(item.producto) * item.cantidad).toFixed(2)}
-                  </span>
-                </div>
-              ))}
+            <div className="flex flex-col mb-4">
+              {pedidoCreado
+                ? items.map((item) => (
+                    <div key={item.producto.id} className="flex justify-between text-sm py-2 border-b border-gray-100 last:border-0">
+                      <span className="text-gray-700 truncate pr-2">
+                        {item.producto.nombre} <span className="text-gray-400">x{item.cantidad}</span>
+                      </span>
+                      <span className="font-medium text-gray-800 flex-shrink-0">
+                        ${(getProductoPrecioFinal(item.producto) * item.cantidad).toFixed(2)}
+                      </span>
+                    </div>
+                  ))
+                : items.map((item) => <ItemCarrito key={item.producto.id} item={item} />)}
             </div>
 
             {hasInvalidStock && (

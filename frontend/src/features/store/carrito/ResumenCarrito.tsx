@@ -22,7 +22,7 @@ export const ResumenCarrito: React.FC = () => {
         onClick={handleCheckout}
         className="w-full bg-blue-600 text-white font-semibold py-2.5 rounded-lg hover:bg-blue-700 transition-colors"
       >
-        Ir al checkout
+        Continuar compra
       </button>
     </div>
   )

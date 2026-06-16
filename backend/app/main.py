@@ -1,5 +1,6 @@
-﻿from contextlib import asynccontextmanager
-from fastapi import FastAPI
+﻿import time
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.db.base import create_all_tables
@@ -17,6 +18,30 @@ from app.modules.pagos import router as pagos_router
 from app.modules.uploads import router as uploads_router
 
 settings = get_settings()
+
+
+class TimingMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        start = time.perf_counter()
+
+        async def send_with_timing(message):
+            if message["type"] == "http.response.start":
+                duration = time.perf_counter() - start
+                headers = list(message.get("headers", []))
+                headers.append((b"x-process-time", f"{duration:.4f}s".encode()))
+                message = {**message, "headers": headers}
+                method = scope.get("method", "")
+                path = scope.get("path", "")
+                print(f"[TIMING] {method} {path} -> {message['status']} ({duration * 1000:.1f}ms)")
+            await send(message)
+
+        await self.app(scope, receive, send_with_timing)
 
 
 @asynccontextmanager
@@ -44,6 +69,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(TimingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,

@@ -23,7 +23,9 @@ axiosClient.interceptors.response.use(
 
     const cleanError = new Error(message)
 
-    if (error.response?.status === 401) {
+    const isSessionProbe = error.config?.url?.includes('/auth/me')
+
+    if (error.response?.status === 401 && !isSessionProbe) {
       if (window.location.pathname !== '/login') {
         import('@store/authStore').then(({ useAuthStore }) => {
           useAuthStore.getState().logout()

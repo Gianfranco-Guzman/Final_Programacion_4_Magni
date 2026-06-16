@@ -75,7 +75,7 @@ Copy-Item backend/.env.example backend/.env
 Variables requeridas para funcionalidad completa:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/foodstore
+DATABASE_URL=postgresql://foodstore:foodstore_dev_pass_123@localhost:5433/foodstore_db
 SECRET_KEY=una-clave-secreta-minimo-32-caracteres
 MP_ACCESS_TOKEN=APP_USR-...         # cuenta MercadoPago sandbox
 MP_PUBLIC_KEY=APP_USR-...           # clave publica MercadoPago
@@ -102,6 +102,16 @@ VITE_MP_PUBLIC_KEY=APP_USR-...     # misma clave publica que el backend
 
 ## Ejecucion local
 
+### Base de datos (Docker)
+
+Levantar Postgres antes que el backend — sin esto, alembic y uvicorn van a fallar con "connection refused":
+
+```powershell
+docker-compose up -d
+```
+
+Postgres queda expuesto en el host en el puerto **5433** (ver `docker-compose.yml`), no 5432. Si usás `.env.example` tal cual, ajustá `DATABASE_URL` a `localhost:5433`.
+
 ### Backend
 
 ```powershell
@@ -110,9 +120,11 @@ python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 Copy-Item .env.example .env
-python -m alembic upgrade head
+alembic upgrade head
 python -m uvicorn app.main:app --reload
 ```
+
+> `alembic` se ejecuta directo (no con `python -m alembic` — el paquete no tiene `__main__.py` y falla con "No module named alembic.__main__").
 
 Backend disponible en:
 

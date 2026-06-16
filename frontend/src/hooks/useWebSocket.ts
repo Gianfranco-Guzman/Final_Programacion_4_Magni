@@ -14,7 +14,7 @@ interface UseWebSocketOptions {
 }
 
 const buildWsUrl = () => {
-  const apiUrl = new URL(API_BASE_URL)
+  const apiUrl = new URL(API_BASE_URL, window.location.origin)
   const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
   const path = apiUrl.pathname.replace(/\/$/, '')
   return `${protocol}//${apiUrl.host}${path}/pedidos/ws`

@@ -51,13 +51,11 @@ function App() {
           <Route
             path="/catalogo"
             element={
-              <ProtectedRoute>
-                <ProductosProvider>
-                  <MainLayout>
-                    <ListaPage />
-                  </MainLayout>
-                </ProductosProvider>
-              </ProtectedRoute>
+              <ProductosProvider>
+                <MainLayout>
+                  <ListaPage />
+                </MainLayout>
+              </ProductosProvider>
             }
           />
           <Route

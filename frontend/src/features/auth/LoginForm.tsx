@@ -102,7 +102,7 @@ export const LoginForm: React.FC = () => {
           <p className="text-xs text-gray-400 text-center mb-3">Usuarios de prueba</p>
           <div className="grid grid-cols-2 gap-2">
              {[
-                { label: 'Admin', email: 'admin@foodstore.com', password: 'admin123', color: 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100' },
+                { label: 'Admin', email: 'admin@foodstore.com', password: 'Admin1234!', color: 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100' },
                 { label: 'Cliente', email: 'cliente@foodstore.com', password: 'cliente123', color: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' },
                 { label: 'Stock', email: 'stock@foodstore.com', password: 'stock123', color: 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100' },
                 { label: 'Pedidos', email: 'pedidos@foodstore.com', password: 'pedidos123', color: 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100' },

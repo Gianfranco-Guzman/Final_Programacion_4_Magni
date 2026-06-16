@@ -36,7 +36,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   const handleLogout = async () => {
     await logout()
-    navigate('/login')
+    navigate('/catalogo')
   }
 
   return (
@@ -64,7 +64,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {usuario && (
                 <span className="text-sm text-gray-700 font-medium hidden sm:inline">{displayName}</span>
               )}
-              {isClient && (
+              {(isClient || !usuario) && (
                 <button
                   onClick={toggleCart}
                   className="relative flex items-center justify-center w-10 h-10 rounded hover:bg-gray-100"
@@ -78,9 +78,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   )}
                 </button>
               )}
-              <Button variant="secondary" size="sm" onClick={handleLogout}>
-                Salir
-              </Button>
+              {usuario ? (
+                <Button variant="secondary" size="sm" onClick={handleLogout}>
+                  Salir
+                </Button>
+              ) : (
+                <Button variant="secondary" size="sm" onClick={() => navigate('/login')}>
+                  Iniciar sesión
+                </Button>
+              )}
             </div>
           </div>
         </div>

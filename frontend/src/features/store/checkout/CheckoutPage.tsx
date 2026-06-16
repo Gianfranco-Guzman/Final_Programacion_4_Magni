@@ -119,17 +119,25 @@ export const CheckoutPage: React.FC = () => {
 
   const handleMercadoPagoSubmit = async (formData: MercadoPagoCardFormData) => {
     if (!pedidoCreado) {
-      throw new Error('Primero debés crear el pedido.')
+      setError('Primero debés crear el pedido.')
+      return
     }
 
-    await pagoMutation.mutateAsync({
-      pedido_id: pedidoCreado.id,
-      token: formData.token,
-      payment_method_id: formData.payment_method_id,
-      installments: Number(formData.installments ?? 1),
-      issuer_id: formData.issuer_id,
-      payer_email: formData.payer?.email ?? usuario?.email ?? undefined,
-    })
+    setError('')
+
+    try {
+      await pagoMutation.mutateAsync({
+        pedido_id: pedidoCreado.id,
+        token: formData.token,
+        payment_method_id: formData.payment_method_id,
+        installments: Number(formData.installments ?? 1),
+        issuer_id: formData.issuer_id,
+        payer_email: formData.payer?.email ?? usuario?.email ?? undefined,
+      })
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo procesar el pago')
+      return
+    }
 
     clearCart()
     navigate(`/pedidos/${pedidoCreado.id}`)

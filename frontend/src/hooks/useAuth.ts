@@ -16,7 +16,18 @@ export const useAuth = () => {
     },
     onSuccess: () => {
       const from = (location.state as { from?: { pathname: string; search: string } } | null)?.from
-      navigate(from ? `${from.pathname}${from.search}` : '/catalogo', { replace: true })
+      if (from) {
+        navigate(`${from.pathname}${from.search}`, { replace: true })
+        return
+      }
+      const roles = useAuthStore.getState().usuario?.roles?.map((r) => r.nombre) ?? []
+      if (roles.includes('STOCK') && !roles.includes('ADMIN')) {
+        navigate('/admin/stock', { replace: true })
+      } else if (roles.includes('PEDIDOS') && !roles.includes('ADMIN')) {
+        navigate('/cajero', { replace: true })
+      } else {
+        navigate('/catalogo', { replace: true })
+      }
     },
   })
 

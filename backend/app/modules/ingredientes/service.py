@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from app.db.models import Ingrediente
 from app.db.models.enums import TipoMovimientoIngrediente, UnidadMedida
 from app.db.unit_of_work import SqlModelUnitOfWork
-from app.modules.ingredientes.schemas import IngredienteCreate, IngredienteUpdate
+from app.modules.ingredientes.schemas import IngredienteCreate, IngredienteUpdate, MovimientoEntradaRead, StockCargaInput, StockCorreccionInput
 from app.modules.ingredientes.stock_service import IngredienteStockService
 
 
@@ -113,6 +113,117 @@ class IngredienteService:
                     stock_posterior_override=stock_posterior,
                 )
         return ingrediente
+
+    _CONVERSIONES: dict[UnidadMedida, dict[str, Decimal]] = {
+        UnidadMedida.GRAMO: {"mg": Decimal("0.001"), "g": Decimal("1"), "kg": Decimal("1000")},
+        UnidadMedida.MILILITRO: {"ml": Decimal("1"), "L": Decimal("1000")},
+        UnidadMedida.UNIDAD: {"unidad": Decimal("1")},
+        UnidadMedida.KILOGRAMO: {"g": Decimal("0.001"), "kg": Decimal("1"), "t": Decimal("1000")},
+        UnidadMedida.LITRO: {"ml": Decimal("0.001"), "L": Decimal("1")},
+    }
+
+    @staticmethod
+    def _resolver_factor(ingrediente: Ingrediente, unidad_entrada: str) -> Decimal:
+        conversiones = IngredienteService._CONVERSIONES.get(ingrediente.unidad_medida, {})
+        factor = conversiones.get(unidad_entrada)
+        if factor is None:
+            opciones = list(conversiones.keys())
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unidad '{unidad_entrada}' no válida para {ingrediente.unidad_medida}. Opciones: {opciones}",
+            )
+        return factor
+
+    @staticmethod
+    def cargar_stock(ingrediente_id: int, data: StockCargaInput, uow: SqlModelUnitOfWork, usuario_id: int | None = None) -> Ingrediente:
+        ingrediente = uow.ingredientes.get_active_by_id(ingrediente_id)
+        if not ingrediente:
+            raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
+
+        factor = IngredienteService._resolver_factor(ingrediente, data.unidad_entrada)
+        cantidad_base = Decimal(str(data.cantidad)) * factor
+        IngredienteStockService.registrar_movimiento(
+            ingrediente,
+            cantidad_base,
+            TipoMovimientoIngrediente.ENTRADA_STOCK,
+            uow,
+            usuario_id=usuario_id,
+            observacion=f"Carga: {data.cantidad} {data.unidad_entrada}",
+            aplicar_cambio=True,
+            signo=1,
+        )
+        return ingrediente
+
+    @staticmethod
+    def mis_cargas(usuario_id: int, uow: SqlModelUnitOfWork) -> list[MovimientoEntradaRead]:
+        movimientos = uow.movimientos_stock_ingredientes.list_entradas_by_usuario(usuario_id)
+        result = []
+        for m in movimientos:
+            ya_corregido = (
+                uow.movimientos_stock_ingredientes.total_corregido(m.id)
+                if m.tipo_movimiento == TipoMovimientoIngrediente.ENTRADA_STOCK
+                else Decimal("0")
+            )
+            result.append(MovimientoEntradaRead(
+                id=m.id,
+                ingrediente_id=m.ingrediente_id,
+                tipo_movimiento=m.tipo_movimiento,
+                cantidad=m.cantidad,
+                stock_anterior=m.stock_anterior,
+                stock_posterior=m.stock_posterior,
+                observacion=m.observacion,
+                created_at=m.created_at,
+                movimiento_referencia_id=m.movimiento_referencia_id,
+                ya_corregido_total=ya_corregido,
+            ))
+        return result
+
+    @staticmethod
+    def corregir_entrada(data: StockCorreccionInput, usuario_id: int, uow: SqlModelUnitOfWork) -> MovimientoEntradaRead:
+        movimiento = uow.movimientos_stock_ingredientes.get_by_id(data.movimiento_id)
+        if not movimiento or movimiento.tipo_movimiento != TipoMovimientoIngrediente.ENTRADA_STOCK:
+            raise HTTPException(status_code=404, detail="Movimiento no encontrado")
+        if movimiento.usuario_id != usuario_id:
+            raise HTTPException(status_code=403, detail="Solo podés corregir tus propias cargas")
+
+        ingrediente = uow.ingredientes.get_active_by_id(movimiento.ingrediente_id)
+        if not ingrediente:
+            raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
+
+        factor = IngredienteService._resolver_factor(ingrediente, data.unidad_entrada)
+        cantidad_base = Decimal(str(data.cantidad)) * factor
+
+        ya_corregido = uow.movimientos_stock_ingredientes.total_corregido(data.movimiento_id)
+        disponible = movimiento.cantidad - ya_corregido
+        if cantidad_base > disponible:
+            raise HTTPException(
+                status_code=400,
+                detail=f"La corrección supera lo disponible. Máximo corregible: {disponible} (unidad base)",
+            )
+
+        nuevo = IngredienteStockService.registrar_movimiento(
+            ingrediente,
+            cantidad_base,
+            TipoMovimientoIngrediente.CORRECCION_ENTRADA,
+            uow,
+            usuario_id=usuario_id,
+            movimiento_referencia_id=data.movimiento_id,
+            observacion=data.motivo,
+            aplicar_cambio=True,
+            signo=-1,
+        )
+        return MovimientoEntradaRead(
+            id=nuevo.id,
+            ingrediente_id=nuevo.ingrediente_id,
+            tipo_movimiento=nuevo.tipo_movimiento,
+            cantidad=nuevo.cantidad,
+            stock_anterior=nuevo.stock_anterior,
+            stock_posterior=nuevo.stock_posterior,
+            observacion=nuevo.observacion,
+            created_at=nuevo.created_at,
+            movimiento_referencia_id=nuevo.movimiento_referencia_id,
+            ya_corregido_total=Decimal("0"),
+        )
 
     @staticmethod
     def dar_de_baja(ingrediente_id: int, uow: SqlModelUnitOfWork) -> Ingrediente:

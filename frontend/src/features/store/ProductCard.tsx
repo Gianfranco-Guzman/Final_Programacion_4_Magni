@@ -15,7 +15,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
   const isDeleted = producto.deleted_at != null
   const isOperationallyAvailable = isProductoOperativamenteDisponible(producto)
   const categoriaPrincipal = producto.categorias?.find((item) => item.es_principal)?.categoria
-  const categoriasSecundarias = producto.categorias?.filter((item) => !item.es_principal && item.categoria).map((item) => item.categoria!.nombre) || []
   const alergenos = producto.ingredientes?.filter((item) => item.ingrediente?.es_alergeno).map((item) => item.ingrediente!.nombre) || []
   const precioFinal = getProductoPrecioFinal(producto)
   const precioBase = getProductoPrecioBase(producto)

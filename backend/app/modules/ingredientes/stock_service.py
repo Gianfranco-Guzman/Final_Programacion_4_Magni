@@ -18,6 +18,8 @@ class IngredienteStockService:
         uow: SqlModelUnitOfWork,
         *,
         pedido_id: int | None = None,
+        usuario_id: int | None = None,
+        movimiento_referencia_id: int | None = None,
         observacion: str | None = None,
         aplicar_cambio: bool = False,
         signo: int = 1,
@@ -53,6 +55,8 @@ class IngredienteStockService:
         movimiento = MovimientoStockIngrediente(
             ingrediente_id=ingrediente.id,
             pedido_id=pedido_id,
+            usuario_id=usuario_id,
+            movimiento_referencia_id=movimiento_referencia_id,
             tipo_movimiento=tipo_movimiento,
             cantidad=cantidad_decimal,
             stock_anterior=stock_anterior,

@@ -674,13 +674,13 @@ def _seed_pedidos_demo(
 
     pedidos_seed = [
         {
-            "nota": "SEED-DEMO-ORDER-1",
+            "nota": "SEED-ENTREGADO-1",
             "estado_actual": "ENTREGADO",
             "forma_pago": "MERCADOPAGO",
             "direccion": casa,
             "lineas": [("PIZZA-002", 1), ("BEB-001", 1), ("POST-001", 1)],
             "historial": [
-                (None, "PENDIENTE", cliente, "Pedido creado desde seed demo"),
+                (None, "PENDIENTE", cliente, None),
                 ("PENDIENTE", "CONFIRMADO", admin, "Confirmado por administración"),
                 ("CONFIRMADO", "EN_PREP", operador, "Preparación iniciada"),
                 ("EN_PREP", "EN_CAMINO", operador, "Sale con repartidor"),
@@ -689,13 +689,13 @@ def _seed_pedidos_demo(
             "created_offset_hours": 6,
         },
         {
-            "nota": "SEED-DEMO-ORDER-2",
+            "nota": "SEED-CONFIRMADO-1",
             "estado_actual": "CONFIRMADO",
             "forma_pago": "EFECTIVO",
             "direccion": trabajo,
             "lineas": [("PIZZA-005", 1), ("ENT-002", 2), ("BEB-002", 2)],
             "historial": [
-                (None, "PENDIENTE", cliente, "Pedido creado desde seed demo"),
+                (None, "PENDIENTE", cliente, None),
                 ("PENDIENTE", "CONFIRMADO", operador, "Pago validado, listo para cocina"),
             ],
             "created_offset_hours": 2,

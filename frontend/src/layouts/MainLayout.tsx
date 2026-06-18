@@ -119,9 +119,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
 
         <nav className="p-4 flex flex-col gap-2">
-          <Link to="/catalogo" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
-            Catálogo
-          </Link>
+          {(!canManageCatalog && !isCajero) && (
+            <Link to="/catalogo" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+              Catálogo
+            </Link>
+          )}
+          {isAdmin && (
+            <Link to="/catalogo" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+              Catálogo
+            </Link>
+          )}
           {isClient && (
             <>
               <Link to="/pedidos" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
@@ -141,6 +148,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
           {canManageCatalog && (
             <>
+              <Link to="/admin/stock" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
+                Gestión de stock
+              </Link>
               {isAdmin && (
                 <>
                   <Link to="/admin/dashboard" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
@@ -159,11 +169,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     Admin usuarios
                   </Link>
                 </>
-              )}
-              {!isAdmin && (
-                <Link to="/admin/productos" onClick={closeSidebar} className="px-3 py-2 rounded text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium">
-                  Productos y disponibilidad
-                </Link>
               )}
             </>
           )}

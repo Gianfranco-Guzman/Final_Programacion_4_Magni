@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from app.db.models.enums import UnidadMedida
+from app.db.models.enums import TipoMovimientoIngrediente, UnidadMedida
 
 
 class IngredienteBase(BaseModel):
@@ -31,6 +31,33 @@ class IngredienteUpdate(BaseModel):
     stock_minimo: Optional[Decimal] = Field(None, ge=0)
     costo_unitario: Optional[Decimal] = Field(None, ge=0)
     permite_fraccion: Optional[bool] = None
+
+
+class StockCargaInput(BaseModel):
+    cantidad: Decimal = Field(..., gt=0, description="Cantidad a agregar en la unidad especificada")
+    unidad_entrada: str = Field(..., min_length=1, max_length=10)
+
+
+class StockCorreccionInput(BaseModel):
+    movimiento_id: int
+    cantidad: Decimal = Field(..., gt=0)
+    unidad_entrada: str = Field(..., min_length=1, max_length=10)
+    motivo: str = Field(..., min_length=3, max_length=255)
+
+
+class MovimientoEntradaRead(BaseModel):
+    id: int
+    ingrediente_id: int
+    tipo_movimiento: TipoMovimientoIngrediente
+    cantidad: Decimal
+    stock_anterior: Decimal
+    stock_posterior: Decimal
+    observacion: Optional[str]
+    created_at: datetime
+    movimiento_referencia_id: Optional[int]
+    ya_corregido_total: Decimal
+
+    model_config = {"from_attributes": True}
 
 
 class IngredienteRead(IngredienteBase):

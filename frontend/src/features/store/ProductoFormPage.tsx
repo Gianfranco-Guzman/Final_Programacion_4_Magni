@@ -104,7 +104,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
   const stockMaximo = useMemo(() => calcularStockMaximoProducto(selectedIngredienteConfigs), [selectedIngredienteConfigs])
   const precioFinal = useMemo(() => Number((form.precio_venta * (1 - (form.descuento_porcentaje || 0) / 100)).toFixed(2)), [form.precio_venta, form.descuento_porcentaje])
   const precioSugerido = useMemo(() => Number((costoCalculado * 1.15).toFixed(2)), [costoCalculado])
-  const ganancia = useMemo(() => Number((form.precio_venta - costoCalculado).toFixed(2)), [form.precio_venta, costoCalculado])
+  const ganancia = useMemo(() => Number((precioFinal - costoCalculado).toFixed(2)), [precioFinal, costoCalculado])
 
   const sortedCategorias = useMemo(
     () => [...categorias].sort((a, b) => a.nombre.localeCompare(b.nombre)),
@@ -523,10 +523,16 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
               <span className="font-medium text-gray-700">${form.precio_venta.toFixed(2)}</span>
             </div>
             {form.descuento_porcentaje > 0 && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Con descuento ({form.descuento_porcentaje}%)</span>
-                <span className="font-medium text-gray-700">${precioFinal.toFixed(2)}</span>
-              </div>
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Descuento ({form.descuento_porcentaje}%)</span>
+                  <span className="font-medium text-red-600">-${(form.precio_venta - precioFinal).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between border-t border-gray-200 pt-2">
+                  <span className="font-medium text-gray-700">Precio al cliente</span>
+                  <span className="font-bold text-gray-800">${precioFinal.toFixed(2)}</span>
+                </div>
+              </>
             )}
             <div className={`flex justify-between rounded px-2 py-1.5 ${ganancia >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
               <span className={`font-medium ${ganancia >= 0 ? 'text-green-700' : 'text-red-700'}`}>Ganancia</span>

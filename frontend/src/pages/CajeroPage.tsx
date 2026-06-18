@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { hasAnyRole } from '@/auth/permissions'
 import { FeedbackAlert } from '@components/FeedbackAlert'
@@ -8,15 +8,14 @@ import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
 import { useAuthStore } from '@store/authStore'
 import { Pedido } from '@models/index'
 
-const ORDEN_ESTADOS = ['PENDIENTE', 'CONFIRMADO', 'EN_PREP', 'EN_CAMINO', 'ENTREGADO', 'CANCELADO'] as const
+const ESTADOS_ACTIVOS = ['PENDIENTE', 'CONFIRMADO', 'EN_PREP', 'EN_CAMINO'] as const
+const ESTADOS_HISTORICOS = ['ENTREGADO', 'CANCELADO'] as const
 
 const ESTADO_COLORS: Record<string, string> = {
   PENDIENTE: 'border-t-yellow-400 bg-yellow-50',
   CONFIRMADO: 'border-t-blue-400 bg-blue-50',
   EN_PREP: 'border-t-orange-400 bg-orange-50',
   EN_CAMINO: 'border-t-purple-400 bg-purple-50',
-  ENTREGADO: 'border-t-green-400 bg-green-50',
-  CANCELADO: 'border-t-red-400 bg-red-50',
 }
 
 const ESTADO_BADGE: Record<string, string> = {
@@ -26,6 +25,11 @@ const ESTADO_BADGE: Record<string, string> = {
   EN_CAMINO: 'bg-purple-100 text-purple-800',
   ENTREGADO: 'bg-green-100 text-green-800',
   CANCELADO: 'bg-red-100 text-red-800',
+}
+
+const ESTADO_FILA_HISTORICO: Record<string, string> = {
+  ENTREGADO: 'text-green-700',
+  CANCELADO: 'text-red-600',
 }
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -44,8 +48,6 @@ const NEXT_LABEL: Record<string, string> = {
   EN_CAMINO: 'Marcar entregado',
 }
 
-const ESTADOS_HISTORICOS = ['ENTREGADO', 'CANCELADO']
-const MAX_HISTORICOS = 10
 
 interface KanbanCardProps {
   pedido: Pedido
@@ -102,10 +104,18 @@ function KanbanCard({ pedido, onAvanzar, onCancelar, isBusy }: KanbanCardProps) 
 
 export const CajeroPage: React.FC = () => {
   const [actionError, setActionError] = useState('')
+  const [mostrarSubir, setMostrarSubir] = useState(false)
+  const historialRef = useRef<HTMLDivElement>(null)
   const usuario = useAuthStore((state) => state.usuario)
   const { data: pedidos = [], isLoading, error, refetch } = usePedidos({ size: 100 })
   const avanzarMutation = useAvanzarEstado()
   const cancelarMutation = useCancelarPedido()
+
+  useEffect(() => {
+    const onScroll = () => setMostrarSubir(window.scrollY > 300)
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const handleWsMessage = useCallback((message: WsMessage) => {
     if (
@@ -122,18 +132,18 @@ export const CajeroPage: React.FC = () => {
     onMessage: handleWsMessage,
   })
 
-  const pedidosByEstado = useMemo(() => {
-    const groups: Record<string, Pedido[]> = {}
-    ORDEN_ESTADOS.forEach((e) => { groups[e] = [] })
+  const { activos, historicos } = useMemo(() => {
+    const grupos: Record<string, Pedido[]> = {}
+    ;[...ESTADOS_ACTIVOS, ...ESTADOS_HISTORICOS].forEach((e) => { grupos[e] = [] })
     pedidos.forEach((p) => {
-      if (groups[p.estado_actual] !== undefined) {
-        groups[p.estado_actual].push(p)
-      }
+      if (grupos[p.estado_actual] !== undefined) grupos[p.estado_actual].push(p)
     })
-    ORDEN_ESTADOS.forEach((e) => {
-      groups[e].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    ESTADOS_ACTIVOS.forEach((e) => {
+      grupos[e].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     })
-    return groups
+    const hist = [...(grupos['ENTREGADO'] ?? []), ...(grupos['CANCELADO'] ?? [])]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    return { activos: grupos, historicos: hist }
   }, [pedidos])
 
   const handleAvanzar = (id: number) => {
@@ -172,22 +182,30 @@ export const CajeroPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-8">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Panel cajero</h1>
           <p className="text-gray-500 text-sm mt-1">{pedidos.length} pedido(s) cargados</p>
         </div>
-        <button
-          onClick={() => refetch()}
-          className="text-sm border border-gray-300 rounded px-3 py-2 hover:bg-gray-50"
-        >
-          Actualizar
-        </button>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={() => historialRef.current?.scrollIntoView({ behavior: 'smooth' })}
+            className="text-sm text-blue-600 border border-blue-200 bg-blue-50 rounded px-4 py-2 hover:bg-blue-100"
+          >
+            Ver historial
+          </button>
+          <button
+            onClick={() => refetch()}
+            className="text-sm border border-gray-300 rounded px-3 py-2 hover:bg-gray-50"
+          >
+            Actualizar
+          </button>
+        </div>
       </div>
 
       {actionError && (
-        <div className="mb-4">
+        <div>
           <FeedbackAlert title="No se pudo completar la acción">{actionError}</FeedbackAlert>
         </div>
       )}
@@ -196,31 +214,23 @@ export const CajeroPage: React.FC = () => {
         <div className="py-12"><Spinner /></div>
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-4">
-          {ORDEN_ESTADOS.map((estado) => {
-            const lista = pedidosByEstado[estado] ?? []
-            const esHistorico = ESTADOS_HISTORICOS.includes(estado)
-            const visible = esHistorico ? lista.slice(-MAX_HISTORICOS) : lista
-            const ocultos = esHistorico ? Math.max(0, lista.length - MAX_HISTORICOS) : 0
-
+          {ESTADOS_ACTIVOS.map((estado) => {
+            const lista = activos[estado] ?? []
             return (
               <div key={estado} className="flex-shrink-0 w-52 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ESTADO_BADGE[estado] ?? 'bg-gray-100 text-gray-700'}`}>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ESTADO_BADGE[estado]}`}>
                     {ESTADO_LABEL[estado]}
                   </span>
                   <span className="text-xs text-gray-400 font-medium">{lista.length}</span>
                 </div>
-
-                <div className="flex flex-col gap-2 min-h-[4rem]">
-                  {ocultos > 0 && (
-                    <p className="text-xs text-gray-400 text-center py-1">+{ocultos} anteriores</p>
-                  )}
-                  {visible.length === 0 ? (
+                <div className="flex flex-col gap-2 overflow-y-auto max-h-[70vh] pr-0.5">
+                  {lista.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-gray-200 p-4 text-center text-xs text-gray-400">
                       Sin pedidos
                     </div>
                   ) : (
-                    visible.map((pedido) => (
+                    lista.map((pedido) => (
                       <KanbanCard
                         key={pedido.id}
                         pedido={pedido}
@@ -235,6 +245,67 @@ export const CajeroPage: React.FC = () => {
             )
           })}
         </div>
+      )}
+
+      <div ref={historialRef}>
+        <h2 className="text-lg font-semibold text-gray-700 mb-3">Historial de pedidos</h2>
+        {historicos.length === 0 ? (
+          <p className="text-sm text-gray-400">No hay pedidos entregados ni cancelados todavía.</p>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notas</th>
+                  <th className="px-5 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {historicos.map((pedido) => (
+                  <tr key={pedido.id} className="hover:bg-gray-50">
+                    <td className="px-5 py-3 text-sm font-medium text-gray-800">#{pedido.id}</td>
+                    <td className="px-5 py-3 text-sm text-gray-500 whitespace-nowrap">
+                      {new Date(pedido.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
+                    </td>
+                    <td className="px-5 py-3 text-sm font-semibold text-gray-800">${pedido.total.toFixed(2)}</td>
+                    <td className="px-5 py-3">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ESTADO_BADGE[pedido.estado_actual]}`}>
+                        {ESTADO_LABEL[pedido.estado_actual]}
+                      </span>
+                    </td>
+                    <td className={`px-5 py-3 text-xs max-w-xs truncate ${ESTADO_FILA_HISTORICO[pedido.estado_actual] ?? 'text-gray-500'}`}>
+                      {pedido.notas ?? '—'}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <Link
+                        to={`/pedidos/${pedido.id}`}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        Ver detalle
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {mostrarSubir && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-6 right-6 bg-white border border-gray-300 text-gray-600 rounded-full w-10 h-10 flex items-center justify-center shadow-md hover:bg-gray-50"
+          aria-label="Volver arriba"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
       )}
     </div>
   )

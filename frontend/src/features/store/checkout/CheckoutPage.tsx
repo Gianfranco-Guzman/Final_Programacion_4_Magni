@@ -283,8 +283,8 @@ export const CheckoutPage: React.FC = () => {
           )}
         </div>
 
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow p-5 sticky top-4">
+        <div className="lg:col-span-2 lg:self-start lg:sticky lg:top-4">
+          <div className="bg-white rounded-lg shadow p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-800">Resumen</h2>
               {!pedidoCreado && (

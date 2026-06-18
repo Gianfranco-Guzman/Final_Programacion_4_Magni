@@ -30,6 +30,8 @@ export const PedidoDetallePage: React.FC = () => {
   const pedidoIdNumber = Number(pedidoId)
   const navigate = useNavigate()
   const usuario = useAuthStore((state) => state.usuario)
+  const esCajero = hasAnyRole(usuario?.roles, ['PEDIDOS']) && !hasAnyRole(usuario?.roles, ['ADMIN'])
+  const rutaVolver = esCajero ? '/cajero' : '/pedidos'
   const { data: pedido, isLoading, error, refetch } = usePedido(pedidoIdNumber)
   const cancelarMutation = useCancelarPedido()
   const [actionError, setActionError] = React.useState('')
@@ -65,7 +67,7 @@ export const PedidoDetallePage: React.FC = () => {
     cancelarMutation.mutate(
       { id: pedido!.id, observacion },
       {
-        onSuccess: () => navigate('/pedidos'),
+        onSuccess: () => navigate(rutaVolver),
         onError: (err: unknown) => setActionError(err instanceof Error ? err.message : 'Error al cancelar'),
       },
     )
@@ -90,8 +92,8 @@ export const PedidoDetallePage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <button onClick={() => navigate(-1)} className="text-sm text-blue-600 hover:underline mb-4 inline-block">
-        ← Volver a mis pedidos
+      <button onClick={() => navigate(rutaVolver)} className="text-sm text-blue-600 hover:underline mb-4 inline-block">
+        ← {esCajero ? 'Volver al panel' : 'Volver a mis pedidos'}
       </button>
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">

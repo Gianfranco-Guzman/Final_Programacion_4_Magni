@@ -505,7 +505,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
           </form>
         </div>
 
-        <aside className="h-fit rounded-lg bg-white p-4 shadow-md xl:sticky xl:top-20">
+        <aside className="rounded-lg bg-white p-4 shadow-md xl:self-start xl:sticky xl:top-20">
           <h2 className="mb-3 text-lg font-semibold text-gray-800">Resumen</h2>
           <div className="space-y-2 text-sm text-gray-700">
             <p><span className="font-medium">Tipo:</span> {form.tipo_producto}</p>

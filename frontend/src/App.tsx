@@ -39,7 +39,7 @@ function RoleGuard({ children }: { children: ReactNode }) {
   const roles = usuario.roles?.map((r) => r.nombre) ?? []
   const isAdmin = roles.includes('ADMIN')
 
-  if (!isAdmin && roles.includes('PEDIDOS') && location.pathname !== '/cajero') {
+  if (!isAdmin && roles.includes('PEDIDOS') && location.pathname !== '/cajero' && !location.pathname.startsWith('/pedidos/')) {
     return <Navigate to="/cajero" replace />
   }
   if (!isAdmin && roles.includes('STOCK') && location.pathname !== '/admin/stock') {

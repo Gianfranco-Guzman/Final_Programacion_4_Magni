@@ -182,9 +182,37 @@ Modulos cubiertos: `auth`, `pedidos`, `pagos`, `uploads`, `estadisticas`
 2. Obtener credenciales de prueba (Access Token y Public Key de sandbox)
 3. Configurar `MP_ACCESS_TOKEN` y `MP_PUBLIC_KEY` en `backend/.env`
 4. Configurar `VITE_MP_PUBLIC_KEY` en `frontend/.env`
-5. Para webhooks locales: usar ngrok y configurar `MP_NOTIFICATION_URL`
+5. Levantar ngrok con el dominio permanente (ver seccion ngrok abajo)
+6. Configurar `MP_NOTIFICATION_URL` en `backend/.env` con la URL de ngrok
 
 Tarjetas de prueba disponibles en la documentacion de MercadoPago Developers.
+
+## ngrok (webhooks locales)
+
+El webhook de MercadoPago requiere una URL publica. En local se usa ngrok.
+
+> El paquete npm de ngrok puede fallar en Windows. Usar el ejecutable de Python:
+
+```powershell
+C:\Users\Gian\AppData\Local\Programs\Python\Python313\Scripts\ngrok.exe http 8000 --domain=lobularly-unprosaical-nedra.ngrok-free.dev
+```
+
+El dominio permanente evita tener que actualizar `MP_NOTIFICATION_URL` en el `.env` cada vez.
+
+La URL del webhook configurada en `backend/.env` debe ser:
+
+```env
+MP_NOTIFICATION_URL=https://lobularly-unprosaical-nedra.ngrok-free.dev/api/v1/pagos/webhook
+```
+
+Orden de arranque para probar pagos con MercadoPago:
+
+1. `docker-compose up -d` (base de datos)
+2. `python -m uvicorn app.main:app --reload` (backend)
+3. `npm run dev` (frontend)
+4. ngrok con el comando de arriba (en terminal separada)
+
+Sin ngrok corriendo con el dominio correcto, el pago se procesa pero el pedido no avanza de PENDIENTE automaticamente.
 
 ## Cloudinary
 

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Card } from '@components/Card'
 import { Producto } from '@models/index'
-import { getCloudinaryProductImageUrl, getProductoEtiquetaStock, getProductoImagenPrincipal, getProductoPrecioBase, getProductoPrecioFinal, getProductoStockDisponible, isProductoOperativamenteDisponible } from '@/utils/producto'
+import { getCloudinaryProductImageUrl, getProductoImagenPrincipal, getProductoPrecioBase, getProductoPrecioFinal, getProductoStockDisponible, isProductoOperativamenteDisponible } from '@/utils/producto'
 
 interface ProductCardProps {
   producto: Producto
@@ -11,13 +11,12 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja, onReactivar, onAgregarAlCarrito }) => {
+  const isAdminView = !!onDarDeBaja
   const isDeleted = producto.deleted_at != null
   const isOperationallyAvailable = isProductoOperativamenteDisponible(producto)
   const categoriaPrincipal = producto.categorias?.find((item) => item.es_principal)?.categoria
   const categoriasSecundarias = producto.categorias?.filter((item) => !item.es_principal && item.categoria).map((item) => item.categoria!.nombre) || []
   const alergenos = producto.ingredientes?.filter((item) => item.ingrediente?.es_alergeno).map((item) => item.ingrediente!.nombre) || []
-  const stockDisplay = getProductoEtiquetaStock(producto)
-  const stockColor = isOperationallyAvailable ? 'text-green-600' : 'text-red-600'
   const precioFinal = getProductoPrecioFinal(producto)
   const precioBase = getProductoPrecioBase(producto)
   const stockDisponible = getProductoStockDisponible(producto)
@@ -63,22 +62,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
           </p>
         )}
 
-        {categoriasSecundarias.length > 0 && (
-          <p className="text-xs text-gray-400 mb-2">
-            También en: {categoriasSecundarias.join(', ')}
-          </p>
-        )}
-
         {producto.ingredientes && producto.ingredientes.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {producto.ingredientes.filter((item) => item.ingrediente).slice(0, 3).map((item) => (
               <span
                 key={item.ingrediente_id}
-                className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                  item.ingrediente!.es_alergeno
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
+                className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
               >
                 {item.ingrediente!.nombre}
               </span>
@@ -101,18 +90,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
       <div className="border-t pt-3 mt-3">
         <div className="flex justify-between items-end">
           <div>
-            <p className="text-2xl font-bold text-blue-600">
-              ${precioFinal.toFixed(2)}
-            </p>
+            <div className="flex items-center gap-2 mb-0.5">
+              <p className="text-2xl font-bold text-blue-600">${precioFinal.toFixed(2)}</p>
+              {producto.descuento_porcentaje > 0 && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">
+                  -{producto.descuento_porcentaje}%
+                </span>
+              )}
+            </div>
             {producto.descuento_porcentaje > 0 && (
-              <p className="text-xs text-gray-500 line-through">${precioBase.toFixed(2)}</p>
+              <p className="text-xs text-gray-400 line-through mb-1">${precioBase.toFixed(2)}</p>
             )}
-            <p className="text-xs text-gray-500">{producto.tipo_producto}</p>
-            <p className={`text-xs ${stockColor} font-medium`}>
-              {stockDisplay}
-            </p>
-            <p className="text-xs text-gray-400">Stock calculado: {stockDisponible}</p>
-            {!producto.disponible && (
+            {isAdminView && <p className="text-xs text-gray-500 mb-1">{producto.tipo_producto}</p>}
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${isOperationallyAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {isOperationallyAvailable ? 'Disponible' : 'Sin stock'}
+            </span>
+            {isAdminView && <p className="text-xs text-gray-400 mt-1">Stock calculado: {stockDisponible}</p>}
+            {isAdminView && !producto.disponible && (
               <p className="text-xs text-amber-600 font-medium mt-1">
                 Oculto del flujo de compra
               </p>
@@ -120,9 +114,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
           </div>
         </div>
 
-        <div className="mt-2 text-xs text-gray-500">
-          Código: {producto.codigo}
-        </div>
+        {isAdminView && (
+          <div className="mt-2 text-xs text-gray-500">
+            Código: {producto.codigo}
+          </div>
+        )}
 
         {!isDeleted && onAgregarAlCarrito && isOperationallyAvailable && (
           <button

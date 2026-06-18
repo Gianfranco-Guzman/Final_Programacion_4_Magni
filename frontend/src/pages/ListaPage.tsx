@@ -30,7 +30,7 @@ export const ListaPage: React.FC = () => {
     size: 8,
     search: state.search || undefined,
     categoria_id: state.categoriaId || undefined,
-    disponible: state.disponible ?? undefined,
+    disponible: isAdmin ? (state.disponible ?? undefined) : true,
     incluir_baja: isAdmin ? state.showDeleted : false,
   })
 

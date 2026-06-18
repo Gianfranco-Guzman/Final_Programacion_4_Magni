@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
+import { useCartStore } from '@store/cartStore'
 import { authApi } from '@api/authApi'
 import { LoginRequest, RegisterRequest } from '@models/index'
 
@@ -33,6 +34,7 @@ export const useAuth = () => {
       await authApi.logout()
     } finally {
       storeLogout()
+      useCartStore.getState().clearCart()
     }
   }
 

@@ -1,4 +1,5 @@
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, useCallback, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   useBajaCategoria,
   useCategoriasList,
@@ -7,6 +8,7 @@ import {
   useReactivarCategoria,
   useUpdateCategoria,
 } from '@hooks/useCategorias'
+import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
 import { Categoria } from '@models/index'
 import { CategoriaCreateInput, CategoriaUpdateInput } from '@api/categoriasApi'
 import { Spinner } from '@components/Spinner'
@@ -48,6 +50,8 @@ const emptyForm: CategoriaCreateInput = {
 }
 
 export function CategoriasPage() {
+  const qc = useQueryClient()
+  const formRef = useRef<HTMLDivElement>(null)
   const [incluirBaja, setIncluirBaja] = useState(true)
   const { data: categorias = [], isLoading, error } = useCategoriasList({
     incluir_baja: incluirBaja,
@@ -58,6 +62,15 @@ export function CategoriasPage() {
   const updateMutation = useUpdateCategoria()
   const bajaMutation = useBajaCategoria()
   const reactivarMutation = useReactivarCategoria()
+
+  useWebSocket({
+    enabled: true,
+    onMessage: useCallback((msg: WsMessage) => {
+      if (msg.event === 'categorias_actualizadas') {
+        void qc.invalidateQueries({ queryKey: ['categorias'] })
+      }
+    }, [qc]),
+  })
 
   const [showForm, setShowForm] = useState(false)
   const [editingCategoria, setEditingCategoria] = useState<Categoria | null>(null)
@@ -92,6 +105,7 @@ export function CategoriasPage() {
     })
     setFormError('')
     setShowForm(true)
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
   }
 
   const handleBaja = (categoria: Categoria) => {
@@ -175,7 +189,7 @@ export function CategoriasPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-lg shadow-md max-w-lg mb-6">
+        <div ref={formRef} className="bg-white rounded-lg shadow-md max-w-lg mb-6">
           <form onSubmit={handleSubmit} className="px-6 py-6 flex flex-col gap-4">
             <h2 className="text-lg font-semibold text-gray-800">
               {editingCategoria ? 'Editar Categoría' : 'Nueva Categoría'}

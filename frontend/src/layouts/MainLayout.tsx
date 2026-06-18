@@ -29,10 +29,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const displayName = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ')
 
   const wsBadge = (() => {
+    if (wsStatus === 'idle') return null
     if (wsStatus === 'connected') return { label: 'Tiempo real activo', className: 'bg-green-100 text-green-700' }
-    if (wsStatus === 'reconnecting' || wsStatus === 'connecting') return { label: 'Reconectando tiempo real', className: 'bg-amber-100 text-amber-700' }
+    if (wsStatus === 'reconnecting' || wsStatus === 'connecting') return { label: 'Conectando...', className: 'bg-amber-100 text-amber-700' }
     if (wsStatus === 'error') return { label: 'Tiempo real con error', className: 'bg-red-100 text-red-700' }
-    return { label: 'Tiempo real inactivo', className: 'bg-gray-100 text-gray-600' }
+    return null
   })()
 
   const handleLogout = async () => {
@@ -42,7 +43,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <nav className="bg-white shadow-sm border-b border-gray-200 z-30 relative">
+      <nav className="bg-white shadow-sm border-b border-gray-200 z-30 sticky top-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
@@ -59,9 +60,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className={`hidden md:inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${wsBadge.className}`}>
-                {wsBadge.label}
-              </span>
+              {wsBadge && (
+                <span className={`hidden md:inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${wsBadge.className}`}>
+                  {wsBadge.label}
+                </span>
+              )}
               {usuario && (
                 <span className="text-sm text-gray-700 font-medium hidden sm:inline">{displayName}</span>
               )}

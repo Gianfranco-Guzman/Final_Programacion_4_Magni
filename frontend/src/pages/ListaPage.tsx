@@ -17,8 +17,8 @@ export const ListaPage: React.FC = () => {
   const usuario = useAuthStore((currentState) => currentState.usuario)
   const addItem = useCartStore((state) => state.addItem)
   const showToast = useToastStore((state) => state.showToast)
-  const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
   const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
+  const isClient = hasAnyRole(usuario?.roles, ['CLIENT'])
 
   const handleAgregarAlCarrito = (producto: Producto) => {
     addItem(producto)
@@ -145,7 +145,7 @@ export const ListaPage: React.FC = () => {
               productos={productosData.items}
               onDarDeBaja={isAdmin ? handleDarDeBaja : undefined}
               onReactivar={isAdmin ? handleReactivar : undefined}
-              onAgregarAlCarrito={!canManageCatalog ? handleAgregarAlCarrito : undefined}
+              onAgregarAlCarrito={(isClient || !usuario) ? handleAgregarAlCarrito : undefined}
             />
           )}
 

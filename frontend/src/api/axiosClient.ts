@@ -15,8 +15,11 @@ export const axiosClient = axios.create({
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const rawDetail = error.response?.data?.detail
     const message =
-      error.response?.data?.detail ||
+      (Array.isArray(rawDetail)
+        ? rawDetail.map((e: { msg?: string }) => e.msg ?? String(e)).join(', ')
+        : rawDetail) ||
       error.response?.data?.message ||
       error.message ||
       'Error desconocido'

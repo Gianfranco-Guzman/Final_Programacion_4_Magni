@@ -40,6 +40,7 @@ export const IngredientesPage: React.FC = () => {
   const [soloActivos, setSoloActivos] = useState(false)
   const [soloStockBajo, setSoloStockBajo] = useState(false)
   const [unidadFiltro, setUnidadFiltro] = useState<UnidadMedida | ''>('')
+  const [busqueda, setBusqueda] = useState('')
 
   const resetForm = () => {
     setForm(emptyForm)
@@ -107,13 +108,17 @@ export const IngredientesPage: React.FC = () => {
   }
 
   const ingredientesFiltrados = useMemo(() => {
-    return ingredientes.filter((ingrediente) => {
-      if (soloActivos && ingrediente.deleted_at) return false
-      if (soloStockBajo && Number(ingrediente.stock_actual) > Number(ingrediente.stock_minimo)) return false
-      if (unidadFiltro && ingrediente.unidad_medida !== unidadFiltro) return false
-      return true
-    })
-  }, [ingredientes, soloActivos, soloStockBajo, unidadFiltro])
+    const q = busqueda.toLowerCase()
+    return [...ingredientes]
+      .filter((ingrediente) => {
+        if (soloActivos && ingrediente.deleted_at) return false
+        if (soloStockBajo && Number(ingrediente.stock_actual) > Number(ingrediente.stock_minimo)) return false
+        if (unidadFiltro && ingrediente.unidad_medida !== unidadFiltro) return false
+        if (q && !ingrediente.nombre.toLowerCase().includes(q)) return false
+        return true
+      })
+      .sort((a, b) => a.nombre.localeCompare(b.nombre))
+  }, [ingredientes, soloActivos, soloStockBajo, unidadFiltro, busqueda])
 
   const isPending = createMutation.isPending || updateMutation.isPending
 
@@ -140,25 +145,34 @@ export const IngredientesPage: React.FC = () => {
         </Button>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3 rounded-lg bg-white p-4 shadow-md">
-        <label className="flex items-center gap-2 text-sm text-gray-700">
-          <input type="checkbox" checked={soloActivos} onChange={(e) => setSoloActivos(e.target.checked)} />
-          Solo activos
-        </label>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
-          <input type="checkbox" checked={soloStockBajo} onChange={(e) => setSoloStockBajo(e.target.checked)} />
-          Solo stock bajo
-        </label>
-        <select
-          value={unidadFiltro}
-          onChange={(e) => setUnidadFiltro((e.target.value as UnidadMedida) || '')}
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">Todas las unidades</option>
-          {UNIDADES.map((unidad) => (
-            <option key={unidad} value={unidad}>{unidadLabel[unidad]}</option>
-          ))}
-        </select>
+      <div className="mb-6 rounded-lg bg-white p-4 shadow-md flex flex-col gap-3">
+        <input
+          type="text"
+          placeholder="Buscar ingrediente..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={soloActivos} onChange={(e) => setSoloActivos(e.target.checked)} />
+            Solo activos
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={soloStockBajo} onChange={(e) => setSoloStockBajo(e.target.checked)} />
+            Solo stock bajo
+          </label>
+          <select
+            value={unidadFiltro}
+            onChange={(e) => setUnidadFiltro((e.target.value as UnidadMedida) || '')}
+            className="rounded border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">Todas las unidades</option>
+            {UNIDADES.map((unidad) => (
+              <option key={unidad} value={unidad}>{unidadLabel[unidad]}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {showForm && (

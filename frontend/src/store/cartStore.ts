@@ -38,10 +38,9 @@ export const useCartStore = create<CartState>()(
               items: state.items.map((i) =>
                 i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i,
               ),
-              isOpen: true,
             }
           }
-          return { items: [...state.items, { producto, cantidad: 1 }], isOpen: true }
+          return { items: [...state.items, { producto, cantidad: 1 }] }
         }),
 
       removeItem: (productoId) =>

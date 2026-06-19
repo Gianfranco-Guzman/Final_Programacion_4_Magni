@@ -1,6 +1,8 @@
+from anyio import from_thread
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import require_role
+from app.core.websocket import manager
 from app.db.models import Categoria
 from app.db.models.usuario import Usuario
 from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
@@ -13,6 +15,14 @@ from app.modules.Categoria.schemas import (
 from app.modules.Categoria.service import CategoriaService
 
 router = APIRouter(tags=["categorias"])
+
+_ADMIN_ROLES = ["ADMIN"]
+
+
+def _queue_categorias_broadcast(uow: SqlModelUnitOfWork) -> None:
+    uow.add_after_commit(
+        lambda: from_thread.run(manager.broadcast_to_roles, _ADMIN_ROLES, "categorias_actualizadas", {})
+    )
 
 
 @router.get(
@@ -75,6 +85,7 @@ def crear_categoria(
     _admin: Usuario = Depends(require_role("ADMIN")),
 ):
     categoria = CategoriaService.crear_categoria(data, uow)
+    _queue_categorias_broadcast(uow)
     return CategoriaRead.model_validate(categoria)
 
 
@@ -90,6 +101,7 @@ def actualizar_categoria(
     _admin: Usuario = Depends(require_role("ADMIN")),
 ):
     categoria = CategoriaService.actualizar_categoria(categoria_id, data, uow)
+    _queue_categorias_broadcast(uow)
     return CategoriaRead.model_validate(categoria)
 
 
@@ -104,6 +116,7 @@ def dar_de_baja_categoria(
     _admin: Usuario = Depends(require_role("ADMIN")),
 ):
     categoria = CategoriaService.dar_de_baja(categoria_id, uow)
+    _queue_categorias_broadcast(uow)
     return CategoriaRead.model_validate(categoria)
 
 
@@ -118,6 +131,7 @@ def reactivar_categoria(
     _admin: Usuario = Depends(require_role("ADMIN")),
 ):
     categoria = CategoriaService.reactivar_categoria(categoria_id, uow)
+    _queue_categorias_broadcast(uow)
     return CategoriaRead.model_validate(categoria)
 
 

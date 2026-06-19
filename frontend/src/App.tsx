@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect, useRef, type ReactNode } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@store/authStore'
 import { ProductosProvider } from '@context/ProductosContext'
@@ -18,6 +18,7 @@ import { AdminUsuariosPage } from '@pages/AdminUsuariosPage'
 import { MisPedidosPage } from '@pages/MisPedidosPage'
 import { PedidoDetallePage } from '@pages/PedidoDetallePage'
 import { CajeroPage } from '@pages/CajeroPage'
+import { AdminStockPage } from '@pages/AdminStockPage'
 import { CheckoutPage } from '@features/store/checkout/CheckoutPage'
 import { MainLayout } from '@layouts/MainLayout'
 
@@ -26,6 +27,27 @@ const ADMIN_ROLES = ['ADMIN']
 const CAJERO_ROLES = ['ADMIN', 'PEDIDOS']
 
 const queryClient = new QueryClient()
+
+function RoleGuard({ children }: { children: ReactNode }) {
+  const location = useLocation()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const initialized = useAuthStore((s) => s.initialized)
+  const usuario = useAuthStore((s) => s.usuario)
+
+  if (!initialized || !isAuthenticated || !usuario) return <>{children}</>
+
+  const roles = usuario.roles?.map((r) => r.nombre) ?? []
+  const isAdmin = roles.includes('ADMIN')
+
+  if (!isAdmin && roles.includes('PEDIDOS') && location.pathname !== '/cajero' && !location.pathname.startsWith('/pedidos/')) {
+    return <Navigate to="/cajero" replace />
+  }
+  if (!isAdmin && roles.includes('STOCK') && location.pathname !== '/admin/stock') {
+    return <Navigate to="/admin/stock" replace />
+  }
+
+  return <>{children}</>
+}
 
 function App() {
   const initializeSession = useAuthStore((state) => state.initializeSession)
@@ -47,6 +69,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ScrollToTop />
+        <RoleGuard>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 
@@ -191,6 +214,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/stock"
+            element={
+              <ProtectedRoute allowedRoles={MANAGEMENT_ROLES}>
+                <MainLayout>
+                  <AdminStockPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/checkout"
@@ -207,6 +240,7 @@ function App() {
 
           <Route path="*" element={<Navigate to="/catalogo" replace />} />
         </Routes>
+        </RoleGuard>
       </BrowserRouter>
     </QueryClientProvider>
   )

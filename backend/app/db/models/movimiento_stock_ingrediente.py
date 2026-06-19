@@ -14,6 +14,8 @@ class MovimientoStockIngrediente(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     ingrediente_id: int = Field(foreign_key="ingrediente.id", index=True)
     pedido_id: Optional[int] = Field(default=None, foreign_key="pedido.id", index=True)
+    usuario_id: Optional[int] = Field(default=None, foreign_key="usuario.id")
+    movimiento_referencia_id: Optional[int] = Field(default=None, foreign_key="movimiento_stock_ingrediente.id")
     tipo_movimiento: TipoMovimientoIngrediente = Field(                                      #enum que sirve para la trazabilididad de los movimientos de stock
         sa_column=Column(
             SAEnum(TipoMovimientoIngrediente, name="tipo_movimiento_ingrediente_enum", native_enum=False),

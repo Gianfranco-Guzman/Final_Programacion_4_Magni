@@ -58,6 +58,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
   const isEdit = producto != null
   const [form, setForm] = useState<ProductoCreateInput>(empty)
   const [error, setError] = useState('')
+  const [ingredientSearch, setIngredientSearch] = useState('')
 
   const createMutation = useCreateProducto()
   const updateMutation = useUpdateProducto()
@@ -89,11 +90,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
       return
     }
 
-    const defaultCategoryId = categorias[0]?.id
-    setForm({
-      ...empty,
-      categorias: defaultCategoryId ? [{ categoria_id: defaultCategoryId, es_principal: true }] : [],
-    })
+    setForm({ ...empty })
   }, [producto, categorias])
 
   const selectedIngredienteConfigs = useMemo<ProductoDetalleConfig[]>(() => {
@@ -106,6 +103,29 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
   const costoCalculado = useMemo(() => calcularCostoProducto(selectedIngredienteConfigs), [selectedIngredienteConfigs])
   const stockMaximo = useMemo(() => calcularStockMaximoProducto(selectedIngredienteConfigs), [selectedIngredienteConfigs])
   const precioFinal = useMemo(() => Number((form.precio_venta * (1 - (form.descuento_porcentaje || 0) / 100)).toFixed(2)), [form.precio_venta, form.descuento_porcentaje])
+  const precioSugerido = useMemo(() => Number((costoCalculado * 1.15).toFixed(2)), [costoCalculado])
+  const ganancia = useMemo(() => Number((precioFinal - costoCalculado).toFixed(2)), [precioFinal, costoCalculado])
+
+  const sortedCategorias = useMemo(
+    () => [...categorias].sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    [categorias],
+  )
+
+  const leafCategorias = useMemo(() => {
+    const parentIds = new Set(categorias.filter((c) => c.parent_id != null).map((c) => c.parent_id!))
+    return sortedCategorias.filter((c) => !parentIds.has(c.id))
+  }, [sortedCategorias, categorias])
+
+  const sortedIngredientes = useMemo(
+    () => [...ingredientes].sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    [ingredientes],
+  )
+
+  const filteredIngredientes = useMemo(() => {
+    if (!ingredientSearch.trim()) return sortedIngredientes
+    const q = ingredientSearch.toLowerCase()
+    return sortedIngredientes.filter((ing) => ing.nombre.toLowerCase().includes(q))
+  }, [sortedIngredientes, ingredientSearch])
 
   const setField = (field: keyof ProductoCreateInput) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = e.target.type === 'number' ? Number(e.target.value) : e.target.value
@@ -277,22 +297,12 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de producto *</label>
-                <select value={form.tipo_producto} onChange={(e) => handleTipoProductoChange(e.target.value as TipoProducto)} className="w-full rounded border border-gray-300 px-3 py-2 text-sm">
-                  <option value="FABRICADO">Fabricado</option>
-                  <option value="REVENTA">Reventa</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Precio de venta *</label>
-                <input type="number" min="0.01" step="0.01" value={form.precio_venta} onChange={setField('precio_venta')} className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descuento %</label>
-                <input type="number" min="0" max="100" step="0.01" value={form.descuento_porcentaje} onChange={setField('descuento_porcentaje')} className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de producto *</label>
+              <select value={form.tipo_producto} onChange={(e) => handleTipoProductoChange(e.target.value as TipoProducto)} className="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                <option value="FABRICADO">Fabricado</option>
+                <option value="REVENTA">Reventa</option>
+              </select>
             </div>
 
             <label className="inline-flex items-center gap-2 text-sm text-gray-700">
@@ -341,7 +351,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Categorías *</label>
               <div className="max-h-48 overflow-y-auto rounded border border-gray-300 px-3 py-2">
-                {categorias.map((categoria) => (
+                {leafCategorias.map((categoria) => (
                   <div key={categoria.id} className="border-b border-gray-100 py-2 last:border-b-0">
                     <label className="flex items-center gap-2 text-sm text-gray-700">
                       <input type="checkbox" checked={isCategoriaSelected(categoria.id)} onChange={() => toggleCategoria(categoria.id)} className="w-4 h-4 rounded accent-blue-500" />
@@ -362,8 +372,15 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
               <label className="block text-sm font-medium text-gray-700 mb-2">Detalle de ingredientes *</label>
               {form.tipo_producto === 'FABRICADO' ? (
                 <div className="rounded border border-gray-300 p-3">
+                  <input
+                    type="text"
+                    placeholder="Buscar ingrediente..."
+                    value={ingredientSearch}
+                    onChange={(e) => setIngredientSearch(e.target.value)}
+                    className="mb-2 w-full rounded border border-gray-300 px-3 py-1.5 text-sm"
+                  />
                   <div className="mb-3 max-h-52 overflow-y-auto space-y-2">
-                    {ingredientes.map((ingrediente) => {
+                    {filteredIngredientes.map((ingrediente) => {
                       const selected = (form.ingredientes || []).some((item) => item.ingrediente_id === ingrediente.id)
                       return (
                         <label key={ingrediente.id} className="flex items-center gap-2 text-sm text-gray-700">
@@ -413,7 +430,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
                 <div className="rounded border border-gray-300 p-3 space-y-2">
                   <p className="text-sm text-gray-600">Producto de reventa: elegí exactamente un ingrediente base de stock.</p>
                   <div className="max-h-52 overflow-y-auto space-y-2">
-                    {ingredientes.map((ingrediente) => (
+                    {sortedIngredientes.map((ingrediente) => (
                       <label key={ingrediente.id} className="flex items-center gap-2 text-sm text-gray-700">
                         <input type="radio" name="ingrediente_reventa" checked={ingredienteSeleccionadoReventa === ingrediente.id} onChange={() => setIngredienteReventa(ingrediente.id)} className="w-4 h-4 accent-blue-500" />
                         <span>{ingrediente.nombre}</span>
@@ -425,6 +442,60 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
               )}
             </div>
 
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Precio de venta</p>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Costo de producción</p>
+                  <p className="text-2xl font-bold text-gray-700">${costoCalculado.toFixed(2)}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">calculado automáticamente</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Precio sugerido (+15%)</p>
+                  <p className="text-2xl font-bold text-indigo-600">${precioSugerido.toFixed(2)}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">referencia de ganancia</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Tu precio de venta *</p>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    value={form.precio_venta}
+                    onChange={setField('precio_venta')}
+                    className={`w-full text-center text-2xl font-bold rounded border px-2 py-1 focus:outline-none focus:ring-2 ${
+                      costoCalculado > 0 && form.precio_venta > 0 && form.precio_venta < costoCalculado
+                        ? 'border-red-300 bg-red-50 text-red-700 focus:ring-red-200'
+                        : costoCalculado > 0 && form.precio_venta >= precioSugerido
+                          ? 'border-green-300 bg-green-50 text-green-700 focus:ring-green-200'
+                          : 'border-gray-300 bg-white text-gray-800 focus:ring-blue-200'
+                    }`}
+                  />
+                  {costoCalculado > 0 && form.precio_venta > 0 && form.precio_venta < costoCalculado && (
+                    <p className="text-xs text-red-600 mt-1">Por debajo del costo de producción</p>
+                  )}
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-3">
+                <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Descuento (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={form.descuento_porcentaje}
+                  onChange={setField('descuento_porcentaje')}
+                  className="w-28 rounded border border-gray-300 px-2 py-1 text-sm"
+                />
+                {form.descuento_porcentaje > 0 && (
+                  <span className="text-xs text-gray-500">
+                    Precio con descuento: <span className="font-medium text-gray-700">${precioFinal.toFixed(2)}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={() => navigate('/catalogo')} className="flex-1 rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
               <button type="submit" disabled={isPending} className="flex-1 rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50">
@@ -434,14 +505,41 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
           </form>
         </div>
 
-        <aside className="h-fit rounded-lg bg-white p-4 shadow-md">
-          <h2 className="mb-3 text-lg font-semibold text-gray-800">Resumen del producto</h2>
+        <aside className="rounded-lg bg-white p-4 shadow-md xl:self-start xl:sticky xl:top-20">
+          <h2 className="mb-3 text-lg font-semibold text-gray-800">Resumen</h2>
           <div className="space-y-2 text-sm text-gray-700">
             <p><span className="font-medium">Tipo:</span> {form.tipo_producto}</p>
             <p><span className="font-medium">Ingredientes:</span> {selectedIngredienteConfigs.length}</p>
-            <p><span className="font-medium">Costo calculado:</span> ${costoCalculado.toFixed(2)}</p>
-            <p><span className="font-medium">Precio final:</span> ${precioFinal.toFixed(2)}</p>
             <p><span className="font-medium">Máximo producible:</span> {stockMaximo}</p>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-gray-100 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Costo de producción</span>
+              <span className="font-medium text-gray-700">${costoCalculado.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Precio de venta</span>
+              <span className="font-medium text-gray-700">${form.precio_venta.toFixed(2)}</span>
+            </div>
+            {form.descuento_porcentaje > 0 && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Descuento ({form.descuento_porcentaje}%)</span>
+                  <span className="font-medium text-red-600">-${(form.precio_venta - precioFinal).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between border-t border-gray-200 pt-2">
+                  <span className="font-medium text-gray-700">Precio al cliente</span>
+                  <span className="font-bold text-gray-800">${precioFinal.toFixed(2)}</span>
+                </div>
+              </>
+            )}
+            <div className={`flex justify-between rounded px-2 py-1.5 ${ganancia >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+              <span className={`font-medium ${ganancia >= 0 ? 'text-green-700' : 'text-red-700'}`}>Ganancia</span>
+              <span className={`font-bold ${ganancia >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                {ganancia >= 0 ? '+' : ''}{ganancia.toFixed(2)}
+              </span>
+            </div>
           </div>
         </aside>
       </div>

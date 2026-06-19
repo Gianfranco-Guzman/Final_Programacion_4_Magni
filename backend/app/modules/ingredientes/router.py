@@ -7,6 +7,9 @@ from app.modules.ingredientes.schemas import (
     IngredienteCreate,
     IngredienteRead,
     IngredienteUpdate,
+    MovimientoEntradaRead,
+    StockCargaInput,
+    StockCorreccionInput,
 )
 from app.modules.ingredientes.service import IngredienteService
 
@@ -21,6 +24,32 @@ router = APIRouter(tags=["ingredientes"])
 def listar_ingredientes(uow: SqlModelUnitOfWork = Depends(get_uow)):
     ingredientes = uow.ingredientes.list_all()
     return [IngredienteRead.model_validate(i) for i in ingredientes]
+
+
+@router.get(
+    "/mis-cargas",
+    response_model=list[MovimientoEntradaRead],
+    summary="Historial de cargas de stock del usuario autenticado",
+)
+def mis_cargas(
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+    current_user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+):
+    return IngredienteService.mis_cargas(current_user.id, uow)
+
+
+@router.post(
+    "/movimientos/corregir",
+    response_model=MovimientoEntradaRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Corregir una carga de stock propia",
+)
+def corregir_entrada(
+    data: StockCorreccionInput,
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+    current_user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+):
+    return IngredienteService.corregir_entrada(data, current_user.id, uow)
 
 
 @router.get(
@@ -62,6 +91,21 @@ def actualizar_ingrediente(
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     ingrediente = IngredienteService.actualizar_ingrediente(ingrediente_id, data, uow)
+    return IngredienteRead.model_validate(ingrediente)
+
+
+@router.patch(
+    "/{ingrediente_id}/cargar-stock",
+    response_model=IngredienteRead,
+    summary="Cargar stock de un ingrediente",
+)
+def cargar_stock(
+    ingrediente_id: int,
+    data: StockCargaInput,
+    uow: SqlModelUnitOfWork = Depends(get_uow),
+    _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
+):
+    ingrediente = IngredienteService.cargar_stock(ingrediente_id, data, uow, usuario_id=_user.id)
     return IngredienteRead.model_validate(ingrediente)
 
 

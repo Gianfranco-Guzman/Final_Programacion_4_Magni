@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useProductos, useDarDeBaja, useReactivar, useToggleDisponibilidad } from '@hooks/useProductos'
 import { Spinner } from '@components/Spinner'
@@ -50,7 +50,35 @@ export const AdminProductosPage: React.FC = () => {
     })
   }
 
-  const productos = productosData?.items ?? []
+  const [busqueda, setBusqueda] = useState('')
+  const [categoriaFiltro, setCategoriaFiltro] = useState<number | null>(null)
+
+  const categoriasDisponibles = useMemo(() => {
+    const map = new Map<number, string>()
+    ;(productosData?.items ?? []).forEach((p) => {
+      p.categorias?.forEach((c) => {
+        if (!map.has(c.categoria_id)) map.set(c.categoria_id, c.categoria.nombre)
+      })
+    })
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [productosData])
+
+  const hayFiltros = busqueda.trim() !== '' || categoriaFiltro !== null
+
+  const productos = useMemo(() => {
+    const lista = [...(productosData?.items ?? [])]
+    lista.sort((a, b) => a.nombre.localeCompare(b.nombre))
+    return lista.filter((p) => {
+      if (busqueda.trim()) {
+        const q = busqueda.toLowerCase()
+        if (!p.nombre.toLowerCase().includes(q) && !p.codigo.toLowerCase().includes(q)) return false
+      }
+      if (categoriaFiltro !== null) {
+        if (!p.categorias?.some((c) => c.categoria_id === categoriaFiltro)) return false
+      }
+      return true
+    })
+  }, [productosData, busqueda, categoriaFiltro])
 
   if (error) {
     return (
@@ -74,6 +102,34 @@ export const AdminProductosPage: React.FC = () => {
           <Link to="/productos/nuevo">
             <Button>+ Nuevo Producto</Button>
           </Link>
+        )}
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-3 items-center">
+        <input
+          type="text"
+          placeholder="Buscar por nombre o código..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="flex-1 min-w-[200px] max-w-sm rounded border border-gray-300 px-3 py-2 text-sm"
+        />
+        <select
+          value={categoriaFiltro ?? ''}
+          onChange={(e) => setCategoriaFiltro(e.target.value ? Number(e.target.value) : null)}
+          className="rounded border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">Todas las categorías</option>
+          {categoriasDisponibles.map(([id, nombre]) => (
+            <option key={id} value={id}>{nombre}</option>
+          ))}
+        </select>
+        {hayFiltros && (
+          <button
+            onClick={() => { setBusqueda(''); setCategoriaFiltro(null) }}
+            className="text-sm text-gray-500 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50"
+          >
+            Limpiar filtros
+          </button>
         )}
       </div>
 

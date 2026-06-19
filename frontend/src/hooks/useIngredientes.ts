@@ -49,3 +49,33 @@ export const useReactivarIngrediente = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['ingredientes'] }),
   })
 }
+
+export const useCargarStock = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, cantidad, unidad_entrada }: { id: number; cantidad: number; unidad_entrada: string }) =>
+      ingredientesApi.cargarStock(id, { cantidad, unidad_entrada }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ingredientes'] })
+      qc.invalidateQueries({ queryKey: ['mis-cargas'] })
+    },
+  })
+}
+
+export const useMisCargas = () => {
+  return useQuery({
+    queryKey: ['mis-cargas'],
+    queryFn: ingredientesApi.getMisCargas,
+  })
+}
+
+export const useCorregirEntrada = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ingredientesApi.corregirEntrada,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ingredientes'] })
+      qc.invalidateQueries({ queryKey: ['mis-cargas'] })
+    },
+  })
+}

@@ -11,10 +11,6 @@ interface AuthState {
 
   login: (email: string, password: string) => Promise<void>
   logout: () => void
-  setUser: (user: Usuario) => void
-  setLoading: (loading: boolean) => void
-  clearError: () => void
-  fetchMe: () => Promise<void>
   initializeSession: () => Promise<void>
 }
 
@@ -57,28 +53,6 @@ export const useAuthStore = create<AuthState>()((set) => ({
       loading: false,
       error: null,
     })
-  },
-
-  setUser: (user: Usuario) => {
-    set({ usuario: user, isAuthenticated: true, initialized: true })
-  },
-
-  setLoading: (loading: boolean) => {
-    set({ loading })
-  },
-
-  clearError: () => {
-    set({ error: null })
-  },
-
-  fetchMe: async () => {
-    try {
-      const user = await authApi.me()
-      set({ usuario: user, isAuthenticated: true, initialized: true })
-    } catch (err) {
-      set({ usuario: null, isAuthenticated: false, initialized: true })
-      throw err
-    }
   },
 
   initializeSession: async () => {

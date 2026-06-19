@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { pagosApi, PagoCreateInput } from '@api/pagosApi'
 
 export const useCreatePago = () => {
@@ -10,13 +10,5 @@ export const useCreatePago = () => {
       qc.invalidateQueries({ queryKey: ['pagos', pago.pedido_id] })
       qc.invalidateQueries({ queryKey: ['pedidos'] })
     },
-  })
-}
-
-export const usePago = (pedidoId: number) => {
-  return useQuery({
-    queryKey: ['pagos', pedidoId],
-    queryFn: () => pagosApi.getPagoByPedidoId(pedidoId),
-    enabled: !!pedidoId,
   })
 }

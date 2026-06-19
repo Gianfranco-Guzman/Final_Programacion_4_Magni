@@ -4,7 +4,6 @@ interface UIState {
   sidebarOpen: boolean
   toggleSidebar: () => void
   closeSidebar: () => void
-  openSidebar: () => void
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -16,9 +15,5 @@ export const useUIStore = create<UIState>((set) => ({
 
   closeSidebar: () => {
     set({ sidebarOpen: false })
-  },
-
-  openSidebar: () => {
-    set({ sidebarOpen: true })
   },
 }))

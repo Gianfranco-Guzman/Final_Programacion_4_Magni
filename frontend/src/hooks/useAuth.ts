@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { useCartStore } from '@store/cartStore'
 import { authApi } from '@api/authApi'
-import { LoginRequest, RegisterRequest } from '@models/index'
+import { LoginRequest } from '@models/index'
 
 export const useAuth = () => {
   const navigate = useNavigate()
@@ -31,15 +31,6 @@ export const useAuth = () => {
     },
   })
 
-  const registerMutation = useMutation({
-    mutationFn: async (data: RegisterRequest) => {
-      return await authApi.register(data)
-    },
-    onSuccess: () => {
-      navigate('/login')
-    },
-  })
-
   const logout = async () => {
     try {
       await authApi.logout()
@@ -53,9 +44,6 @@ export const useAuth = () => {
     login: loginMutation.mutate,
     loginLoading: loginMutation.isPending,
     loginError: loginMutation.error,
-    register: registerMutation.mutate,
-    registerLoading: registerMutation.isPending,
-    registerError: registerMutation.error,
     logout,
   }
 }

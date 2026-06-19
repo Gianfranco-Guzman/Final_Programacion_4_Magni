@@ -37,7 +37,8 @@ export const CheckoutPage: React.FC = () => {
   const pagoMutation = useCreatePago()
 
   const { data: direcciones = [], isLoading: loadingDir } = useDirecciones()
-  const { data: formasPago = [], isLoading: loadingFP } = useFormasPago()
+  const { data: rawFormasPago = [], isLoading: loadingFP } = useFormasPago()
+  const formasPago = rawFormasPago.filter((fp) => (fp.codigo ?? fp.nombre) !== 'EFECTIVO')
 
   const direccionPrincipal = direcciones.find((d) => d.es_principal)
   const [selectedDireccionId, setSelectedDireccionId] = useState<number | null>(direccionPrincipal?.id ?? null)

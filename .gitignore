@@ -74,14 +74,6 @@ Thumbs.db
 .gitignore
 
 # Project-specific
-ROADMAP.LOCAL.md
-ROADMAP.md
 *.local.md
-CHANGES.md
-TPI_PROG4_FOOD_STORE_v6.md
 
 
-skills-lock.json
-
-.agents/
-.engram/

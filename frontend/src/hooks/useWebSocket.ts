@@ -25,21 +25,10 @@ export const useWebSocket = ({ enabled = true, onMessage, adminFeed = false }: U
   const onMessageRef = useRef(onMessage)
   const subscribedOrdersRef = useRef<Set<number>>(new Set())
   const setStatus = useWsStore((state) => state.setStatus)
-  const markEvent = useWsStore((state) => state.markEvent)
-  const setOrderSubscribed = useWsStore((state) => state.setOrderSubscribed)
-  const setOrderUnsubscribed = useWsStore((state) => state.setOrderUnsubscribed)
-  const setAdminFeedActive = useWsStore((state) => state.setAdminFeedActive)
 
   useEffect(() => {
     onMessageRef.current = onMessage
   }, [onMessage])
-
-  useEffect(() => {
-    setAdminFeedActive(adminFeed && enabled)
-    return () => {
-      setAdminFeedActive(false)
-    }
-  }, [adminFeed, enabled, setAdminFeedActive])
 
   useEffect(() => {
     if (!enabled) {
@@ -86,14 +75,12 @@ export const useWebSocket = ({ enabled = true, onMessage, adminFeed = false }: U
         retryCount = 0
         replaySubscriptions(socket)
         setStatus('connected')
-        markEvent()
         onMessageRef.current?.({ event: 'WS_CONNECTED', data: null })
       }
 
       socket.onmessage = (event) => {
         if (cancelled) return
         try {
-          markEvent()
           onMessageRef.current?.(JSON.parse(event.data) as WsMessage)
         } catch {
           // noop
@@ -127,23 +114,21 @@ export const useWebSocket = ({ enabled = true, onMessage, adminFeed = false }: U
       setStatus('disconnected')
       wsRef.current = null
     }
-  }, [adminFeed, enabled, markEvent, setStatus])
+  }, [adminFeed, enabled, setStatus])
 
   const subscribeToOrder = useCallback((orderId: number) => {
     subscribedOrdersRef.current.add(orderId)
-    setOrderSubscribed(orderId)
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ action: 'subscribe-order', order_id: orderId }))
     }
-  }, [setOrderSubscribed])
+  }, [])
 
   const unsubscribeFromOrder = useCallback((orderId: number) => {
     subscribedOrdersRef.current.delete(orderId)
-    setOrderUnsubscribed(orderId)
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ action: 'unsubscribe-order', order_id: orderId }))
     }
-  }, [setOrderUnsubscribed])
+  }, [])
 
   return { subscribeToOrder, unsubscribeFromOrder }
 }

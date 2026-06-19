@@ -50,10 +50,6 @@ export const LoginForm: React.FC = () => {
     login({ email, password })
   }
 
-  const getErrorMessage = (): string | null => {
-    return displayError
-  }
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md">
@@ -62,9 +58,9 @@ export const LoginForm: React.FC = () => {
           <p className="text-gray-600 mt-1">Ingresa a tu cuenta</p>
         </div>
 
-        {getErrorMessage() && (
+        {displayError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">{getErrorMessage()}</p>
+            <p className="text-sm text-red-700">{displayError}</p>
           </div>
         )}
 

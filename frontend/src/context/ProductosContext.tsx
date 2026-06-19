@@ -1,5 +1,4 @@
 import { createContext, useContext, useReducer, ReactNode } from 'react'
-import { Producto } from '@models/index'
 
 interface ProductosState {
   search: string
@@ -7,7 +6,6 @@ interface ProductosState {
   disponible: boolean | null
   page: number
   showDeleted: boolean
-  editingProducto: Producto | null
 }
 
 const initialState: ProductosState = {
@@ -16,7 +14,6 @@ const initialState: ProductosState = {
   disponible: null,
   page: 1,
   showDeleted: false,
-  editingProducto: null,
 }
 
 type Action =
@@ -26,8 +23,6 @@ type Action =
   | { type: 'SET_PAGE'; payload: number }
   | { type: 'SET_SHOW_DELETED'; payload: boolean }
   | { type: 'RESET_FILTROS' }
-  | { type: 'SET_EDITING'; payload: Producto }
-  | { type: 'CLEAR_EDITING' }
 
 function productosReducer(
   state: ProductosState,
@@ -45,14 +40,7 @@ function productosReducer(
     case 'SET_SHOW_DELETED':
       return { ...state, showDeleted: action.payload, page: 1 }
     case 'RESET_FILTROS':
-      return {
-        ...initialState,
-        editingProducto: state.editingProducto,
-      }
-    case 'SET_EDITING':
-      return { ...state, editingProducto: action.payload }
-    case 'CLEAR_EDITING':
-      return { ...state, editingProducto: null }
+      return initialState
     default:
       return state
   }

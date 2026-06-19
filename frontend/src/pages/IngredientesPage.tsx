@@ -1,5 +1,9 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useIngredientes, useCreateIngrediente, useUpdateIngrediente, useBajaIngrediente, useReactivarIngrediente } from '@hooks/useIngredientes'
+import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
+import { useAuthStore } from '@store/authStore'
+import { hasAnyRole } from '@/auth/permissions'
 import { Ingrediente, UnidadMedida } from '@models/index'
 import { IngredienteCreateInput, IngredienteUpdateInput } from '@api/ingredientesApi'
 import { Spinner } from '@components/Spinner'
@@ -27,11 +31,25 @@ const unidadLabel: Record<UnidadMedida, string> = {
 }
 
 export const IngredientesPage: React.FC = () => {
+  const qc = useQueryClient()
+  const usuario = useAuthStore((state) => state.usuario)
   const { data: ingredientes = [], isLoading, error } = useIngredientes()
   const createMutation = useCreateIngrediente()
   const updateMutation = useUpdateIngrediente()
   const bajaMutation = useBajaIngrediente()
   const reactivarMutation = useReactivarIngrediente()
+
+  const handleWsMessage = useCallback((message: WsMessage) => {
+    if (['estado_cambiado', 'pedido_cancelado'].includes(message.event)) {
+      void qc.invalidateQueries({ queryKey: ['ingredientes'] })
+    }
+  }, [qc])
+
+  useWebSocket({
+    enabled: !!usuario && hasAnyRole(usuario.roles, ['ADMIN', 'PEDIDOS']),
+    onMessage: handleWsMessage,
+    adminFeed: true,
+  })
 
   const [showForm, setShowForm] = useState(false)
   const [editingIngrediente, setEditingIngrediente] = useState<Ingrediente | null>(null)

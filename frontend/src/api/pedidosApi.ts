@@ -7,7 +7,8 @@ export interface ItemCarritoInput {
 }
 
 export interface PedidoCreateInput {
-  direccion_entrega_id: number
+  tipo_entrega: 'domicilio' | 'sucursal'
+  direccion_entrega_id?: number | null
   forma_pago_id: number
   items: ItemCarritoInput[]
   notas?: string

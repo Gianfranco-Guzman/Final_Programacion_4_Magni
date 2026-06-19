@@ -12,7 +12,8 @@ class Pedido(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuario.id", index=True)
-    direccion_entrega_id: int = Field(foreign_key="direccion_entrega.id")
+    tipo_entrega: str = Field(default="domicilio", max_length=10)
+    direccion_entrega_id: Optional[int] = Field(default=None, foreign_key="direccion_entrega.id", nullable=True)
     forma_pago_id: int = Field(foreign_key="forma_pago.id")
     estado_actual: str = Field(default="PENDIENTE", max_length=20, index=True)
     subtotal: Decimal = Field(

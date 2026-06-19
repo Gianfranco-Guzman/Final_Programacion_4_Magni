@@ -2,7 +2,6 @@ import React from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { useUIStore } from '@store/uiStore'
-import { useWsStore } from '@store/wsStore'
 import { useCartStore, selectCartItemCount } from '@store/cartStore'
 import { useAuth } from '@hooks/useAuth'
 import { Button } from '@components/Button'
@@ -21,22 +20,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
   const toggleCart = useCartStore((state) => state.toggleCart)
   const cartCount = useCartStore(selectCartItemCount)
-  const wsStatus = useWsStore((state) => state.status)
-  const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
+const canManageCatalog = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
   const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
   const isCajero = hasAnyRole(usuario?.roles, ['PEDIDOS'])
   const isClient = hasAnyRole(usuario?.roles, ['CLIENT'])
   const displayName = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ')
 
-  const wsBadge = (() => {
-    if (wsStatus === 'idle') return null
-    if (wsStatus === 'connected') return { label: 'Tiempo real activo', className: 'bg-green-100 text-green-700' }
-    if (wsStatus === 'reconnecting' || wsStatus === 'connecting') return { label: 'Conectando...', className: 'bg-amber-100 text-amber-700' }
-    if (wsStatus === 'error') return { label: 'Tiempo real con error', className: 'bg-red-100 text-red-700' }
-    return null
-  })()
-
-  const handleLogout = async () => {
+const handleLogout = async () => {
     await logout()
     navigate('/catalogo')
   }
@@ -60,12 +50,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center gap-3">
-              {wsBadge && (
-                <span className={`hidden md:inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${wsBadge.className}`}>
-                  {wsBadge.label}
-                </span>
-              )}
-              {usuario && (
+{usuario && (
                 <span className="text-sm text-gray-700 font-medium hidden sm:inline">{displayName}</span>
               )}
               {(isClient || !usuario) && (

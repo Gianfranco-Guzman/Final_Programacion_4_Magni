@@ -193,16 +193,26 @@ class PedidoService:
 
     @staticmethod
     def crear_pedido(data: PedidoCreate, current_user: Usuario, uow: SqlModelUnitOfWork) -> Pedido:
-        direccion = uow.direcciones.get_active_for_user(data.direccion_entrega_id, current_user.id)
-        if not direccion:
-            raise HTTPException(
-                status_code=404,
-                detail="Dirección de entrega no encontrada o no pertenece al usuario",
-            )
+        direccion_id: int | None = None
+        if data.tipo_entrega == "domicilio":
+            direccion = uow.direcciones.get_active_for_user(data.direccion_entrega_id, current_user.id)
+            if not direccion:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Dirección de entrega no encontrada o no pertenece al usuario",
+                )
+            direccion_id = data.direccion_entrega_id
 
         forma_pago = uow.formas_pago.get_active_by_id(data.forma_pago_id)
         if not forma_pago:
             raise HTTPException(status_code=404, detail="Forma de pago no encontrada o inactiva")
+
+        codigo_pago = (forma_pago.codigo or forma_pago.nombre or "").upper()
+        if codigo_pago == "EFECTIVO" and data.tipo_entrega != "sucursal":
+            raise HTTPException(
+                status_code=422,
+                detail="El pago en efectivo solo está disponible para retiro en sucursal",
+            )
 
         now = datetime.now(timezone.utc)
         items_consolidados = PedidoService._consolidar_items(data.items)
@@ -217,7 +227,8 @@ class PedidoService:
 
         pedido = Pedido(
             usuario_id=current_user.id,
-            direccion_entrega_id=data.direccion_entrega_id,
+            tipo_entrega=data.tipo_entrega,
+            direccion_entrega_id=direccion_id,
             forma_pago_id=data.forma_pago_id,
             estado_actual="PENDIENTE",
             subtotal=subtotal,

@@ -25,6 +25,12 @@ const ESTADO_LABEL: Record<string, string> = {
   CANCELADO: 'Cancelado',
 }
 
+const getEstadoLabel = (estado: string, tipoEntrega?: string): string => {
+  if (estado === 'EN_CAMINO' && tipoEntrega === 'sucursal') return 'Listo para retirar'
+  if (estado === 'ENTREGADO' && tipoEntrega === 'sucursal') return 'Retirado'
+  return ESTADO_LABEL[estado] ?? estado
+}
+
 const ESTADOS_CANCELABLES = ['PENDIENTE', 'CONFIRMADO']
 
 export const MisPedidosPage: React.FC = () => {
@@ -111,7 +117,7 @@ export const MisPedidosPage: React.FC = () => {
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-lg font-semibold text-gray-800">Pedido #{pedido.id}</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${ESTADO_COLORS[pedido.estado_actual] ?? 'bg-gray-100 text-gray-700'}`}>
-                      {ESTADO_LABEL[pedido.estado_actual] ?? pedido.estado_actual}
+                      {getEstadoLabel(pedido.estado_actual, pedido.tipo_entrega)}
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-blue-600 mb-1">${pedido.total.toFixed(2)}</p>

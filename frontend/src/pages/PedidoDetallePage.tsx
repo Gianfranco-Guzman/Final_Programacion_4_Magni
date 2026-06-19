@@ -16,13 +16,19 @@ const ESTADO_COLORS: Record<string, string> = {
   CANCELADO: 'bg-red-100 text-red-800',
 }
 
-const ESTADO_LABEL: Record<string, string> = {
+const ESTADO_LABEL_BASE: Record<string, string> = {
   PENDIENTE: 'Pendiente',
   CONFIRMADO: 'Confirmado',
   EN_PREP: 'En preparación',
   EN_CAMINO: 'En camino',
   ENTREGADO: 'Entregado',
   CANCELADO: 'Cancelado',
+}
+
+const getEstadoLabel = (estado: string, tipoEntrega?: string): string => {
+  if (estado === 'EN_CAMINO' && tipoEntrega === 'sucursal') return 'Listo para retirar'
+  if (estado === 'ENTREGADO' && tipoEntrega === 'sucursal') return 'Retirado'
+  return ESTADO_LABEL_BASE[estado] ?? estado
 }
 
 export const PedidoDetallePage: React.FC = () => {
@@ -87,7 +93,7 @@ export const PedidoDetallePage: React.FC = () => {
   }
 
   const estadoColor = ESTADO_COLORS[pedido.estado_actual] ?? 'bg-gray-100 text-gray-700'
-  const estadoLabel = ESTADO_LABEL[pedido.estado_actual] ?? pedido.estado_actual
+  const estadoLabel = getEstadoLabel(pedido.estado_actual, pedido.tipo_entrega)
   const puedeCancel = ['PENDIENTE', 'CONFIRMADO'].includes(pedido.estado_actual)
 
   return (
@@ -119,8 +125,8 @@ export const PedidoDetallePage: React.FC = () => {
             <p>{new Date(pedido.created_at).toLocaleString('es-AR')}</p>
           </div>
           <div>
-            <p className="font-medium text-gray-700">Dirección ID</p>
-            <p>#{pedido.direccion_entrega_id}</p>
+            <p className="font-medium text-gray-700">Entrega</p>
+            <p>{pedido.tipo_entrega === 'sucursal' ? 'Retiro en sucursal' : `Domicilio #${pedido.direccion_entrega_id}`}</p>
           </div>
           <div>
             <p className="font-medium text-gray-700">Forma de pago ID</p>
@@ -186,8 +192,8 @@ export const PedidoDetallePage: React.FC = () => {
                 <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium text-gray-800">
-                    {h.estado_anterior ? `${ESTADO_LABEL[h.estado_anterior] ?? h.estado_anterior} → ` : ''}
-                    {ESTADO_LABEL[h.estado_nuevo] ?? h.estado_nuevo}
+                    {h.estado_anterior ? `${getEstadoLabel(h.estado_anterior, pedido.tipo_entrega)} → ` : ''}
+                    {getEstadoLabel(h.estado_nuevo, pedido.tipo_entrega)}
                   </p>
                   <p className="text-gray-500 text-xs">{new Date(h.fecha).toLocaleString('es-AR')}</p>
                   {h.observacion && <p className="text-gray-600 italic text-xs mt-0.5">"{h.observacion}"</p>}

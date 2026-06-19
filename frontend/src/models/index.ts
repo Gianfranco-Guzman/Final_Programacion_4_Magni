@@ -127,10 +127,13 @@ export interface HistorialEstadoPedido {
   observacion: string | null
 }
 
+export type TipoEntrega = 'domicilio' | 'sucursal'
+
 export interface Pedido {
   id: number
   usuario_id: number
-  direccion_entrega_id: number
+  tipo_entrega: TipoEntrega
+  direccion_entrega_id: number | null
   forma_pago_id: number
   estado_actual: string
   subtotal?: number

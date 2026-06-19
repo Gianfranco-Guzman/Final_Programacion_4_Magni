@@ -8,7 +8,7 @@ import { useCheckout } from '@hooks/useCheckout'
 import { useDirecciones } from '@hooks/useDirecciones'
 import { useFormasPago } from '@hooks/useFormasPago'
 import { useCreatePago } from '@hooks/usePagos'
-import { Pedido, Usuario } from '@models/index'
+import { Pedido, TipoEntrega, Usuario } from '@models/index'
 import { useAuthStore } from '@store/authStore'
 import { useCartStore, selectCartTotal } from '@store/cartStore'
 import { getProductoPrecioFinal, getProductoStockDisponible } from '@/utils/producto'
@@ -28,6 +28,8 @@ const buildMercadoPagoPayer = (usuario: Usuario | null) => {
   return { email: usuario.email }
 }
 
+const EFECTIVO_CODE = 'EFECTIVO'
+
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate()
   const usuario = useAuthStore((state) => state.usuario)
@@ -38,10 +40,10 @@ export const CheckoutPage: React.FC = () => {
 
   const { data: direcciones = [], isLoading: loadingDir } = useDirecciones()
   const { data: rawFormasPago = [], isLoading: loadingFP } = useFormasPago()
-  const formasPago = rawFormasPago.filter((fp) => (fp.codigo ?? fp.nombre) !== 'EFECTIVO')
 
+  const [tipoEntrega, setTipoEntrega] = useState<TipoEntrega>('domicilio')
   const direccionPrincipal = direcciones.find((d) => d.es_principal)
-  const [selectedDireccionId, setSelectedDireccionId] = useState<number | null>(direccionPrincipal?.id ?? null)
+  const [selectedDireccionId, setSelectedDireccionId] = useState<number | null>(null)
   const [selectedFormaPagoId, setSelectedFormaPagoId] = useState<number | null>(null)
   const [notas, setNotas] = useState('')
   const [error, setError] = useState('')
@@ -49,9 +51,14 @@ export const CheckoutPage: React.FC = () => {
 
   const hasInvalidStock = items.some((item) => item.cantidad > getProductoStockDisponible(item.producto))
 
+  const formasPagoDisponibles = useMemo(() => {
+    if (tipoEntrega === 'sucursal') return rawFormasPago
+    return rawFormasPago.filter((fp) => (fp.codigo ?? fp.nombre) !== EFECTIVO_CODE)
+  }, [rawFormasPago, tipoEntrega])
+
   const formaPagoSeleccionada = useMemo(
-    () => formasPago.find((formaPago) => formaPago.id === selectedFormaPagoId) ?? null,
-    [formasPago, selectedFormaPagoId],
+    () => formasPagoDisponibles.find((fp) => fp.id === selectedFormaPagoId) ?? null,
+    [formasPagoDisponibles, selectedFormaPagoId],
   )
 
   const isMercadoPago = (formaPagoSeleccionada?.codigo ?? formaPagoSeleccionada?.nombre) === 'MERCADOPAGO'
@@ -64,10 +71,13 @@ export const CheckoutPage: React.FC = () => {
   }, [direccionPrincipal, selectedDireccionId])
 
   useEffect(() => {
-    if (formasPago.length > 0 && selectedFormaPagoId === null) {
-      setSelectedFormaPagoId(formasPago[0].id)
+    if (formasPagoDisponibles.length > 0) {
+      const seleccionadaAunDisponible = formasPagoDisponibles.some((fp) => fp.id === selectedFormaPagoId)
+      if (!seleccionadaAunDisponible) {
+        setSelectedFormaPagoId(formasPagoDisponibles[0].id)
+      }
     }
-  }, [formasPago, selectedFormaPagoId])
+  }, [formasPagoDisponibles, selectedFormaPagoId])
 
   useEffect(() => {
     if (mercadoPagoPublicKey) {
@@ -89,15 +99,22 @@ export const CheckoutPage: React.FC = () => {
     )
   }
 
+  const handleTipoEntregaChange = (tipo: TipoEntrega) => {
+    setTipoEntrega(tipo)
+  }
+
   const handleConfirmar = () => {
     setError('')
-    if (!selectedDireccionId) return setError('Seleccioná una dirección de entrega.')
+    if (tipoEntrega === 'domicilio' && !selectedDireccionId) {
+      return setError('Seleccioná una dirección de entrega.')
+    }
     if (!selectedFormaPagoId) return setError('Seleccioná una forma de pago.')
     if (hasInvalidStock) return setError('Hay productos con cantidades mayores al stock disponible.')
 
     checkoutMutation.mutate(
       {
-        direccion_entrega_id: selectedDireccionId,
+        tipo_entrega: tipoEntrega,
+        direccion_entrega_id: tipoEntrega === 'domicilio' ? selectedDireccionId! : null,
         forma_pago_id: selectedFormaPagoId,
         items: items.map((item) => ({ producto_id: item.producto.id, cantidad: item.cantidad })),
         notas: notas.trim() || undefined,
@@ -108,7 +125,6 @@ export const CheckoutPage: React.FC = () => {
             setPedidoCreado(pedido)
             return
           }
-
           clearCart()
           navigate(`/pedidos/${pedido.id}`)
         },
@@ -123,9 +139,7 @@ export const CheckoutPage: React.FC = () => {
       setError('Primero debés crear el pedido.')
       return
     }
-
     setError('')
-
     try {
       await pagoMutation.mutateAsync({
         pedido_id: pedidoCreado.id,
@@ -139,7 +153,6 @@ export const CheckoutPage: React.FC = () => {
       setError(err instanceof Error ? err.message : 'No se pudo procesar el pago')
       return
     }
-
     clearCart()
     navigate(`/pedidos/${pedidoCreado.id}`)
   }
@@ -162,61 +175,123 @@ export const CheckoutPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         <div className="lg:col-span-3 flex flex-col gap-6">
+
           <div className="bg-white rounded-lg shadow p-5">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Dirección de entrega</h2>
-            {direcciones.filter((d) => !d.deleted_at).length === 0 ? (
-              <div className="text-sm text-gray-500">
-                No tenés direcciones guardadas.{` `}
-                <button
-                  onClick={() => navigate('/direcciones')}
-                  className="text-blue-600 hover:underline"
-                >
-                  Agregar dirección
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {direcciones
-                  .filter((d) => !d.deleted_at)
-                  .map((d) => (
-                    <label
-                      key={d.id}
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedDireccionId === d.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="direccion"
-                        value={d.id}
-                        checked={selectedDireccionId === d.id}
-                        onChange={() => setSelectedDireccionId(d.id)}
-                        className="mt-0.5 accent-blue-600"
-                        disabled={!!pedidoCreado}
-                      />
-                      <div>
-                        <p className="font-medium text-sm text-gray-800">
-                          {d.etiqueta || 'Dirección'}{' '}
-                          {d.es_principal && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full ml-1">
-                              Principal
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs text-gray-500">{d.linea1}, {d.ciudad}</p>
-                      </div>
-                    </label>
-                  ))}
-              </div>
-            )}
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">¿Cómo querés recibir tu pedido?</h2>
+            <div className="flex flex-col gap-3">
+              <label
+                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  tipoEntrega === 'domicilio'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="tipo_entrega"
+                  value="domicilio"
+                  checked={tipoEntrega === 'domicilio'}
+                  onChange={() => handleTipoEntregaChange('domicilio')}
+                  className="mt-0.5 accent-blue-600"
+                  disabled={!!pedidoCreado}
+                />
+                <div>
+                  <p className="font-medium text-sm text-gray-800">Entrega a domicilio</p>
+                  <p className="text-xs text-gray-500">Te lo llevamos a tu dirección</p>
+                </div>
+              </label>
+              <label
+                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  tipoEntrega === 'sucursal'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="tipo_entrega"
+                  value="sucursal"
+                  checked={tipoEntrega === 'sucursal'}
+                  onChange={() => handleTipoEntregaChange('sucursal')}
+                  className="mt-0.5 accent-blue-600"
+                  disabled={!!pedidoCreado}
+                />
+                <div>
+                  <p className="font-medium text-sm text-gray-800">Retiro en sucursal</p>
+                  <p className="text-xs text-gray-500">Retirá en el local · Podés pagar en efectivo</p>
+                </div>
+              </label>
+            </div>
           </div>
+
+          {tipoEntrega === 'domicilio' && (
+            <div className="bg-white rounded-lg shadow p-5">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Dirección de entrega</h2>
+              {direcciones.filter((d) => !d.deleted_at).length === 0 ? (
+                <div className="text-sm text-gray-500">
+                  No tenés direcciones guardadas.{` `}
+                  <button
+                    onClick={() => navigate('/direcciones')}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Agregar dirección
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {direcciones
+                    .filter((d) => !d.deleted_at)
+                    .map((d) => (
+                      <label
+                        key={d.id}
+                        className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          selectedDireccionId === d.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="direccion"
+                          value={d.id}
+                          checked={selectedDireccionId === d.id}
+                          onChange={() => setSelectedDireccionId(d.id)}
+                          className="mt-0.5 accent-blue-600"
+                          disabled={!!pedidoCreado}
+                        />
+                        <div>
+                          <p className="font-medium text-sm text-gray-800">
+                            {d.etiqueta || 'Dirección'}{' '}
+                            {d.es_principal && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full ml-1">
+                                Principal
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500">{d.linea1}, {d.ciudad}</p>
+                        </div>
+                      </label>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {tipoEntrega === 'sucursal' && (
+            <div className="bg-white rounded-lg shadow p-5">
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Punto de retiro</h2>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+                <p className="font-medium text-gray-800 mb-1">Sucursal principal</p>
+                <p>Av. Corrientes 1234, CABA</p>
+                <p className="text-gray-500 mt-1">Lun a Sáb · 9 hs a 20 hs</p>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-lg shadow p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Forma de pago</h2>
             <div className="flex flex-col gap-3">
-              {formasPago.map((fp) => (
+              {formasPagoDisponibles.map((fp) => (
                 <label
                   key={fp.id}
                   className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -236,7 +311,10 @@ export const CheckoutPage: React.FC = () => {
                   />
                   <div>
                     <p className="font-medium text-sm text-gray-800">{fp.nombre}</p>
-                    {fp.descripcion && <p className="text-xs text-gray-500">{fp.descripcion}</p>}
+                    {(fp.codigo ?? fp.nombre) === EFECTIVO_CODE
+                      ? <p className="text-xs text-gray-500">Pago al momento del retiro</p>
+                      : fp.descripcion && <p className="text-xs text-gray-500">{fp.descripcion}</p>
+                    }
                   </div>
                 </label>
               ))}
@@ -262,7 +340,6 @@ export const CheckoutPage: React.FC = () => {
               <div className="mb-4 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
                 Pedido #{pedidoCreado.id} creado correctamente. Completá el pago para finalizar.
               </div>
-
               {mercadoPagoPublicKey ? (
                 <CardPayment
                   initialization={{

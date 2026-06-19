@@ -41,11 +41,29 @@ const ESTADO_LABEL: Record<string, string> = {
   CANCELADO: 'Cancelado',
 }
 
-const NEXT_LABEL: Record<string, string> = {
+const getEstadoLabel = (estado: string, tipoEntrega?: string): string => {
+  if (estado === 'EN_CAMINO' && tipoEntrega === 'sucursal') return 'Listo para retirar'
+  if (estado === 'ENTREGADO' && tipoEntrega === 'sucursal') return 'Retirado'
+  return ESTADO_LABEL[estado] ?? estado
+}
+
+const NEXT_LABEL_DOMICILIO: Record<string, string> = {
   PENDIENTE: 'Confirmar',
   CONFIRMADO: 'Iniciar preparación',
   EN_PREP: 'Enviar',
   EN_CAMINO: 'Marcar entregado',
+}
+
+const NEXT_LABEL_SUCURSAL: Record<string, string> = {
+  PENDIENTE: 'Confirmar',
+  CONFIRMADO: 'Iniciar preparación',
+  EN_PREP: 'Marcar listo para retirar',
+  EN_CAMINO: 'Confirmar retiro',
+}
+
+const getNextLabel = (estado: string, tipoEntrega?: string): string | undefined => {
+  const map = tipoEntrega === 'sucursal' ? NEXT_LABEL_SUCURSAL : NEXT_LABEL_DOMICILIO
+  return map[estado]
 }
 
 
@@ -57,7 +75,7 @@ interface KanbanCardProps {
 }
 
 function KanbanCard({ pedido, onAvanzar, onCancelar, isBusy }: KanbanCardProps) {
-  const nextLabel = NEXT_LABEL[pedido.estado_actual]
+  const nextLabel = getNextLabel(pedido.estado_actual, pedido.tipo_entrega)
   const puedeCancel = ['PENDIENTE', 'CONFIRMADO'].includes(pedido.estado_actual)
 
   return (
@@ -274,7 +292,7 @@ export const CajeroPage: React.FC = () => {
                     <td className="px-5 py-3 text-sm font-semibold text-gray-800">${pedido.total.toFixed(2)}</td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ESTADO_BADGE[pedido.estado_actual]}`}>
-                        {ESTADO_LABEL[pedido.estado_actual]}
+                        {getEstadoLabel(pedido.estado_actual, pedido.tipo_entrega)}
                       </span>
                     </td>
                     <td className={`px-5 py-3 text-xs max-w-xs truncate ${ESTADO_FILA_HISTORICO[pedido.estado_actual] ?? 'text-gray-500'}`}>

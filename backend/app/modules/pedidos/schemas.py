@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from datetime import datetime
 from typing import Optional
 
@@ -9,10 +9,17 @@ class ItemCarrito(BaseModel):
 
 
 class PedidoCreate(BaseModel):
-    direccion_entrega_id: int = Field(ge=1, description="Dirección de entrega requerida")
+    tipo_entrega: str = Field(default="domicilio", pattern="^(domicilio|sucursal)$")
+    direccion_entrega_id: Optional[int] = Field(None, ge=1)
     forma_pago_id: int = Field(ge=1, description="Forma de pago requerida")
     items: list[ItemCarrito] = Field(min_length=1, description="Al menos un ítem requerido")
     notas: Optional[str] = Field(None, max_length=500)
+
+    @model_validator(mode="after")
+    def validar_tipo_entrega(self) -> "PedidoCreate":
+        if self.tipo_entrega == "domicilio" and not self.direccion_entrega_id:
+            raise ValueError("direccion_entrega_id es requerida para entrega a domicilio")
+        return self
 
 
 class DetallePedidoRead(BaseModel):
@@ -43,7 +50,8 @@ class HistorialEstadoPedidoRead(BaseModel):
 class PedidoRead(BaseModel):
     id: int
     usuario_id: int
-    direccion_entrega_id: int
+    tipo_entrega: str
+    direccion_entrega_id: Optional[int]
     forma_pago_id: int
     estado_actual: str
     subtotal: float = 0

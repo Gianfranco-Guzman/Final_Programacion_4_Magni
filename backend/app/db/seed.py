@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy.orm import attributes
 from sqlmodel import Session, select
 
 from app.core.security import hash_password

@@ -14,7 +14,7 @@ Sistema de gestion de pedidos de comida construido con:
 
 ## Video
 
-- https://youtu.be/u8AqXBbrxMg
+- https://youtu.be/zO1Vx8CP1uk
 
 ## Implementado
 

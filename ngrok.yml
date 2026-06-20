@@ -1,0 +1,14 @@
+version: "2"
+authtoken: 3FNSEgWsyplFIKG0MGOYAC9jsrU_6JvvjofFeJgdnMJXc7UuS
+
+tunnels:
+  backend:
+    proto: http
+    addr: 8000
+    domain: turbojet-marxism-footrest.ngrok-free.dev
+    inspect: true
+
+  frontend:
+    proto: http
+    addr: 5173
+    inspect: true

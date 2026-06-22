@@ -50,7 +50,15 @@ def test_crear_pago_pedido_no_pendiente(client, cliente_headers, admin_headers, 
 
 
 def test_crear_pago_pedido_no_mercadopago(client, cliente_headers, direccion, forma_pago_efectivo, producto):
-    pedido = _crear_pedido_mp(client, cliente_headers, direccion.id, forma_pago_efectivo.id, producto.id)
+    pedido = client.post(
+        "/api/v1/pedidos/",
+        json={
+            "tipo_entrega": "sucursal",
+            "forma_pago_id": forma_pago_efectivo.id,
+            "items": [{"producto_id": producto.id, "cantidad": 1}],
+        },
+        headers=cliente_headers,
+    )
     pedido_id = pedido.json()["id"]
 
     resp = client.post(

@@ -1,8 +1,8 @@
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
-from app.core.repositories.base import BaseRepository
-from app.db.models import Producto, ProductoCategoria, ProductoDetalle
+from app.core.base_repository import BaseRepository
+from app.modules.productos.model import Producto, ProductoCategoria, ProductoDetalle
 
 
 class ProductoRepository(BaseRepository):

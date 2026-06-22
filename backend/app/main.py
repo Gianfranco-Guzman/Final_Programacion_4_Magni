@@ -5,17 +5,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.db.base import create_all_tables
 from app.db.seed import populate_seed_data
-from app.modules.auth import router as auth_router
-from app.modules.admin import router as admin_router
-from app.modules.direcciones import router as direcciones_router
-from app.modules.productos import router as productos_router
-from app.modules.Categoria import router as categoria_router
-from app.modules.ingredientes import router as ingrediente_router
-from app.modules.formas_pago import router as formas_pago_router
-from app.modules.estadisticas import router as estadisticas_router
-from app.modules.pedidos import router as pedidos_router
-from app.modules.pagos import router as pagos_router
-from app.modules.uploads import router as uploads_router
+from app.modules.auth.router import router as auth_router
+from app.modules.admin.router import router as admin_router
+from app.modules.direcciones.router import router as direcciones_router
+from app.modules.productos.router import router as productos_router
+from app.modules.categorias.router import router as categoria_router
+from app.modules.ingredientes.router import router as ingrediente_router
+from app.modules.formas_pago.router import router as formas_pago_router
+from app.modules.estadisticas.router import router as estadisticas_router
+from app.modules.pedidos.router import router as pedidos_router
+from app.modules.pagos.router import router as pagos_router
+from app.modules.uploads.router import router as uploads_router
 
 settings = get_settings()
 

@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from app.db.models.enums import TipoMovimientoIngrediente, UnidadMedida
+from app.db.enums import TipoMovimientoIngrediente, UnidadMedida
 
 
 class IngredienteBase(BaseModel):

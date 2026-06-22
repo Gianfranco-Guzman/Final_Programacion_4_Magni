@@ -7,7 +7,7 @@ def _crear_pedido(client, direccion_id, forma_pago_id, producto_id, headers):
     return client.post(
         "/api/v1/pedidos/",
         json={
-            "direccion_entrega_id": direccion_id,
+            "tipo_entrega": "sucursal",
             "forma_pago_id": forma_pago_id,
             "items": [{"producto_id": producto_id, "cantidad": 1}],
         },
@@ -28,7 +28,7 @@ def test_crear_pedido_producto_inexistente(client, cliente_headers, direccion, f
     resp = client.post(
         "/api/v1/pedidos/",
         json={
-            "direccion_entrega_id": direccion.id,
+            "tipo_entrega": "sucursal",
             "forma_pago_id": forma_pago_efectivo.id,
             "items": [{"producto_id": 99999, "cantidad": 1}],
         },

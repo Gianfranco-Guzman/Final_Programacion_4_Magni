@@ -5,25 +5,15 @@ from sqlmodel import Session, select
 
 from app.core.security import hash_password
 from app.db.base import engine
-from app.db.models import (
-    Categoria,
-    DetallePedido,
-    DireccionEntrega,
-    EstadoPedido,
-    FormaPago,
-    HistorialEstadoPedido,
-    Ingrediente,
-    Pedido,
-    Pago,
-    Producto,
-    ProductoCategoria,
-    ProductoDetalle,
-    Rol,
-    UnidadMedidaCatalogo,
-    Usuario,
-    UsuarioRol,
-)
-from app.db.models.enums import TipoProducto
+from app.modules.auth.model import Rol, Usuario, UsuarioRol
+from app.modules.categorias.model import Categoria
+from app.modules.direcciones.model import DireccionEntrega
+from app.modules.formas_pago.model import FormaPago
+from app.modules.ingredientes.model import Ingrediente, UnidadMedidaCatalogo
+from app.modules.pagos.model import Pago
+from app.modules.pedidos.model import DetallePedido, EstadoPedido, HistorialEstadoPedido, Pedido
+from app.modules.productos.model import Producto, ProductoCategoria, ProductoDetalle
+from app.db.enums import TipoProducto
 from app.modules.productos.service import ProductoService
 
 

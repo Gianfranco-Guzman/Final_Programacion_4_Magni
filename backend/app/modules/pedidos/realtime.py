@@ -3,7 +3,7 @@ from datetime import timezone
 from sqlmodel import Session
 
 from app.core.websocket import manager
-from app.db.models.pedido import Pedido
+from app.modules.pedidos.model import Pedido
 from app.db.unit_of_work import UnitOfWork
 from app.modules.pedidos.schemas import HistorialEstadoPedidoRead, PedidoDetalle
 

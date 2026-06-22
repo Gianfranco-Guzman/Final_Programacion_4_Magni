@@ -72,3 +72,54 @@ class Usuario(SQLModel, table=True):
 
     def __repr__(self) -> str:
         return f"<Usuario id={self.id} email={self.email} nombre={self.nombre}>"
+
+
+class Rol(SQLModel, table=True):
+
+    __tablename__ = "rol"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nombre: str = Field(
+        index=True,
+        unique=True,
+        max_length=50,
+        description="Nombre unico del rol (ADMIN, CLIENT, STOCK, PEDIDOS)"
+    )
+    descripcion: Optional[str] = Field(
+        default=None,
+        max_length=255,
+        description="Descripcion del rol"
+    )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Fecha de creacion"
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Fecha de ultima actualización"
+    )
+
+    usuarios: list["Usuario"] = Relationship(
+        back_populates="roles",
+        link_model=UsuarioRol,
+        sa_relationship_kwargs={
+            "primaryjoin": "Rol.id == UsuarioRol.rol_id",
+            "secondaryjoin": "UsuarioRol.usuario_id == Usuario.id",
+        },
+    )
+
+    def __repr__(self) -> str:
+        return f"<Rol id={self.id} nombre={self.nombre}>"
+
+
+class RefreshToken(SQLModel, table=True):
+
+    __tablename__ = "refresh_token"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuario.id", index=True)
+    token_hash: str = Field(index=True, unique=True, max_length=128)
+    jti: str = Field(index=True, unique=True, max_length=100)
+    expires_at: datetime
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    revoked_at: Optional[datetime] = Field(default=None)

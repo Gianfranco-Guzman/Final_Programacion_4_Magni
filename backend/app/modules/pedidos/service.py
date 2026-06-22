@@ -4,13 +4,11 @@ from typing import Optional
 
 from fastapi import HTTPException
 
-from app.db.models import Ingrediente
-from app.db.models.enums import TipoMovimientoIngrediente
-from app.db.models.pedido import Pedido
-from app.db.models.detalle_pedido import DetallePedido
-from app.db.models.historial_estado_pedido import HistorialEstadoPedido
-from app.db.models.producto import Producto
-from app.db.models.usuario import Usuario
+from app.modules.ingredientes.model import Ingrediente
+from app.db.enums import TipoMovimientoIngrediente
+from app.modules.pedidos.model import Pedido, DetallePedido, HistorialEstadoPedido
+from app.modules.productos.model import Producto
+from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork
 from app.modules.ingredientes.stock_service import IngredienteStockService
 from app.modules.pedidos.realtime import PedidoRealtimePublisher

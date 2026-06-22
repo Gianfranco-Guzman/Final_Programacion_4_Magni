@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 
 from sqlmodel import select
 
-from app.core.repositories.base import BaseRepository
-from app.db.models import DireccionEntrega
+from app.core.base_repository import BaseRepository
+from app.modules.direcciones.model import DireccionEntrega
 
 
 class DireccionRepository(BaseRepository):

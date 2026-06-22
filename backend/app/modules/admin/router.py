@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, status
 
 from app.core.dependencies import require_role
-from app.db.models.usuario import Usuario
+from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.admin.schemas import (
     AdminUserActionResponse,

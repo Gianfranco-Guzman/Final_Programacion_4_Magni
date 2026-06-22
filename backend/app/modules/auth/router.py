@@ -7,7 +7,7 @@ from app.core.config import get_settings
 from app.core.dependencies import get_current_user, require_role
 from app.core.rate_limit import auth_rate_limiter
 from app.core.security import create_access_token
-from app.db.models.usuario import Usuario
+from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.auth.schemas import (
     AdminActionResponse,

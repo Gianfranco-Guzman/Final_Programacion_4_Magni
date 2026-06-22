@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 
-from app.db.models.usuario import Usuario
+from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork
 from app.modules.admin.schemas import (
     AdminUserActionResponse,

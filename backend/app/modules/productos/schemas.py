@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import AliasChoices, BaseModel, Field, field_validator
 
-from app.db.models.enums import TipoProducto, UnidadMedida
+from app.db.enums import TipoProducto, UnidadMedida
 
 
 class CategoriaBase(BaseModel):

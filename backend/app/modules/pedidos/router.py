@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, s
 
 from app.core.dependencies import get_current_user, get_current_websocket_user, get_user_role_names, require_role
 from app.core.websocket import manager
-from app.db.models.usuario import Usuario
-from app.db.models.pedido import Pedido
+from app.modules.auth.model import Usuario
+from app.modules.pedidos.model import Pedido
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.pedidos.schemas import (
     AvanzarEstadoRequest,

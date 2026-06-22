@@ -4,7 +4,7 @@ from decimal import Decimal, ROUND_FLOOR
 
 from fastapi import HTTPException
 
-from app.db.models import Producto
+from app.modules.productos.model import Producto
 from app.db.unit_of_work import UnitOfWork
 from app.modules.productos.schemas import (
     ProductoCategoriaPayload,

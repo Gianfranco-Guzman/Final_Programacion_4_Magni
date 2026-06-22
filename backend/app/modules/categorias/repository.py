@@ -1,7 +1,8 @@
 from sqlmodel import select
 
-from app.core.repositories.base import BaseRepository
-from app.db.models import Categoria, Producto, ProductoCategoria
+from app.core.base_repository import BaseRepository
+from app.modules.categorias.model import Categoria
+from app.modules.productos.model import Producto, ProductoCategoria
 
 
 class CategoriaRepository(BaseRepository):

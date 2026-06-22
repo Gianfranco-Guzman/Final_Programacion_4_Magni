@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
-from app.db.models.forma_pago import FormaPago
+from app.modules.formas_pago.model import FormaPago
 from app.db.unit_of_work import UnitOfWork
 from app.modules.formas_pago.schemas import FormaPagoCreate, FormaPagoUpdate
 

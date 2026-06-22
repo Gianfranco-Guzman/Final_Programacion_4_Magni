@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from app.core.config import get_settings
 from app.core.security import decode_access_token
-from app.db.models.usuario import Usuario
+from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 
 

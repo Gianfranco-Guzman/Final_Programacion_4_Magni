@@ -5,8 +5,8 @@ from uuid import uuid4
 from fastapi import HTTPException, status
 
 from app.core.config import get_settings
-from app.db.models.pago import Pago
-from app.db.models.usuario import Usuario
+from app.modules.pagos.model import Pago
+from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork
 from app.modules.pagos.schemas import PagoCreateRequest
 from app.modules.pedidos.realtime import PedidoRealtimePublisher

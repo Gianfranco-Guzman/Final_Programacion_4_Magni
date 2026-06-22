@@ -3,8 +3,8 @@ from decimal import Decimal
 
 from fastapi import HTTPException
 
-from app.db.models import Ingrediente, MovimientoStockIngrediente
-from app.db.models.enums import TipoMovimientoIngrediente
+from app.modules.ingredientes.model import Ingrediente, MovimientoStockIngrediente
+from app.db.enums import TipoMovimientoIngrediente
 from app.db.unit_of_work import UnitOfWork
 
 #service solo para el manejo de stock de los ingredientes

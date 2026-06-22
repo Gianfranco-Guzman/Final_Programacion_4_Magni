@@ -8,8 +8,8 @@ from app.core.dependencies import (
     require_role,
     user_has_any_role,
 )
-from app.db.models import Producto
-from app.db.models.usuario import Usuario
+from app.modules.productos.model import Producto
+from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.productos.schemas import (
     CategoriaRead,

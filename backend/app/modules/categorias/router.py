@@ -3,16 +3,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import require_role
 from app.core.websocket import manager
-from app.db.models import Categoria
-from app.db.models.usuario import Usuario
-from app.db.unit_of_work import UnitOfWork, get_uow
-from app.modules.Categoria.schemas import (
+from app.modules.auth.model import Usuario
+from app.modules.categorias.model import Categoria
+from app.modules.categorias.schemas import (
     CategoriaCreate,
     CategoriaListResponse,
     CategoriaRead,
     CategoriaUpdate,
 )
-from app.modules.Categoria.service import CategoriaService
+from app.modules.categorias.service import CategoriaService
+from app.db.unit_of_work import UnitOfWork, get_uow
 
 router = APIRouter(tags=["categorias"])
 

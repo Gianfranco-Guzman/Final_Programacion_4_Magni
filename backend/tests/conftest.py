@@ -9,20 +9,22 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app.core.config import get_settings
 from app.core.security import create_access_token, hash_password
-from app.db import models as _  # noqa: F401
-from app.db.models import (
-    Categoria,
-    DireccionEntrega,
-    FormaPago,
-    Ingrediente,
-    Producto,
-    ProductoDetalle,
-    Rol,
-    Usuario,
-    UsuarioRol,
-)
-from app.db.models.enums import TipoProducto, UnidadMedida
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+import app.modules.auth.model  # noqa: F401
+import app.modules.categorias.model  # noqa: F401
+import app.modules.direcciones.model  # noqa: F401
+import app.modules.formas_pago.model  # noqa: F401
+import app.modules.ingredientes.model  # noqa: F401
+import app.modules.pagos.model  # noqa: F401
+import app.modules.pedidos.model  # noqa: F401
+import app.modules.productos.model  # noqa: F401
+from app.modules.auth.model import Rol, Usuario, UsuarioRol
+from app.modules.categorias.model import Categoria
+from app.modules.direcciones.model import DireccionEntrega
+from app.modules.formas_pago.model import FormaPago
+from app.modules.ingredientes.model import Ingrediente
+from app.modules.productos.model import Producto, ProductoDetalle
+from app.db.enums import TipoProducto, UnidadMedida
+from app.db.unit_of_work import UnitOfWork, get_uow
 from app.main import app
 
 
@@ -99,13 +101,8 @@ def db():
 @pytest.fixture
 def client(db):
     def _get_uow():
-        uow = SqlModelUnitOfWork(db)
-        try:
+        with UnitOfWork() as uow:
             yield uow
-            uow.commit()
-        except Exception:
-            uow.rollback()
-            raise
 
     app.dependency_overrides[get_uow] = _get_uow
     try:

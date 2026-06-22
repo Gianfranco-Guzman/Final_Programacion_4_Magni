@@ -1,6 +1,5 @@
 from enum import Enum
 
-#todos los enums van aca
 
 class UnidadMedida(str, Enum):
     UNIDAD = "UNIDAD"

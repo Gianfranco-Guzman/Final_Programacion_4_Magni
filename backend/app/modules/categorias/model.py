@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional
+
 from sqlmodel import SQLModel, Field, Relationship
 
 
@@ -47,4 +48,4 @@ class Categoria(SQLModel, table=True):
     subcategorias: list["Categoria"] = Relationship(back_populates="parent")
 
     def __repr__(self) -> str:
-        return f"<Categoria id={self.id} nombre={self.nombre}>"    #sirve para mostrar algo legible cuando se llama a la categoria 
+        return f"<Categoria id={self.id} nombre={self.nombre}>"

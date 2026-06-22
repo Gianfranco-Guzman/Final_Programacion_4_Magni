@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
-from app.db.models import Categoria
+
+from app.modules.categorias.model import Categoria
+from app.modules.categorias.schemas import CategoriaCreate, CategoriaUpdate
 from app.db.unit_of_work import UnitOfWork
-from app.modules.Categoria.schemas import CategoriaCreate, CategoriaUpdate
 
 
 class CategoriaService:

@@ -2,7 +2,6 @@ from sqlalchemy import text
 from sqlmodel import SQLModel, Session, create_engine
 
 from app.core.config import get_settings
-from app.db import models as db_models  # noqa: F401
 
 settings = get_settings()
 

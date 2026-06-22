@@ -9,8 +9,7 @@ from app.core.security import (
     hash_token,
     verify_password,
 )
-from app.db.models.refresh_token import RefreshToken
-from app.db.models.usuario import Usuario
+from app.modules.auth.model import RefreshToken, Usuario
 from app.db.unit_of_work import UnitOfWork
 from app.modules.auth.schemas import (
     AdminActionResponse,

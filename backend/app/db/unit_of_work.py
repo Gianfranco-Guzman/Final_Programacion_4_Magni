@@ -1,19 +1,14 @@
 from sqlmodel import Session
 
-from app.core.repositories import (
-    CategoriaRepository,
-    DireccionRepository,
-    EstadisticaRepository,
-    FormaPagoRepository,
-    IngredienteRepository,
-    MovimientoStockIngredienteRepository,
-    PagoRepository,
-    PedidoRepository,
-    ProductoRepository,
-    RefreshTokenRepository,
-    RolRepository,
-    UsuarioRepository,
-)
+from app.modules.auth.repository import RefreshTokenRepository, RolRepository, UsuarioRepository
+from app.modules.categorias.repository import CategoriaRepository
+from app.modules.direcciones.repository import DireccionRepository
+from app.modules.estadisticas.repository import EstadisticaRepository
+from app.modules.formas_pago.repository import FormaPagoRepository
+from app.modules.ingredientes.repository import IngredienteRepository, MovimientoStockIngredienteRepository
+from app.modules.pagos.repository import PagoRepository
+from app.modules.pedidos.repository import PedidoRepository
+from app.modules.productos.repository import ProductoRepository
 from app.db.base import engine
 
 

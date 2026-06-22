@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 
 from app.core.dependencies import require_role
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.admin.schemas import (
     AdminUserActionResponse,
     AdminUserListResponse,
@@ -25,7 +25,7 @@ def listar_usuarios(
     size: int = Query(default=20, ge=1, le=100),
     rol: str | None = Query(default=None, description="Filtrar por rol"),
     _admin: Usuario = Depends(require_role("ADMIN")),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> AdminUserListResponse:
     return AdminService.listar_usuarios(uow, page, size, rol)
 
@@ -40,7 +40,7 @@ def actualizar_usuario(
     usuario_id: int,
     data: AdminUserUpdateRequest,
     current_admin: Usuario = Depends(require_role("ADMIN")),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> AdminUserActionResponse:
     usuario = AdminService.actualizar_usuario(usuario_id, data, current_admin, uow)
     return AdminUserActionResponse(message="Usuario actualizado correctamente", usuario=usuario)
@@ -55,7 +55,7 @@ def actualizar_usuario(
 def dar_de_baja_usuario(
     usuario_id: int,
     current_admin: Usuario = Depends(require_role("ADMIN")),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> AdminUserActionResponse:
     return AdminService.dar_de_baja_usuario(usuario_id, current_admin, uow)
 
@@ -69,7 +69,7 @@ def dar_de_baja_usuario(
 def reactivar_usuario(
     usuario_id: int,
     _admin: Usuario = Depends(require_role("ADMIN")),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> AdminUserActionResponse:
     return AdminService.reactivar_usuario(usuario_id, uow)
 
@@ -84,6 +84,6 @@ def actualizar_roles(
     usuario_id: int,
     data: AdminUserRolesRequest,
     current_admin: Usuario = Depends(require_role("ADMIN")),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> AdminUserActionResponse:
     return AdminService.actualizar_roles(usuario_id, data, current_admin, uow)

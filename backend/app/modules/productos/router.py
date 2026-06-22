@@ -10,7 +10,7 @@ from app.core.dependencies import (
 )
 from app.db.models import Producto
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.productos.schemas import (
     CategoriaRead,
     IngredienteRead,
@@ -100,7 +100,7 @@ def listar_productos(
     search: Optional[str] = Query(None),
     disponible: Optional[bool] = Query(None),
     incluir_baja: bool = Query(False, description="Incluir productos dados de baja"),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario | None = Depends(get_optional_current_user),
 ):
     if incluir_baja and not user_has_any_role(current_user, ["ADMIN", "STOCK"], uow):
@@ -140,7 +140,7 @@ def listar_productos(
 )
 def exportar_productos(
     search: Optional[str] = Query(default=None),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     productos = uow.productos.list_for_export(search=search, limit=1000)
     excel_file = ProductoService.exportar_a_excel(productos)
@@ -157,7 +157,7 @@ def exportar_productos(
     response_model=list[CategoriaRead],
     summary="Listar todas las categorías",
 )
-def listar_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)):
+def listar_categorias(uow: UnitOfWork = Depends(get_uow)):
     categorias = uow.categorias.list_all_ordered()
     return [CategoriaRead.model_validate(c) for c in categorias]
 
@@ -167,7 +167,7 @@ def listar_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)):
     response_model=ProductoRead,
     summary="Obtener producto por ID",
 )
-def obtener_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
+def obtener_producto(producto_id: int, uow: UnitOfWork = Depends(get_uow)):
     producto = uow.productos.get_active_by_id_with_relations(producto_id)
 
     if not producto:
@@ -181,7 +181,7 @@ def obtener_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow
     response_model=list[IngredienteRead],
     summary="Listar ingredientes del producto",
 )
-def listar_ingredientes_producto(producto_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
+def listar_ingredientes_producto(producto_id: int, uow: UnitOfWork = Depends(get_uow)):
     producto = uow.productos.get_active_by_id_with_relations(producto_id)
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -197,7 +197,7 @@ def listar_ingredientes_producto(producto_id: int, uow: SqlModelUnitOfWork = Dep
 )
 def crear_producto(
     data: ProductoCreate,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.crear_producto(data, uow)
@@ -212,7 +212,7 @@ def crear_producto(
 def actualizar_producto(
     producto_id: int,
     data: ProductoUpdate,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.actualizar_producto(producto_id, data, uow)
@@ -227,7 +227,7 @@ def actualizar_producto(
 def actualizar_imagenes_producto(
     producto_id: int,
     data: ProductoUpdate,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.actualizar_producto(
@@ -245,7 +245,7 @@ def actualizar_imagenes_producto(
 )
 def dar_de_baja(
     producto_id: int,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.dar_de_baja(producto_id, uow)
@@ -259,7 +259,7 @@ def dar_de_baja(
 )
 def reactivar_producto(
     producto_id: int,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.reactivar_producto(producto_id, uow)
@@ -273,7 +273,7 @@ def reactivar_producto(
 )
 def alternar_disponibilidad(
     producto_id: int,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.toggle_disponible(producto_id, uow)

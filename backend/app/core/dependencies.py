@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from app.core.config import get_settings
 from app.core.security import decode_access_token
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+from app.db.unit_of_work import UnitOfWork, get_uow
 
 
 class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):        #clase para obtener el token de la cookie o del header Authorization
@@ -46,7 +46,7 @@ def _credentials_exception() -> HTTPException:
     )
 
 
-def _resolve_user_from_token(uow: SqlModelUnitOfWork, token: str) -> Usuario:      #para saber el usuario a partir del ttoken
+def _resolve_user_from_token(uow: UnitOfWork, token: str) -> Usuario:      #para saber el usuario a partir del ttoken
     credentials_exception = _credentials_exception()
 
     payload = decode_access_token(token)
@@ -78,18 +78,18 @@ def _resolve_user_from_token(uow: SqlModelUnitOfWork, token: str) -> Usuario:   
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
-    uow: Annotated[SqlModelUnitOfWork, Depends(get_uow)],
+    uow: Annotated[UnitOfWork, Depends(get_uow)],
 ) -> Usuario:
     return _resolve_user_from_token(uow, token)
 
 
-def get_user_role_names(uow: SqlModelUnitOfWork, user_id: int) -> list[str]:
+def get_user_role_names(uow: UnitOfWork, user_id: int) -> list[str]:
     return uow.roles.get_names_for_user(user_id)
 
 
 async def get_optional_current_user(
     token: Annotated[str | None, Depends(optional_oauth2_scheme)],
-    uow: Annotated[SqlModelUnitOfWork, Depends(get_uow)],
+    uow: Annotated[UnitOfWork, Depends(get_uow)],
 ) -> Usuario | None:
     if token is None:
         return None
@@ -97,7 +97,7 @@ async def get_optional_current_user(
     return _resolve_user_from_token(uow, token)
 
 
-def user_has_any_role(user: Usuario | None, roles: list[str], uow: SqlModelUnitOfWork) -> bool:
+def user_has_any_role(user: Usuario | None, roles: list[str], uow: UnitOfWork) -> bool:
     if user is None:
         return False
 
@@ -106,7 +106,7 @@ def user_has_any_role(user: Usuario | None, roles: list[str], uow: SqlModelUnitO
 
 async def get_current_websocket_user(
     websocket: WebSocket,
-    uow: Annotated[SqlModelUnitOfWork, Depends(get_uow)],
+    uow: Annotated[UnitOfWork, Depends(get_uow)],
 ) -> Usuario:
     settings = get_settings()
     token = websocket.cookies.get(settings.auth_cookie_name)
@@ -132,7 +132,7 @@ def require_role(*allowed_roles: str | list[str] | tuple[str, ...]):
 
     async def role_checker(
         current_user: Usuario = Depends(get_current_user),
-        uow: SqlModelUnitOfWork = Depends(get_uow),
+        uow: UnitOfWork = Depends(get_uow),
     ) -> Usuario:
         if not normalized_roles:
             return current_user

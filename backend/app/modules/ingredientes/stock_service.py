@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from app.db.models import Ingrediente, MovimientoStockIngrediente
 from app.db.models.enums import TipoMovimientoIngrediente
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 
 #service solo para el manejo de stock de los ingredientes
 
@@ -15,7 +15,7 @@ class IngredienteStockService:
         ingrediente: Ingrediente,
         cantidad: Decimal,
         tipo_movimiento: TipoMovimientoIngrediente,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
         *,
         pedido_id: int | None = None,
         usuario_id: int | None = None,
@@ -73,7 +73,7 @@ class IngredienteStockService:
         ingrediente: Ingrediente,
         cantidad: Decimal,
         pedido_id: int,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
         observacion: str | None = None,
     ) -> MovimientoStockIngrediente:
         return IngredienteStockService.registrar_movimiento(
@@ -92,7 +92,7 @@ class IngredienteStockService:
         ingrediente: Ingrediente,
         cantidad: Decimal,
         pedido_id: int,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
         observacion: str | None = None,
     ) -> MovimientoStockIngrediente:
         return IngredienteStockService.registrar_movimiento(

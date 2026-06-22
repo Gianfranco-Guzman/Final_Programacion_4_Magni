@@ -8,7 +8,7 @@ from app.core.dependencies import get_current_user, require_role
 from app.core.rate_limit import auth_rate_limiter
 from app.core.security import create_access_token
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.auth.schemas import (
     AdminActionResponse,
     AdminUserDetailResponse,
@@ -100,7 +100,7 @@ async def login(
     request: LoginRequest,
     http_request: Request,
     response: Response,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> SessionResponse:
     identifier = _client_identifier(http_request)
     auth_rate_limiter.ensure_allowed("login", identifier)
@@ -132,7 +132,7 @@ async def login_oauth2(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     http_request: Request,
     response: Response,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> SessionResponse:
     identifier = _client_identifier(http_request)
     auth_rate_limiter.ensure_allowed("login", identifier)
@@ -161,7 +161,7 @@ async def refresh_session(
     request: Request,
     response: Response,
     body: RefreshTokenRequest | None = None,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> SessionResponse:
     refresh_token = body.refresh_token if body and body.refresh_token else request.cookies.get(settings.refresh_cookie_name)
     user, roles, new_refresh_token = AuthService.rotar_refresh_token(refresh_token, uow)
@@ -180,7 +180,7 @@ async def refresh_session(
 async def logout(
     request: Request,
     response: Response,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> SessionResponse:
     AuthService.revocar_refresh_token(request.cookies.get(settings.refresh_cookie_name), uow)
     _clear_auth_cookie(response)
@@ -201,7 +201,7 @@ async def logout(
 async def register(
     request: RegisterRequest,
     http_request: Request,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> UsuarioResponse:
     identifier = _client_identifier(http_request)
     auth_rate_limiter.ensure_allowed("register", identifier)
@@ -226,7 +226,7 @@ async def register(
 )
 async def get_me(
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> UsuarioResponse:
     return AuthService.obtener_usuario_con_roles(current_user.id, uow)
 
@@ -243,7 +243,7 @@ async def get_me(
 )
 async def admin_listar_usuarios(
     _admin: Usuario = Depends(require_role("ADMIN")),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> list[AdminUserDetailResponse]:
     return AuthService.listar_usuarios(uow)
 
@@ -262,7 +262,7 @@ async def admin_listar_usuarios(
 async def admin_desactivar_usuario(
     usuario_id: int,
     _admin: Usuario = Depends(require_role("ADMIN")),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> AdminActionResponse:
     return AuthService.toggle_usuario_activo(usuario_id, activo=False, uow=uow)
 
@@ -281,6 +281,6 @@ async def admin_desactivar_usuario(
 async def admin_activar_usuario(
     usuario_id: int,
     _admin: Usuario = Depends(require_role("ADMIN")),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> AdminActionResponse:
     return AuthService.toggle_usuario_activo(usuario_id, activo=True, uow=uow)

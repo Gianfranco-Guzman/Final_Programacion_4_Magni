@@ -17,37 +17,41 @@ from app.core.repositories import (
 from app.db.base import engine
 
 
-class SqlModelUnitOfWork:
+class UnitOfWork:
 
-    def __init__(self, session: Session):
-        self.session = session
-        self.formas_pago = FormaPagoRepository(session)
-        self.direcciones = DireccionRepository(session)
-        self.estadisticas = EstadisticaRepository(session)
-        self.categorias = CategoriaRepository(session)
-        self.usuarios = UsuarioRepository(session)
-        self.roles = RolRepository(session)
-        self.ingredientes = IngredienteRepository(session)
-        self.movimientos_stock_ingredientes = MovimientoStockIngredienteRepository(session)
-        self.pagos = PagoRepository(session)
-        self.productos = ProductoRepository(session)
-        self.pedidos = PedidoRepository(session)
-        self.refresh_tokens = RefreshTokenRepository(session)
+    def __init__(self):
+        self.session = Session(engine)
+        self.formas_pago = FormaPagoRepository(self.session)
+        self.direcciones = DireccionRepository(self.session)
+        self.estadisticas = EstadisticaRepository(self.session)
+        self.categorias = CategoriaRepository(self.session)
+        self.usuarios = UsuarioRepository(self.session)
+        self.roles = RolRepository(self.session)
+        self.ingredientes = IngredienteRepository(self.session)
+        self.movimientos_stock_ingredientes = MovimientoStockIngredienteRepository(self.session)
+        self.pagos = PagoRepository(self.session)
+        self.productos = ProductoRepository(self.session)
+        self.pedidos = PedidoRepository(self.session)
+        self.refresh_tokens = RefreshTokenRepository(self.session)
         self._after_commit_callbacks: list[callable] = []
 
-    def commit(self) -> None:
-        self.session.commit()
-        callbacks = list(self._after_commit_callbacks)
-        self._after_commit_callbacks.clear()
-        for callback in callbacks:
-            try:
-                callback()
-            except Exception as exc:
-                print(f"[WARN] Realtime callback failed after commit: {exc}")
+    def __enter__(self):
+        return self
 
-    def rollback(self) -> None:
-        self._after_commit_callbacks.clear()
-        self.session.rollback()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            self._after_commit_callbacks.clear()
+            self.session.rollback()
+        else:
+            self.session.commit()
+            callbacks = list(self._after_commit_callbacks)
+            self._after_commit_callbacks.clear()
+            for callback in callbacks:
+                try:
+                    callback()
+                except Exception as exc:
+                    print(f"[WARN] Realtime callback failed after commit: {exc}")
+        self.session.close()
 
     def flush(self) -> None:
         self.session.flush()
@@ -60,13 +64,5 @@ class SqlModelUnitOfWork:
 
 
 def get_uow():
-    session = Session(engine)
-    uow = SqlModelUnitOfWork(session)
-    try:
+    with UnitOfWork() as uow:
         yield uow
-        uow.commit()
-    except Exception:
-        uow.rollback()
-        raise
-    finally:
-        session.close()

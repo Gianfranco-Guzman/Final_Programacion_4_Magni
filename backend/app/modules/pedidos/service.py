@@ -11,7 +11,7 @@ from app.db.models.detalle_pedido import DetallePedido
 from app.db.models.historial_estado_pedido import HistorialEstadoPedido
 from app.db.models.producto import Producto
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.ingredientes.stock_service import IngredienteStockService
 from app.modules.pedidos.realtime import PedidoRealtimePublisher
 from app.modules.pedidos.schemas import PedidoCreate
@@ -48,7 +48,7 @@ class PedidoService:
     @staticmethod
     def _cargar_productos_para_pedido(
         producto_ids: list[int],
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> dict[int, Producto]:
         productos = uow.productos.list_available_by_ids_with_ingredientes(producto_ids)
         return {producto.id: producto for producto in productos}
@@ -56,7 +56,7 @@ class PedidoService:
     @staticmethod
     def _preparar_detalles_y_consumo(
         items_consolidados: dict[int, int],
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> tuple[list[dict], dict[int, Decimal], Decimal]:
         productos_map = PedidoService._cargar_productos_para_pedido(list(items_consolidados.keys()), uow)
         detalles_data: list[dict] = []
@@ -101,7 +101,7 @@ class PedidoService:
     @staticmethod
     def _consolidar_consumo_ingredientes_desde_detalles(
         detalles: list[DetallePedido],
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> dict[int, Decimal]:
         consumo_por_ingrediente: dict[int, Decimal] = {}
 
@@ -121,7 +121,7 @@ class PedidoService:
     @staticmethod
     def _validar_stock_para_consumo(
         consumo_por_ingrediente: dict[int, Decimal],
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> dict[int, Ingrediente]:
         ingrediente_ids = list(consumo_por_ingrediente.keys())
         ingredientes = uow.ingredientes.list_by_ids(ingrediente_ids)
@@ -143,7 +143,7 @@ class PedidoService:
         return ingredientes_map
 
     @staticmethod
-    def _descontar_stock_por_confirmacion(pedido: Pedido, uow: SqlModelUnitOfWork) -> None:
+    def _descontar_stock_por_confirmacion(pedido: Pedido, uow: UnitOfWork) -> None:
         detalles = list(pedido.detalles)
         consumo_por_ingrediente = PedidoService._consolidar_consumo_ingredientes_desde_detalles(detalles, uow)
         ingredientes_map = PedidoService._validar_stock_para_consumo(consumo_por_ingrediente, uow)
@@ -159,7 +159,7 @@ class PedidoService:
             )
 
     @staticmethod
-    def _revertir_stock_por_cancelacion(pedido: Pedido, uow: SqlModelUnitOfWork) -> None:
+    def _revertir_stock_por_cancelacion(pedido: Pedido, uow: UnitOfWork) -> None:
         movimientos = uow.movimientos_stock_ingredientes.list_by_pedido_id(pedido.id)
 
         consumos: dict[int, Decimal] = {}
@@ -192,7 +192,7 @@ class PedidoService:
             )
 
     @staticmethod
-    def crear_pedido(data: PedidoCreate, current_user: Usuario, uow: SqlModelUnitOfWork) -> Pedido:
+    def crear_pedido(data: PedidoCreate, current_user: Usuario, uow: UnitOfWork) -> Pedido:
         direccion_id: int | None = None
         if data.tipo_entrega == "domicilio":
             direccion = uow.direcciones.get_active_for_user(data.direccion_entrega_id, current_user.id)
@@ -262,7 +262,7 @@ class PedidoService:
     @staticmethod
     def listar_pedidos(
         current_user: Usuario,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
         estado: Optional[str] = None,
         page: int = 1,
         size: int = 20,
@@ -276,7 +276,7 @@ class PedidoService:
         )
 
     @staticmethod
-    def obtener_pedido(pedido_id: int, current_user: Usuario, uow: SqlModelUnitOfWork) -> Pedido:
+    def obtener_pedido(pedido_id: int, current_user: Usuario, uow: UnitOfWork) -> Pedido:
         pedido = uow.pedidos.get_by_id_with_detalles_historial(pedido_id)
         if not pedido:
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
@@ -292,7 +292,7 @@ class PedidoService:
     def obtener_historial_pedido(
         pedido_id: int,
         current_user: Usuario,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> list[HistorialEstadoPedido]:
         pedido = uow.pedidos.get_by_id(pedido_id)
         if not pedido:
@@ -308,7 +308,7 @@ class PedidoService:
     def avanzar_estado(
         pedido_id: int,
         current_user: Usuario,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
         observacion: Optional[str] = None,
     ) -> Pedido:
         pedido = uow.pedidos.get_by_id_with_detalles(pedido_id)
@@ -349,7 +349,7 @@ class PedidoService:
     def cancelar_pedido(
         pedido_id: int,
         current_user: Usuario,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
         observacion: Optional[str] = None,
     ) -> Pedido:
         pedido = uow.pedidos.get_by_id_with_detalles(pedido_id)

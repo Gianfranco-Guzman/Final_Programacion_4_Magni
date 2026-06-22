@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.core.dependencies import get_current_user
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.pagos.schemas import PagoCreateRequest, PagoResponse, WebhookResponse
 from app.modules.pagos.service import PagosService
 
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/pagos", tags=["pagos"])
 def crear_pago(
     data: PagoCreateRequest,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> PagoResponse:
     pago = PagosService.crear_pago(data, current_user, uow)
     return PagoResponse.model_validate(pago)
@@ -35,7 +35,7 @@ def crear_pago(
 def obtener_pago(
     pedido_id: int,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> PagoResponse:
     pago = PagosService.obtener_pago(pedido_id, current_user, uow)
     return PagoResponse.model_validate(pago)
@@ -52,7 +52,7 @@ async def webhook_mercadopago(
     topic: str | None = Query(default=None),
     type: str | None = Query(default=None),
     id: str | None = Query(default=None),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> WebhookResponse:
     body: dict[str, Any] = {}
     try:

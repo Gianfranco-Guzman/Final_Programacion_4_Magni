@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from app.db.models import Ingrediente
 from app.db.models.enums import TipoMovimientoIngrediente, UnidadMedida
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.ingredientes.schemas import IngredienteCreate, IngredienteUpdate, MovimientoEntradaRead, StockCargaInput, StockCorreccionInput
 from app.modules.ingredientes.stock_service import IngredienteStockService
 
@@ -39,7 +39,7 @@ class IngredienteService:
             )
 
     @staticmethod
-    def crear_ingrediente(data: IngredienteCreate, uow: SqlModelUnitOfWork) -> Ingrediente:
+    def crear_ingrediente(data: IngredienteCreate, uow: UnitOfWork) -> Ingrediente:
         IngredienteService._validar_reglas_unidad_y_fraccion(data)
         existing = uow.ingredientes.get_active_by_name(data.nombre)
         if existing:
@@ -74,7 +74,7 @@ class IngredienteService:
     def actualizar_ingrediente(
         ingrediente_id: int,
         data: IngredienteUpdate,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> Ingrediente:
         ingrediente = uow.ingredientes.get_active_by_id(ingrediente_id)
         if not ingrediente:
@@ -135,7 +135,7 @@ class IngredienteService:
         return factor
 
     @staticmethod
-    def cargar_stock(ingrediente_id: int, data: StockCargaInput, uow: SqlModelUnitOfWork, usuario_id: int | None = None) -> Ingrediente:
+    def cargar_stock(ingrediente_id: int, data: StockCargaInput, uow: UnitOfWork, usuario_id: int | None = None) -> Ingrediente:
         ingrediente = uow.ingredientes.get_active_by_id(ingrediente_id)
         if not ingrediente:
             raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
@@ -155,7 +155,7 @@ class IngredienteService:
         return ingrediente
 
     @staticmethod
-    def mis_cargas(usuario_id: int, uow: SqlModelUnitOfWork) -> list[MovimientoEntradaRead]:
+    def mis_cargas(usuario_id: int, uow: UnitOfWork) -> list[MovimientoEntradaRead]:
         movimientos = uow.movimientos_stock_ingredientes.list_entradas_by_usuario(usuario_id)
         result = []
         for m in movimientos:
@@ -179,7 +179,7 @@ class IngredienteService:
         return result
 
     @staticmethod
-    def corregir_entrada(data: StockCorreccionInput, usuario_id: int, uow: SqlModelUnitOfWork) -> MovimientoEntradaRead:
+    def corregir_entrada(data: StockCorreccionInput, usuario_id: int, uow: UnitOfWork) -> MovimientoEntradaRead:
         movimiento = uow.movimientos_stock_ingredientes.get_by_id(data.movimiento_id)
         if not movimiento or movimiento.tipo_movimiento != TipoMovimientoIngrediente.ENTRADA_STOCK:
             raise HTTPException(status_code=404, detail="Movimiento no encontrado")
@@ -226,7 +226,7 @@ class IngredienteService:
         )
 
     @staticmethod
-    def dar_de_baja(ingrediente_id: int, uow: SqlModelUnitOfWork) -> Ingrediente:
+    def dar_de_baja(ingrediente_id: int, uow: UnitOfWork) -> Ingrediente:
         ingrediente = uow.ingredientes.get_by_id(ingrediente_id)
         if not ingrediente:
             raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
@@ -246,7 +246,7 @@ class IngredienteService:
         return ingrediente
 
     @staticmethod
-    def reactivar(ingrediente_id: int, uow: SqlModelUnitOfWork) -> Ingrediente:
+    def reactivar(ingrediente_id: int, uow: UnitOfWork) -> Ingrediente:
         ingrediente = uow.ingredientes.get_by_id(ingrediente_id)
         if not ingrediente:
             raise HTTPException(status_code=404, detail="Ingrediente no encontrado")

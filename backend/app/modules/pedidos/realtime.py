@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from app.core.websocket import manager
 from app.db.models.pedido import Pedido
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.pedidos.schemas import HistorialEstadoPedidoRead, PedidoDetalle
 
 STAFF_ROLES = ["ADMIN", "PEDIDOS"]
@@ -20,7 +20,7 @@ class PedidoRealtimePublisher:
 
 
     @staticmethod
-    def queue_event(uow: SqlModelUnitOfWork, event: str, pedido_id: int) -> None:
+    def queue_event(uow: UnitOfWork, event: str, pedido_id: int) -> None:
         uow.add_after_commit(lambda: PedidoRealtimePublisher._emit_from_request_thread(uow.session, event, pedido_id))
 
     @staticmethod

@@ -5,7 +5,7 @@ from decimal import Decimal, ROUND_FLOOR
 from fastapi import HTTPException
 
 from app.db.models import Producto
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.productos.schemas import (
     ProductoCategoriaPayload,
     ProductoCreate,
@@ -64,7 +64,7 @@ class ProductoService:
     @staticmethod
     def _calcular_precio_costo(
         ingredientes_payload: list[ProductoDetallePayload],
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> Decimal:
         ingrediente_ids = [item.ingrediente_id for item in ingredientes_payload]
         ingredientes = uow.ingredientes.list_by_ids(ingrediente_ids)
@@ -80,7 +80,7 @@ class ProductoService:
     @staticmethod
     def _validar_categorias(
         categorias_payload: list[ProductoCategoriaPayload],
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> list[ProductoCategoriaPayload]:
         categoria_ids = [item.categoria_id for item in categorias_payload]
 
@@ -112,7 +112,7 @@ class ProductoService:
     @staticmethod
     def _validar_ingredientes(
         ingredientes_payload: list[ProductoDetallePayload],
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> list[ProductoDetallePayload]:
         ingrediente_ids = [item.ingrediente_id for item in ingredientes_payload]
 
@@ -151,7 +151,7 @@ class ProductoService:
         return ingredientes_payload
 
     @staticmethod
-    def crear_producto(data: ProductoCreate, uow: SqlModelUnitOfWork) -> Producto:
+    def crear_producto(data: ProductoCreate, uow: UnitOfWork) -> Producto:
         existing = uow.productos.get_active_by_codigo(data.codigo)
         if existing:
             raise HTTPException(
@@ -214,7 +214,7 @@ class ProductoService:
     def actualizar_producto(
         producto_id: int,
         data: ProductoUpdate,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> Producto:
         producto = uow.productos.get_active_by_id(producto_id)
         if not producto:
@@ -298,7 +298,7 @@ class ProductoService:
         return uow.productos.get_by_id_with_relations(producto_id)
 
     @staticmethod
-    def dar_de_baja(producto_id: int, uow: SqlModelUnitOfWork) -> Producto:
+    def dar_de_baja(producto_id: int, uow: UnitOfWork) -> Producto:
         producto = uow.productos.get_by_id(producto_id)
         if not producto:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -313,7 +313,7 @@ class ProductoService:
         return uow.productos.get_by_id_with_relations(producto_id)
 
     @staticmethod
-    def reactivar_producto(producto_id: int, uow: SqlModelUnitOfWork) -> Producto:
+    def reactivar_producto(producto_id: int, uow: UnitOfWork) -> Producto:
         producto = uow.productos.get_by_id(producto_id)
         if not producto:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -335,7 +335,7 @@ class ProductoService:
         return uow.productos.get_by_id_with_relations(producto_id)
 
     @staticmethod
-    def toggle_disponible(producto_id: int, uow: SqlModelUnitOfWork) -> Producto:
+    def toggle_disponible(producto_id: int, uow: UnitOfWork) -> Producto:
         producto = uow.productos.get_by_id(producto_id)
         if not producto:
             raise HTTPException(status_code=404, detail="Producto no encontrado")

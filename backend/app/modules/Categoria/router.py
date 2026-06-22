@@ -5,7 +5,7 @@ from app.core.dependencies import require_role
 from app.core.websocket import manager
 from app.db.models import Categoria
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.Categoria.schemas import (
     CategoriaCreate,
     CategoriaListResponse,
@@ -19,7 +19,7 @@ router = APIRouter(tags=["categorias"])
 _ADMIN_ROLES = ["ADMIN"]
 
 
-def _queue_categorias_broadcast(uow: SqlModelUnitOfWork) -> None:
+def _queue_categorias_broadcast(uow: UnitOfWork) -> None:
     uow.add_after_commit(
         lambda: from_thread.run(manager.broadcast_to_roles, _ADMIN_ROLES, "categorias_actualizadas", {})
     )
@@ -35,7 +35,7 @@ def listar_categorias(
     size: int = Query(50, ge=1, le=100),
     parent_id: int | None = Query(None),
     incluir_baja: bool = Query(False),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> CategoriaListResponse:
     total = uow.categorias.count_filtered(parent_id=parent_id, incluir_baja=incluir_baja)
     pages = (total + size - 1) // size
@@ -56,7 +56,7 @@ def listar_categorias(
     response_model=list[CategoriaRead],
     summary="Listar árbol de categorías activas",
 )
-def listar_arbol_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)) -> list[CategoriaRead]:
+def listar_arbol_categorias(uow: UnitOfWork = Depends(get_uow)) -> list[CategoriaRead]:
     categorias = uow.categorias.list_root_active_ordered()
     return [CategoriaRead.model_validate(c) for c in categorias]
 
@@ -66,7 +66,7 @@ def listar_arbol_categorias(uow: SqlModelUnitOfWork = Depends(get_uow)) -> list[
     response_model=CategoriaRead,
     summary="Obtener categoría por ID",
 )
-def obtener_categoria(categoria_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
+def obtener_categoria(categoria_id: int, uow: UnitOfWork = Depends(get_uow)):
     categoria = uow.categorias.get_by_id(categoria_id)
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
@@ -81,7 +81,7 @@ def obtener_categoria(categoria_id: int, uow: SqlModelUnitOfWork = Depends(get_u
 )
 def crear_categoria(
     data: CategoriaCreate,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _admin: Usuario = Depends(require_role("ADMIN")),
 ):
     categoria = CategoriaService.crear_categoria(data, uow)
@@ -97,7 +97,7 @@ def crear_categoria(
 def actualizar_categoria(
     categoria_id: int,
     data: CategoriaUpdate,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _admin: Usuario = Depends(require_role("ADMIN")),
 ):
     categoria = CategoriaService.actualizar_categoria(categoria_id, data, uow)
@@ -112,7 +112,7 @@ def actualizar_categoria(
 )
 def dar_de_baja_categoria(
     categoria_id: int,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _admin: Usuario = Depends(require_role("ADMIN")),
 ):
     categoria = CategoriaService.dar_de_baja(categoria_id, uow)
@@ -127,7 +127,7 @@ def dar_de_baja_categoria(
 )
 def reactivar_categoria(
     categoria_id: int,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _admin: Usuario = Depends(require_role("ADMIN")),
 ):
     categoria = CategoriaService.reactivar_categoria(categoria_id, uow)
@@ -142,7 +142,7 @@ def reactivar_categoria(
 )
 def eliminar_categoria(
     categoria_id: int,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _admin: Usuario = Depends(require_role("ADMIN")),
 ):
     categoria = CategoriaService.eliminar_categoria(categoria_id, uow)

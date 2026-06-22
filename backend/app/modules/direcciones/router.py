@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 
 from app.core.dependencies import get_current_user
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.direcciones.schemas import (
     DireccionEntregaCreate,
     DireccionEntregaRead,
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/direcciones", tags=["direcciones"])
 @router.get("/", response_model=list[DireccionEntregaRead], summary="Listar direcciones del usuario")
 def listar_direcciones(
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     direcciones = DireccionEntregaService.listar_direcciones(current_user, uow)
     return [DireccionEntregaRead.model_validate(direccion) for direccion in direcciones]
@@ -26,7 +26,7 @@ def listar_direcciones(
 def obtener_direccion(
     direccion_id: int,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     direccion = DireccionEntregaService.obtener_direccion(direccion_id, current_user, uow)
     return DireccionEntregaRead.model_validate(direccion)
@@ -36,7 +36,7 @@ def obtener_direccion(
 def crear_direccion(
     data: DireccionEntregaCreate,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     direccion = DireccionEntregaService.crear_direccion(data, current_user, uow)
     return DireccionEntregaRead.model_validate(direccion)
@@ -47,7 +47,7 @@ def actualizar_direccion(
     direccion_id: int,
     data: DireccionEntregaUpdate,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     direccion = DireccionEntregaService.actualizar_direccion(direccion_id, data, current_user, uow)
     return DireccionEntregaRead.model_validate(direccion)
@@ -57,7 +57,7 @@ def actualizar_direccion(
 def marcar_principal(
     direccion_id: int,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     direccion = DireccionEntregaService.marcar_principal(direccion_id, current_user, uow)
     return DireccionEntregaRead.model_validate(direccion)
@@ -67,7 +67,7 @@ def marcar_principal(
 def eliminar_direccion(
     direccion_id: int,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     direccion = DireccionEntregaService.eliminar_direccion(direccion_id, current_user, uow)
     return DireccionEntregaRead.model_validate(direccion)

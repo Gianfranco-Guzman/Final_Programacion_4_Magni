@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from app.core.config import get_settings
 from app.db.models.pago import Pago
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.pagos.schemas import PagoCreateRequest
 from app.modules.pedidos.realtime import PedidoRealtimePublisher
 from app.modules.pedidos.service import PedidoService
@@ -42,7 +42,7 @@ class PagosService:
         return request_options
 
     @staticmethod
-    def _ensure_pedido_can_be_paid(pedido_id: int, current_user: Usuario, uow: SqlModelUnitOfWork):
+    def _ensure_pedido_can_be_paid(pedido_id: int, current_user: Usuario, uow: UnitOfWork):
         pedido = PedidoService.obtener_pedido(pedido_id, current_user, uow)
         if pedido.estado_actual != "PENDIENTE":
             raise HTTPException(
@@ -59,7 +59,7 @@ class PagosService:
         return pedido
 
     @staticmethod
-    def crear_pago(data: PagoCreateRequest, current_user: Usuario, uow: SqlModelUnitOfWork) -> Pago:
+    def crear_pago(data: PagoCreateRequest, current_user: Usuario, uow: UnitOfWork) -> Pago:
         pedido = PagosService._ensure_pedido_can_be_paid(data.pedido_id, current_user, uow)
 
         existing_pago = uow.pagos.get_by_pedido_id(pedido.id)
@@ -112,7 +112,7 @@ class PagosService:
         return pago
 
     @staticmethod
-    def obtener_pago(pedido_id: int, current_user: Usuario, uow: SqlModelUnitOfWork) -> Pago:
+    def obtener_pago(pedido_id: int, current_user: Usuario, uow: UnitOfWork) -> Pago:
         PedidoService.obtener_pedido(pedido_id, current_user, uow)
         pago = uow.pagos.get_by_pedido_id(pedido_id)
         if not pago:
@@ -130,7 +130,7 @@ class PagosService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="payment id inválido") from exc
 
     @staticmethod
-    def procesar_webhook(*, topic: str | None, data_id: str | None, query_id: str | None, uow: SqlModelUnitOfWork) -> Pago:
+    def procesar_webhook(*, topic: str | None, data_id: str | None, query_id: str | None, uow: UnitOfWork) -> Pago:
         mp_payment_id = PagosService._resolve_mp_payment_id(topic=topic, data_id=data_id, query_id=query_id)
         sdk = PagosService._get_sdk()
         payment_response = sdk.payment().get(mp_payment_id)

@@ -6,7 +6,7 @@ from app.core.dependencies import get_current_user, get_current_websocket_user, 
 from app.core.websocket import manager
 from app.db.models.usuario import Usuario
 from app.db.models.pedido import Pedido
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.pedidos.schemas import (
     AvanzarEstadoRequest,
     CancelarPedidoRequest,
@@ -33,7 +33,7 @@ ADMIN_FEED_ACTIONS = {"subscribe-admin-feed", "unsubscribe-admin-feed"}
 def crear_pedido(
     data: PedidoCreate,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     pedido = PedidoService.crear_pedido(data, current_user, uow)
     return PedidoRead.model_validate(pedido)
@@ -49,7 +49,7 @@ def listar_pedidos(
     page: int = Query(default=1, ge=1),
     size: int = Query(default=20, ge=1, le=100),
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     pedidos = PedidoService.listar_pedidos(current_user, uow, estado, page, size)
     return [PedidoRead.model_validate(p) for p in pedidos]
@@ -63,7 +63,7 @@ def listar_pedidos(
 def obtener_pedido(
     pedido_id: int,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     pedido = PedidoService.obtener_pedido(pedido_id, current_user, uow)
     return PedidoDetalle.model_validate(pedido)
@@ -77,7 +77,7 @@ def obtener_pedido(
 def obtener_historial_pedido(
     pedido_id: int,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     historial = PedidoService.obtener_historial_pedido(pedido_id, current_user, uow)
     return [HistorialEstadoPedidoRead.model_validate(item) for item in historial]
@@ -92,7 +92,7 @@ def avanzar_estado(
     pedido_id: int,
     body: AvanzarEstadoRequest = AvanzarEstadoRequest(),
     current_user: Usuario = Depends(require_role(["ADMIN", "PEDIDOS"])),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     pedido = PedidoService.avanzar_estado(pedido_id, current_user, uow, body.observacion)
     return PedidoRead.model_validate(pedido)
@@ -107,7 +107,7 @@ def cancelar_pedido(
     pedido_id: int,
     body: CancelarPedidoRequest,
     current_user: Usuario = Depends(get_current_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     pedido = PedidoService.cancelar_pedido(pedido_id, current_user, uow, body.observacion)
     return PedidoRead.model_validate(pedido)
@@ -117,7 +117,7 @@ def cancelar_pedido(
 async def pedidos_websocket(
     websocket: WebSocket,
     current_user: Usuario = Depends(get_current_websocket_user),
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
 ):
     user_roles = get_user_role_names(uow, current_user.id)
     await manager.connect(websocket, user_roles)

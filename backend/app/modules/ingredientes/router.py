@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.dependencies import require_role
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork, get_uow
+from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.ingredientes.schemas import (
     IngredienteCreate,
     IngredienteRead,
@@ -21,7 +21,7 @@ router = APIRouter(tags=["ingredientes"])
     response_model=list[IngredienteRead],
     summary="Listar todos los ingredientes",
 )
-def listar_ingredientes(uow: SqlModelUnitOfWork = Depends(get_uow)):
+def listar_ingredientes(uow: UnitOfWork = Depends(get_uow)):
     ingredientes = uow.ingredientes.list_all()
     return [IngredienteRead.model_validate(i) for i in ingredientes]
 
@@ -32,7 +32,7 @@ def listar_ingredientes(uow: SqlModelUnitOfWork = Depends(get_uow)):
     summary="Historial de cargas de stock del usuario autenticado",
 )
 def mis_cargas(
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     return IngredienteService.mis_cargas(current_user.id, uow)
@@ -46,7 +46,7 @@ def mis_cargas(
 )
 def corregir_entrada(
     data: StockCorreccionInput,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     return IngredienteService.corregir_entrada(data, current_user.id, uow)
@@ -57,7 +57,7 @@ def corregir_entrada(
     response_model=IngredienteRead,
     summary="Obtener ingrediente por ID",
 )
-def obtener_ingrediente(ingrediente_id: int, uow: SqlModelUnitOfWork = Depends(get_uow)):
+def obtener_ingrediente(ingrediente_id: int, uow: UnitOfWork = Depends(get_uow)):
     ingrediente = uow.ingredientes.get_active_by_id(ingrediente_id)
     if not ingrediente:
         raise HTTPException(status_code=404, detail="Ingrediente no encontrado")
@@ -72,7 +72,7 @@ def obtener_ingrediente(ingrediente_id: int, uow: SqlModelUnitOfWork = Depends(g
 )
 def crear_ingrediente(
     data: IngredienteCreate,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     ingrediente = IngredienteService.crear_ingrediente(data, uow)
@@ -87,7 +87,7 @@ def crear_ingrediente(
 def actualizar_ingrediente(
     ingrediente_id: int,
     data: IngredienteUpdate,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     ingrediente = IngredienteService.actualizar_ingrediente(ingrediente_id, data, uow)
@@ -102,7 +102,7 @@ def actualizar_ingrediente(
 def cargar_stock(
     ingrediente_id: int,
     data: StockCargaInput,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     ingrediente = IngredienteService.cargar_stock(ingrediente_id, data, uow, usuario_id=_user.id)
@@ -116,7 +116,7 @@ def cargar_stock(
 )
 def dar_de_baja_ingrediente(
     ingrediente_id: int,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     ingrediente = IngredienteService.dar_de_baja(ingrediente_id, uow)
@@ -130,7 +130,7 @@ def dar_de_baja_ingrediente(
 )
 def reactivar_ingrediente(
     ingrediente_id: int,
-    uow: SqlModelUnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Depends(get_uow),
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     ingrediente = IngredienteService.reactivar(ingrediente_id, uow)

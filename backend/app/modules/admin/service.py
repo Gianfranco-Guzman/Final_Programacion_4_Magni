@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.admin.schemas import (
     AdminUserActionResponse,
     AdminUserListResponse,
@@ -17,7 +17,7 @@ from app.modules.auth.schemas import RolResponse
 class AdminService:
     @staticmethod
     def listar_usuarios(
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
         page: int = 1,
         size: int = 20,
         rol: str | None = None,
@@ -52,7 +52,7 @@ class AdminService:
         usuario_id: int,
         data: AdminUserUpdateRequest,
         current_admin: Usuario,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> AdminUserRead:
         usuario = AdminService._obtener_usuario(usuario_id, uow)
         update_data = data.model_dump(exclude_unset=True)
@@ -84,7 +84,7 @@ class AdminService:
     def dar_de_baja_usuario(
         usuario_id: int,
         current_admin: Usuario,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> AdminUserActionResponse:
         if current_admin.id == usuario_id:
             raise HTTPException(
@@ -113,7 +113,7 @@ class AdminService:
         )
 
     @staticmethod
-    def reactivar_usuario(usuario_id: int, uow: SqlModelUnitOfWork) -> AdminUserActionResponse:
+    def reactivar_usuario(usuario_id: int, uow: UnitOfWork) -> AdminUserActionResponse:
         usuario = AdminService._obtener_usuario(usuario_id, uow)
         if usuario.deleted_at is None and usuario.is_active:
             raise HTTPException(
@@ -138,7 +138,7 @@ class AdminService:
         usuario_id: int,
         data: AdminUserRolesRequest,
         current_admin: Usuario,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> AdminUserActionResponse:
         usuario = AdminService._obtener_usuario(usuario_id, uow)
         requested_roles = list(dict.fromkeys(role.upper() for role in data.roles if role.strip()))
@@ -180,7 +180,7 @@ class AdminService:
         )
 
     @staticmethod
-    def _obtener_usuario(usuario_id: int, uow: SqlModelUnitOfWork) -> Usuario:
+    def _obtener_usuario(usuario_id: int, uow: UnitOfWork) -> Usuario:
         usuario = uow.usuarios.get_by_id(usuario_id)
         if not usuario:
             raise HTTPException(
@@ -190,7 +190,7 @@ class AdminService:
         return usuario
 
     @staticmethod
-    def _obtener_roles(usuario_id: int, uow: SqlModelUnitOfWork) -> list[RolResponse]:
+    def _obtener_roles(usuario_id: int, uow: UnitOfWork) -> list[RolResponse]:
         rows = uow.roles.get_rows_for_user(usuario_id)
         return [RolResponse(id=role_id, nombre=role_name) for role_id, role_name in rows]
 

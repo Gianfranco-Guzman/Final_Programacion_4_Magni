@@ -2,14 +2,14 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from app.db.models.forma_pago import FormaPago
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.formas_pago.schemas import FormaPagoCreate, FormaPagoUpdate
 
 
 class FormaPagoService:
 
     @staticmethod
-    def crear(data: FormaPagoCreate, uow: SqlModelUnitOfWork) -> FormaPago:
+    def crear(data: FormaPagoCreate, uow: UnitOfWork) -> FormaPago:
         existing = uow.formas_pago.get_by_name(data.nombre)
         if existing:
             raise HTTPException(
@@ -24,7 +24,7 @@ class FormaPagoService:
         return forma_pago
 
     @staticmethod
-    def actualizar(forma_pago_id: int, data: FormaPagoUpdate, uow: SqlModelUnitOfWork) -> FormaPago:
+    def actualizar(forma_pago_id: int, data: FormaPagoUpdate, uow: UnitOfWork) -> FormaPago:
         forma_pago = uow.formas_pago.get_by_id(forma_pago_id)
         if not forma_pago:
             raise HTTPException(status_code=404, detail="Forma de pago no encontrada")

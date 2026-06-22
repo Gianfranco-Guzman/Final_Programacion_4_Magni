@@ -11,7 +11,7 @@ from app.core.security import (
 )
 from app.db.models.refresh_token import RefreshToken
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.auth.schemas import (
     AdminActionResponse,
     AdminUserDetailResponse,
@@ -23,7 +23,7 @@ from app.modules.auth.schemas import (
 
 class AuthService:
     @staticmethod
-    def crear_refresh_token(usuario: Usuario, uow: SqlModelUnitOfWork) -> str:
+    def crear_refresh_token(usuario: Usuario, uow: UnitOfWork) -> str:
         refresh_token = create_refresh_token({"sub": str(usuario.id)})
         payload = decode_refresh_token(refresh_token)
         if payload is None:
@@ -40,7 +40,7 @@ class AuthService:
         return refresh_token
 
     @staticmethod
-    def rotar_refresh_token(refresh_token: str, uow: SqlModelUnitOfWork) -> tuple[Usuario, list[str], str]:
+    def rotar_refresh_token(refresh_token: str, uow: UnitOfWork) -> tuple[Usuario, list[str], str]:
         if not refresh_token:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token requerido")
 
@@ -68,7 +68,7 @@ class AuthService:
         return usuario, roles, nuevo_refresh
 
     @staticmethod
-    def revocar_refresh_token(refresh_token: str | None, uow: SqlModelUnitOfWork) -> None:
+    def revocar_refresh_token(refresh_token: str | None, uow: UnitOfWork) -> None:
         if not refresh_token:
             return
         token_record = uow.refresh_tokens.get_active_by_token_hash(hash_token(refresh_token))
@@ -77,7 +77,7 @@ class AuthService:
             uow.flush()
 
     @staticmethod
-    def obtener_roles_usuario(user: Usuario, uow: SqlModelUnitOfWork) -> list[str]:
+    def obtener_roles_usuario(user: Usuario, uow: UnitOfWork) -> list[str]:
         """Obtiene los nombres de los roles de un usuario."""
         return uow.roles.get_names_for_user(user.id)
 
@@ -96,7 +96,7 @@ class AuthService:
         )
 
     @staticmethod
-    def autenticar(email: str, password: str, uow: SqlModelUnitOfWork) -> tuple[Usuario, list[str]]:
+    def autenticar(email: str, password: str, uow: UnitOfWork) -> tuple[Usuario, list[str]]:
         """Autentica y retorna (usuario, roles)."""
         user = uow.usuarios.get_by_email(email)
 
@@ -116,7 +116,7 @@ class AuthService:
         return user, roles
 
     @staticmethod
-    def crear_usuario(request: RegisterRequest, uow: SqlModelUnitOfWork) -> UsuarioResponse:
+    def crear_usuario(request: RegisterRequest, uow: UnitOfWork) -> UsuarioResponse:
         """Registra un nuevo usuario con rol CLIENT y retorna UsuarioResponse con roles."""
         existing_user = uow.usuarios.get_by_email(request.email)
 
@@ -146,7 +146,7 @@ class AuthService:
 
     @staticmethod
     def obtener_usuario_con_roles(
-        usuario_id: int, uow: SqlModelUnitOfWork
+        usuario_id: int, uow: UnitOfWork
     ) -> UsuarioResponse:
         usuario = uow.usuarios.get_by_id(usuario_id)
 
@@ -160,7 +160,7 @@ class AuthService:
         return AuthService._usuario_a_response(usuario, roles_nombres)
 
     @staticmethod
-    def listar_usuarios(uow: SqlModelUnitOfWork) -> list[AdminUserDetailResponse]:
+    def listar_usuarios(uow: UnitOfWork) -> list[AdminUserDetailResponse]:
         """Lista todos los usuarios con sus roles (solo para admin)."""
         usuarios = uow.usuarios.list_all()
 
@@ -184,7 +184,7 @@ class AuthService:
 
     @staticmethod
     def toggle_usuario_activo(
-        usuario_id: int, activo: bool, uow: SqlModelUnitOfWork
+        usuario_id: int, activo: bool, uow: UnitOfWork
     ) -> AdminActionResponse:
         """Activa o desactiva un usuario."""
         usuario = uow.usuarios.get_by_id(usuario_id)

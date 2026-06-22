@@ -3,24 +3,24 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from app.db.models import DireccionEntrega
 from app.db.models.usuario import Usuario
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.direcciones.schemas import DireccionEntregaCreate, DireccionEntregaUpdate
 
 
 class DireccionEntregaService:
     @staticmethod
-    def listar_direcciones(usuario: Usuario, uow: SqlModelUnitOfWork) -> list[DireccionEntrega]:
+    def listar_direcciones(usuario: Usuario, uow: UnitOfWork) -> list[DireccionEntrega]:
         return uow.direcciones.list_active_for_user(usuario.id)
 
     @staticmethod
-    def obtener_direccion(direccion_id: int, usuario: Usuario, uow: SqlModelUnitOfWork) -> DireccionEntrega:
+    def obtener_direccion(direccion_id: int, usuario: Usuario, uow: UnitOfWork) -> DireccionEntrega:
         direccion = DireccionEntregaService._obtener_direccion_activa(direccion_id, usuario, uow)
         if not direccion:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dirección no encontrada")
         return direccion
 
     @staticmethod
-    def crear_direccion(data: DireccionEntregaCreate, usuario: Usuario, uow: SqlModelUnitOfWork) -> DireccionEntrega:
+    def crear_direccion(data: DireccionEntregaCreate, usuario: Usuario, uow: UnitOfWork) -> DireccionEntrega:
         now = datetime.now(timezone.utc)
         debe_ser_principal = data.es_principal or not uow.direcciones.user_has_active_address(usuario.id)
 
@@ -49,7 +49,7 @@ class DireccionEntregaService:
         direccion_id: int,
         data: DireccionEntregaUpdate,
         usuario: Usuario,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> DireccionEntrega:
         direccion = DireccionEntregaService.obtener_direccion(direccion_id, usuario, uow)
         update_data = data.model_dump(exclude_unset=True)
@@ -77,7 +77,7 @@ class DireccionEntregaService:
         return direccion
 
     @staticmethod
-    def marcar_principal(direccion_id: int, usuario: Usuario, uow: SqlModelUnitOfWork) -> DireccionEntrega:
+    def marcar_principal(direccion_id: int, usuario: Usuario, uow: UnitOfWork) -> DireccionEntrega:
         direccion = DireccionEntregaService.obtener_direccion(direccion_id, usuario, uow)
         uow.direcciones.unset_primary_for_user(usuario.id)
         direccion.es_principal = True
@@ -88,7 +88,7 @@ class DireccionEntregaService:
         return direccion
 
     @staticmethod
-    def eliminar_direccion(direccion_id: int, usuario: Usuario, uow: SqlModelUnitOfWork) -> DireccionEntrega:
+    def eliminar_direccion(direccion_id: int, usuario: Usuario, uow: UnitOfWork) -> DireccionEntrega:
         direccion = DireccionEntregaService.obtener_direccion(direccion_id, usuario, uow)
         direccion.deleted_at = datetime.now(timezone.utc)
         direccion.updated_at = direccion.deleted_at
@@ -107,5 +107,5 @@ class DireccionEntregaService:
         return direccion
 
     @staticmethod
-    def _obtener_direccion_activa(direccion_id: int, usuario: Usuario, uow: SqlModelUnitOfWork) -> DireccionEntrega | None:
+    def _obtener_direccion_activa(direccion_id: int, usuario: Usuario, uow: UnitOfWork) -> DireccionEntrega | None:
         return uow.direcciones.get_active_for_user(direccion_id, usuario.id)

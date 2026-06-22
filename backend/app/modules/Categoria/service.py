@@ -2,13 +2,13 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from app.db.models import Categoria
-from app.db.unit_of_work import SqlModelUnitOfWork
+from app.db.unit_of_work import UnitOfWork
 from app.modules.Categoria.schemas import CategoriaCreate, CategoriaUpdate
 
 
 class CategoriaService:
     @staticmethod
-    def _get_categoria(categoria_id: int, uow: SqlModelUnitOfWork) -> Categoria:
+    def _get_categoria(categoria_id: int, uow: UnitOfWork) -> Categoria:
         categoria = uow.categorias.get_by_id(categoria_id)
 
         if not categoria:
@@ -19,7 +19,7 @@ class CategoriaService:
     @staticmethod
     def _validar_nombre_unico(
         nombre: str,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
         categoria_id: int | None = None,
     ) -> None:
         if categoria_id is None:
@@ -35,7 +35,7 @@ class CategoriaService:
     @staticmethod
     def _validar_parent(
         parent_id: int | None,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
         categoria_id: int | None = None,
     ) -> None:
         if parent_id is None:
@@ -65,7 +65,7 @@ class CategoriaService:
             )
 
     @staticmethod
-    def crear_categoria(data: CategoriaCreate, uow: SqlModelUnitOfWork) -> Categoria:
+    def crear_categoria(data: CategoriaCreate, uow: UnitOfWork) -> Categoria:
         CategoriaService._validar_nombre_unico(data.nombre, uow)
         CategoriaService._validar_parent(data.parent_id, uow)
 
@@ -84,7 +84,7 @@ class CategoriaService:
     def actualizar_categoria(
         categoria_id: int,
         data: CategoriaUpdate,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> Categoria:
         categoria = CategoriaService._get_categoria(categoria_id, uow)
 
@@ -111,7 +111,7 @@ class CategoriaService:
         return categoria
 
     @staticmethod
-    def dar_de_baja(categoria_id: int, uow: SqlModelUnitOfWork) -> Categoria:
+    def dar_de_baja(categoria_id: int, uow: UnitOfWork) -> Categoria:
         categoria = CategoriaService._get_categoria(categoria_id, uow)
         if categoria.deleted_at is not None:
             raise HTTPException(
@@ -140,7 +140,7 @@ class CategoriaService:
         return categoria
 
     @staticmethod
-    def reactivar_categoria(categoria_id: int, uow: SqlModelUnitOfWork) -> Categoria:
+    def reactivar_categoria(categoria_id: int, uow: UnitOfWork) -> Categoria:
         categoria = CategoriaService._get_categoria(categoria_id, uow)
         if categoria.deleted_at is None:
             raise HTTPException(
@@ -166,5 +166,5 @@ class CategoriaService:
         return categoria
 
     @staticmethod
-    def eliminar_categoria(categoria_id: int, uow: SqlModelUnitOfWork) -> Categoria:
+    def eliminar_categoria(categoria_id: int, uow: UnitOfWork) -> Categoria:
         return CategoriaService.dar_de_baja(categoria_id, uow)

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { Usuario } from '@models/index'
 import { authApi } from '@api/authApi'
+import { useCartStore } from '@store/cartStore'
 
 interface AuthState {
   usuario: Usuario | null
@@ -46,6 +47,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   logout: () => {
+    useCartStore.getState().clearCart()
     set({
       usuario: null,
       isAuthenticated: false,

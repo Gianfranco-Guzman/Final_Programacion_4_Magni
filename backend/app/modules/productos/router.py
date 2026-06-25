@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -64,12 +65,18 @@ def _build_producto_read(producto: Producto) -> ProductoRead:
     stock_disponible_calculado = ProductoService.calcular_stock_disponible(producto)
     precio_final = ProductoService.calcular_precio_final(producto)
 
+    precio_costo_calculado = sum(
+        Decimal(str(pi.cantidad)) * Decimal(str(pi.ingrediente.costo_unitario))
+        for pi in (producto.ingredientes or [])
+        if pi.ingrediente is not None
+    )
+
     return ProductoRead(
         id=producto.id,
         nombre=producto.nombre,
         descripcion=producto.descripcion,
         precio_venta=producto.precio_venta,
-        precio_costo_calculado=producto.precio_costo_calculado,
+        precio_costo_calculado=precio_costo_calculado,
         descuento_porcentaje=producto.descuento_porcentaje,
         precio_final=precio_final,
         tipo_producto=producto.tipo_producto,

@@ -5,7 +5,8 @@ export const useProductos = (params?: GetProductosParams) => {
   return useQuery({
     queryKey: ['productos', params],
     queryFn: () => productosApi.getProductos(params),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   })
 }
 

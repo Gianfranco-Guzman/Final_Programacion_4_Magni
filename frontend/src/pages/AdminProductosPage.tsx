@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useProductos, useDarDeBaja, useReactivar, useToggleDisponibilidad } from '@hooks/useProductos'
+import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
 import { Spinner } from '@components/Spinner'
 import { Button } from '@components/Button'
 import { Producto } from '@models/index'
@@ -8,10 +10,32 @@ import { useAuthStore } from '@store/authStore'
 import { hasAnyRole } from '@/auth/permissions'
 import { getCloudinaryProductImageUrl, getProductoImagenPrincipal, getProductoPrecioFinal, getProductoStockDisponible } from '@/utils/producto'
 
+type MargenEstilo = { badge: string; text: string; label: string }
+
+function getMargenEstilo(producto: Producto): MargenEstilo | null {
+  const costo = Number(producto.precio_costo_calculado) || 0
+  if (costo <= 0) return null
+  const precioFinal = getProductoPrecioFinal(producto)
+  const margen = ((precioFinal - costo) / costo) * 100
+  if (margen <= 0) return { badge: 'bg-red-100 text-red-700', text: 'text-red-700', label: `${margen.toFixed(0)}%` }
+  if (margen < 20) return { badge: 'bg-orange-100 text-orange-700', text: 'text-orange-700', label: `+${margen.toFixed(0)}%` }
+  return { badge: 'bg-green-100 text-green-700', text: 'text-green-700', label: `+${margen.toFixed(0)}%` }
+}
+
 export const AdminProductosPage: React.FC = () => {
   const usuario = useAuthStore((state) => state.usuario)
   const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
   const canToggleDisponibilidad = hasAnyRole(usuario?.roles, ['ADMIN', 'STOCK'])
+  const qc = useQueryClient()
+
+  const handleWsMessage = useCallback((msg: WsMessage) => {
+    if (msg.event === 'productos_updated') {
+      qc.invalidateQueries({ queryKey: ['productos'] })
+    }
+  }, [qc])
+
+  useWebSocket({ enabled: isAdmin, onMessage: handleWsMessage })
+
   const { data: productosData, isLoading, error } = useProductos({
     page: 1,
     size: 100,
@@ -165,6 +189,7 @@ export const AdminProductosPage: React.FC = () => {
            </div>
 
            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+             <div className="overflow-x-auto">
              <table className="min-w-full divide-y divide-gray-200">
                <thead className="bg-gray-50">
                  <tr>
@@ -189,6 +214,12 @@ export const AdminProductosPage: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Tipo / stock
                     </th>
+                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                     Costo producción
+                   </th>
+                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                     Precio de venta
+                   </th>
                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                      Acciones
                    </th>
@@ -237,7 +268,6 @@ export const AdminProductosPage: React.FC = () => {
                      </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         <div className="font-semibold">{producto.nombre}</div>
-                        <div className="text-xs text-gray-500">${getProductoPrecioFinal(producto).toFixed(2)}</div>
                       </td>
                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                        {producto.codigo}
@@ -245,6 +275,27 @@ export const AdminProductosPage: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div>{producto.tipo_producto}</div>
                         <div className="text-xs text-gray-400">Disp.: {getProductoStockDisponible(producto)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        ${(Number(producto.precio_costo_calculado) || 0).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {(() => {
+                          const margenEstilo = getMargenEstilo(producto)
+                          const precio = getProductoPrecioFinal(producto)
+                          return (
+                            <div>
+                              <div className={margenEstilo ? `font-medium ${margenEstilo.text}` : 'text-gray-700'}>
+                                ${precio.toFixed(2)}
+                              </div>
+                              {margenEstilo && (
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-0.5 ${margenEstilo.badge}`}>
+                                  {margenEstilo.label}
+                                </span>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {isAdmin && (
@@ -285,6 +336,7 @@ export const AdminProductosPage: React.FC = () => {
                  ))}
                </tbody>
              </table>
+             </div>
            </div>
          </div>
        )}

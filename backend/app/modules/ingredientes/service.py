@@ -8,6 +8,7 @@ from app.db.enums import TipoMovimientoIngrediente, UnidadMedida
 from app.db.unit_of_work import UnitOfWork
 from app.modules.ingredientes.schemas import IngredienteCreate, IngredienteUpdate, MovimientoEntradaRead, StockCargaInput, StockCorreccionInput
 from app.modules.ingredientes.stock_service import IngredienteStockService
+from app.modules.ingredientes.realtime import IngredienteRealtimePublisher
 
 
 class IngredienteService:
@@ -112,6 +113,25 @@ class IngredienteService:
                     stock_anterior_override=stock_anterior,
                     stock_posterior_override=stock_posterior,
                 )
+
+        if "costo_unitario" in update_data:
+            IngredienteRealtimePublisher.queue_productos_updated(uow)
+            detalles_afectados = uow.productos.list_detalles_by_ingrediente_id(ingrediente_id)
+            producto_ids = list({d.producto_id for d in detalles_afectados})
+            for pid in producto_ids:
+                producto = uow.productos.get_by_id(pid)
+                if producto is None:
+                    continue
+                all_detalles = uow.productos.list_detalles_by_producto_id(pid)
+                ingrediente_ids = [d.ingrediente_id for d in all_detalles]
+                ingredientes = uow.ingredientes.list_by_ids(ingrediente_ids)
+                costo_map = {i.id: Decimal(str(i.costo_unitario)) for i in ingredientes}
+                producto.precio_costo_calculado = sum(
+                    Decimal(str(d.cantidad)) * costo_map.get(d.ingrediente_id, Decimal("0"))
+                    for d in all_detalles
+                )
+                uow.productos.save(producto)
+
         return ingrediente
 
     _CONVERSIONES: dict[UnidadMedida, dict[str, Decimal]] = {

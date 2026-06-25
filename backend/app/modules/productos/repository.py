@@ -137,6 +137,10 @@ class ProductoRepository(BaseRepository):
         statement = select(ProductoDetalle).where(ProductoDetalle.producto_id == producto_id)
         return list(self.session.exec(statement).all())
 
+    def list_detalles_by_ingrediente_id(self, ingrediente_id: int) -> list[ProductoDetalle]:
+        statement = select(ProductoDetalle).where(ProductoDetalle.ingrediente_id == ingrediente_id)
+        return list(self.session.exec(statement).all())
+
     def replace_categorias(self, producto_id: int, categorias_data: list[dict]) -> None:
         existing_relations = self.session.exec(
             select(ProductoCategoria).where(ProductoCategoria.producto_id == producto_id)

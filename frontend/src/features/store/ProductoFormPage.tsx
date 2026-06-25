@@ -103,7 +103,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
   const costoCalculado = useMemo(() => calcularCostoProducto(selectedIngredienteConfigs), [selectedIngredienteConfigs])
   const stockMaximo = useMemo(() => calcularStockMaximoProducto(selectedIngredienteConfigs), [selectedIngredienteConfigs])
   const precioFinal = useMemo(() => Number((form.precio_venta * (1 - (form.descuento_porcentaje || 0) / 100)).toFixed(2)), [form.precio_venta, form.descuento_porcentaje])
-  const precioSugerido = useMemo(() => Number((costoCalculado * 1.15).toFixed(2)), [costoCalculado])
+  const precioSugerido = useMemo(() => Number((costoCalculado * 1.30).toFixed(2)), [costoCalculado])
   const ganancia = useMemo(() => Number((precioFinal - costoCalculado).toFixed(2)), [precioFinal, costoCalculado])
 
   const sortedCategorias = useMemo(
@@ -451,7 +451,7 @@ export const ProductoFormPage: React.FC<ProductoFormPageProps> = ({ producto, ca
                   <p className="text-xs text-gray-400 mt-0.5">calculado automáticamente</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Precio sugerido (+15%)</p>
+                  <p className="text-xs text-gray-500 mb-1">Precio sugerido (+30%)</p>
                   <p className="text-2xl font-bold text-indigo-600">${precioSugerido.toFixed(2)}</p>
                   <p className="text-xs text-gray-400 mt-0.5">referencia de ganancia</p>
                 </div>

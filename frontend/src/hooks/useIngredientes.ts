@@ -30,7 +30,10 @@ export const useUpdateIngrediente = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: IngredienteUpdateInput }) =>
       ingredientesApi.updateIngrediente(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['ingredientes'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ingredientes'] })
+      qc.invalidateQueries({ queryKey: ['productos'] })
+    },
   })
 }
 

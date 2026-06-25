@@ -89,6 +89,7 @@ export const AdminStockPage: React.FC = () => {
   const cargarStockMutation = useCargarStock()
   const corregirMutation = useCorregirEntrada()
 
+  const [busqueda, setBusqueda] = useState('')
   const [expandido, setExpandido] = useState<number | null>(null)
   const [cantidad, setCantidad] = useState('')
   const [errorLocal, setErrorLocal] = useState('')
@@ -108,12 +109,13 @@ export const AdminStockPage: React.FC = () => {
     [ingredientes],
   )
 
-  const ordenados = useMemo(
-    () => [...ingredientes]
+  const ordenados = useMemo(() => {
+    const termino = busqueda.trim().toLowerCase()
+    return [...ingredientes]
       .filter((i) => !i.deleted_at)
-      .sort((a, b) => NIVEL_ORDEN[getNivel(a)] - NIVEL_ORDEN[getNivel(b)]),
-    [ingredientes],
-  )
+      .filter((i) => !termino || i.nombre.toLowerCase().includes(termino))
+      .sort((a, b) => NIVEL_ORDEN[getNivel(a)] - NIVEL_ORDEN[getNivel(b)])
+  }, [ingredientes, busqueda])
 
   const entradas = useMemo(
     () => misCargas.filter((m) => m.tipo_movimiento === 'ENTRADA_STOCK'),
@@ -220,6 +222,24 @@ export const AdminStockPage: React.FC = () => {
         >
           Ver historial de cargas
         </button>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-3 items-center">
+        <input
+          type="text"
+          placeholder="Buscar por nombre..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="flex-1 min-w-[200px] max-w-sm rounded border border-gray-300 px-3 py-2 text-sm"
+        />
+        {busqueda && (
+          <button
+            onClick={() => setBusqueda('')}
+            className="text-sm text-gray-500 border border-gray-300 rounded px-3 py-2 hover:bg-gray-50"
+          >
+            Limpiar filtros
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-md overflow-hidden">

@@ -4,6 +4,7 @@ import { useAuthStore } from '@store/authStore'
 import { useUIStore } from '@store/uiStore'
 import { useCartStore, selectCartItemCount } from '@store/cartStore'
 import { useAuth } from '@hooks/useAuth'
+import { useInactivityTimer } from '@hooks/useInactivityTimer'
 import { Button } from '@components/Button'
 import { hasAnyRole } from '@/auth/permissions'
 import { CarritoDrawer } from '@features/store/carrito/CarritoDrawer'
@@ -16,6 +17,7 @@ interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navigate = useNavigate()
   const usuario = useAuthStore((state) => state.usuario)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const { logout } = useAuth()
   const { sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
   const toggleCart = useCartStore((state) => state.toggleCart)
@@ -30,6 +32,12 @@ const handleLogout = async () => {
     await logout()
     navigate('/catalogo')
   }
+
+  const handleInactive = () => {
+    logout().finally(() => navigate('/login'))
+  }
+
+  useInactivityTimer(handleInactive, isAuthenticated)
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

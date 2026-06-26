@@ -1,10 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   adminApi,
+  AdminUsuarioCreateInput,
   AdminUsuarioRolesInput,
   AdminUsuariosParams,
   AdminUsuarioUpdateInput,
 } from '@api/adminApi'
+
+export const useCreateAdminUsuario = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: AdminUsuarioCreateInput) => adminApi.createUsuario(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'usuarios'] }),
+  })
+}
 
 export const useAdminUsuarios = (params: AdminUsuariosParams) => {
   return useQuery({

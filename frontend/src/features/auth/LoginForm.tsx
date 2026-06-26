@@ -16,7 +16,6 @@ export const LoginForm: React.FC = () => {
     if (loginError) {
       const errorMessage = loginError instanceof Error ? loginError.message : 'Error en login'
       setDisplayError(errorMessage)
-      console.error('❌ Error de Login:', errorMessage)
     }
   }, [loginError])
 
@@ -93,6 +92,15 @@ export const LoginForm: React.FC = () => {
             {loginLoading ? 'Ingresando...' : 'Ingresar'}
           </Button>
         </form>
+
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600">
+            ¿No tenés cuenta?{' '}
+            <a href="/register" className="text-blue-600 hover:underline font-medium">
+              Registrate
+            </a>
+          </p>
+        </div>
 
         <div className="mt-6">
           <p className="text-xs text-gray-400 text-center mb-3">Usuarios de prueba</p>

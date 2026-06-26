@@ -15,6 +15,15 @@ export interface AdminUsuariosResponse {
   pages: number
 }
 
+export interface AdminUsuarioCreateInput {
+  email: string
+  password: string
+  nombre: string
+  apellido: string
+  celular?: string | null
+  roles: string[]
+}
+
 export interface AdminUsuarioUpdateInput {
   email?: string
   nombre?: string
@@ -33,6 +42,11 @@ export interface AdminUsuarioActionResponse {
 }
 
 export const adminApi = {
+  createUsuario: async (data: AdminUsuarioCreateInput): Promise<AdminUsuarioActionResponse> => {
+    const response = await axiosClient.post<AdminUsuarioActionResponse>('/admin/usuarios/', data)
+    return response.data
+  },
+
   getUsuarios: async (params?: AdminUsuariosParams): Promise<AdminUsuariosResponse> => {
     const response = await axiosClient.get<AdminUsuariosResponse>('/admin/usuarios/', { params })
     return response.data

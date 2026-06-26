@@ -5,6 +5,7 @@ from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.admin.schemas import (
     AdminUserActionResponse,
+    AdminUserCreateRequest,
     AdminUserListResponse,
     AdminUserRolesRequest,
     AdminUserUpdateRequest,
@@ -12,6 +13,20 @@ from app.modules.admin.schemas import (
 from app.modules.admin.service import AdminService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+@router.post(
+    "/usuarios/",
+    response_model=AdminUserActionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear un nuevo usuario con roles específicos",
+)
+def crear_usuario(
+    data: AdminUserCreateRequest,
+    _admin: Usuario = Depends(require_role("ADMIN")),
+    uow: UnitOfWork = Depends(get_uow),
+) -> AdminUserActionResponse:
+    return AdminService.crear_usuario(data, uow)
 
 
 @router.get(

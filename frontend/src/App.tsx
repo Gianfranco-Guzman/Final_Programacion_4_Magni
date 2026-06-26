@@ -6,6 +6,7 @@ import { ProductosProvider } from '@context/ProductosContext'
 import { ProtectedRoute } from '@features/auth/ProtectedRoute'
 import { ScrollToTop } from '@components/ScrollToTop'
 import { LoginPage } from '@features/auth/LoginPage'
+import { RegisterPage } from '@pages/RegisterPage'
 import { ListaPage } from '@pages/ListaPage'
 import { NuevoProductoPage } from '@pages/NuevoProductoPage'
 import { EditarProductoPage } from '@pages/EditarProductoPage'
@@ -72,6 +73,7 @@ function App() {
         <RoleGuard>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
           <Route
             path="/catalogo"

@@ -4,6 +4,7 @@ import { Spinner } from '@components/Spinner'
 import {
   useAdminUsuarios,
   useBajaAdminUsuario,
+  useCreateAdminUsuario,
   useReactivarAdminUsuario,
   useUpdateAdminUsuario,
   useUpdateAdminUsuarioRoles,
@@ -23,6 +24,15 @@ interface FormState {
   roles: UserRole[]
 }
 
+interface CreateFormState {
+  email: string
+  password: string
+  nombre: string
+  apellido: string
+  celular: string
+  roles: UserRole[]
+}
+
 const emptyForm: FormState = {
   email: '',
   nombre: '',
@@ -32,12 +42,24 @@ const emptyForm: FormState = {
   roles: ['CLIENT'],
 }
 
+const emptyCreateForm: CreateFormState = {
+  email: '',
+  password: '',
+  nombre: '',
+  apellido: '',
+  celular: '',
+  roles: ['CLIENT'],
+}
+
 export const AdminUsuariosPage: React.FC = () => {
   const [page, setPage] = useState(1)
   const [roleFilter, setRoleFilter] = useState('')
   const [editingUser, setEditingUser] = useState<AdminUsuario | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [formError, setFormError] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const [createForm, setCreateForm] = useState<CreateFormState>(emptyCreateForm)
+  const [createError, setCreateError] = useState('')
 
   const queryParams = useMemo(
     () => ({ page, size: 10, rol: roleFilter || undefined }),
@@ -45,6 +67,7 @@ export const AdminUsuariosPage: React.FC = () => {
   )
 
   const { data, isLoading, error } = useAdminUsuarios(queryParams)
+  const createMutation = useCreateAdminUsuario()
   const updateMutation = useUpdateAdminUsuario()
   const updateRolesMutation = useUpdateAdminUsuarioRoles()
   const bajaMutation = useBajaAdminUsuario()
@@ -56,6 +79,51 @@ export const AdminUsuariosPage: React.FC = () => {
     setEditingUser(null)
     setForm(emptyForm)
     setFormError('')
+  }
+
+  const resetCreateForm = () => {
+    setIsCreating(false)
+    setCreateForm(emptyCreateForm)
+    setCreateError('')
+  }
+
+  const handleCreateRoleToggle = (role: UserRole) => {
+    setCreateForm((current) => ({
+      ...current,
+      roles: current.roles.includes(role)
+        ? current.roles.filter((r) => r !== role)
+        : [...current.roles, role],
+    }))
+  }
+
+  const handleCreateSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setCreateError('')
+    if (!createForm.email.trim() || !createForm.nombre.trim() || !createForm.apellido.trim() || !createForm.password) {
+      setCreateError('Email, nombre, apellido y contraseña son obligatorios')
+      return
+    }
+    if (createForm.password.length < 6) {
+      setCreateError('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+    if (!createForm.roles.length) {
+      setCreateError('Asigná al menos un rol')
+      return
+    }
+    try {
+      await createMutation.mutateAsync({
+        email: createForm.email.trim(),
+        password: createForm.password,
+        nombre: createForm.nombre.trim(),
+        apellido: createForm.apellido.trim(),
+        celular: createForm.celular.trim() || null,
+        roles: createForm.roles,
+      })
+      resetCreateForm()
+    } catch (err: unknown) {
+      setCreateError(err instanceof Error ? err.message : 'No se pudo crear el usuario')
+    }
   }
 
   const openEdit = (usuario: AdminUsuario) => {
@@ -168,23 +236,120 @@ export const AdminUsuariosPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="w-full md:w-64">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por rol</label>
-          <select
-            value={roleFilter}
-            onChange={(event) => {
-              setRoleFilter(event.target.value)
-              setPage(1)
-            }}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        <div className="flex items-end gap-3">
+          <Button
+            onClick={() => { resetForm(); setIsCreating(true) }}
+            disabled={isCreating}
           >
-            <option value="">Todos</option>
-            {AVAILABLE_ROLES.map((role) => (
-              <option key={role} value={role}>{role}</option>
-            ))}
-          </select>
+            + Nuevo usuario
+          </Button>
+          <div className="w-full md:w-64">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por rol</label>
+            <select
+              value={roleFilter}
+              onChange={(event) => {
+                setRoleFilter(event.target.value)
+                setPage(1)
+              }}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="">Todos</option>
+              {AVAILABLE_ROLES.map((role) => (
+                <option key={role} value={role}>{role}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
+
+      {isCreating && (
+        <div className="bg-white rounded-lg shadow-md max-w-3xl">
+          <form onSubmit={handleCreateSubmit} className="px-6 py-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold text-gray-800">Nuevo usuario</h2>
+              <Button type="button" variant="secondary" onClick={resetCreateForm}>Cancelar</Button>
+            </div>
+
+            {createError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                {createError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input
+                  type="text"
+                  value={createForm.nombre}
+                  onChange={(e) => setCreateForm((c) => ({ ...c, nombre: e.target.value }))}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                <input
+                  type="text"
+                  value={createForm.apellido}
+                  onChange={(e) => setCreateForm((c) => ({ ...c, apellido: e.target.value }))}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm((c) => ({ ...c, email: e.target.value }))}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Celular</label>
+                <input
+                  type="text"
+                  value={createForm.celular}
+                  onChange={(e) => setCreateForm((c) => ({ ...c, celular: e.target.value }))}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                <input
+                  type="password"
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm((c) => ({ ...c, password: e.target.value }))}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">Roles</p>
+              <div className="flex flex-wrap gap-3">
+                {AVAILABLE_ROLES.map((role) => (
+                  <label key={role} className="inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={createForm.roles.includes(role)}
+                      onChange={() => handleCreateRoleToggle(role)}
+                      className="w-4 h-4 rounded accent-blue-600"
+                    />
+                    {role}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Creando...' : 'Crear usuario'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {editingUser && (
         <div className="bg-white rounded-lg shadow-md max-w-3xl">

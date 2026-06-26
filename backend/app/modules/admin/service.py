@@ -3,9 +3,11 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 
 from app.modules.auth.model import Usuario
+from app.core.security import hash_password
 from app.db.unit_of_work import UnitOfWork
 from app.modules.admin.schemas import (
     AdminUserActionResponse,
+    AdminUserCreateRequest,
     AdminUserListResponse,
     AdminUserRead,
     AdminUserRolesRequest,
@@ -15,6 +17,52 @@ from app.modules.auth.schemas import RolResponse
 
 
 class AdminService:
+    @staticmethod
+    def crear_usuario(data: AdminUserCreateRequest, uow: UnitOfWork) -> AdminUserActionResponse:
+        if uow.usuarios.get_by_email(data.email):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Ya existe un usuario con ese email",
+            )
+
+        roles_requested = list(dict.fromkeys(r.upper() for r in data.roles if r.strip()))
+        if not roles_requested:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Debés enviar al menos un rol",
+            )
+
+        available_roles = uow.roles.get_by_names(roles_requested)
+        available_by_name = {r.nombre: r for r in available_roles}
+        missing = [r for r in roles_requested if r not in available_by_name]
+        if missing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Roles inexistentes: {', '.join(missing)}",
+            )
+
+        nuevo = Usuario(
+            email=data.email,
+            password_hash=hash_password(data.password),
+            nombre=data.nombre,
+            apellido=data.apellido,
+            celular=data.celular,
+            is_active=True,
+        )
+        uow.usuarios.save(nuevo)
+        uow.flush()
+
+        for role in available_roles:
+            uow.roles.assign_to_user(nuevo.id, role.id)
+        uow.flush()
+        uow.refresh(nuevo)
+
+        roles_resp = AdminService._obtener_roles(nuevo.id, uow)
+        return AdminUserActionResponse(
+            message="Usuario creado correctamente",
+            usuario=AdminService._build_admin_user(nuevo, roles_resp),
+        )
+
     @staticmethod
     def listar_usuarios(
         uow: UnitOfWork,

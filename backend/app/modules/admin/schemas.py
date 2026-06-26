@@ -6,6 +6,15 @@ from pydantic import BaseModel, EmailStr, Field
 from app.modules.auth.schemas import RolResponse
 
 
+class AdminUserCreateRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=6, max_length=128)
+    nombre: str = Field(..., min_length=2, max_length=100)
+    apellido: str = Field(..., min_length=2, max_length=80)
+    celular: Optional[str] = Field(default=None, max_length=20)
+    roles: list[str] = Field(default=["CLIENT"], min_length=1)
+
+
 class AdminUserUpdateRequest(BaseModel):
     email: Optional[EmailStr] = Field(default=None, description="Email del usuario")
     nombre: Optional[str] = Field(default=None, min_length=2, max_length=100)

@@ -8,6 +8,7 @@ import { useCheckout } from '@hooks/useCheckout'
 import { useDirecciones } from '@hooks/useDirecciones'
 import { useFormasPago } from '@hooks/useFormasPago'
 import { useCreatePago } from '@hooks/usePagos'
+import { useCancelarPedido } from '@hooks/usePedidos'
 import { Pedido, TipoEntrega, Usuario } from '@models/index'
 import { useAuthStore } from '@store/authStore'
 import { useCartStore, selectCartTotal } from '@store/cartStore'
@@ -37,6 +38,7 @@ export const CheckoutPage: React.FC = () => {
   const total = useCartStore(selectCartTotal)
   const checkoutMutation = useCheckout()
   const pagoMutation = useCreatePago()
+  const cancelarMutation = useCancelarPedido()
 
   const { data: direcciones = [], isLoading: loadingDir } = useDirecciones()
   const { data: rawFormasPago = [], isLoading: loadingFP } = useFormasPago()
@@ -176,9 +178,27 @@ export const CheckoutPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <button onClick={() => navigate(-1)} className="text-sm text-blue-600 hover:underline mb-6 inline-block">
-        ← Volver
-      </button>
+      {pedidoCreado ? (
+        <button
+          onClick={() => {
+            cancelarMutation.mutate(
+              { id: pedidoCreado.id, observacion: 'Cancelado por el cliente' },
+              {
+                onSuccess: () => { clearCart(); navigate('/catalogo') },
+                onError: () => { clearCart(); navigate('/catalogo') },
+              },
+            )
+          }}
+          disabled={cancelarMutation.isPending}
+          className="text-sm text-red-600 hover:underline mb-6 inline-block disabled:opacity-50"
+        >
+          {cancelarMutation.isPending ? 'Cancelando...' : '← Cancelar pedido y volver'}
+        </button>
+      ) : (
+        <button onClick={() => navigate(-1)} className="text-sm text-blue-600 hover:underline mb-6 inline-block">
+          ← Volver
+        </button>
+      )}
 
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Checkout</h1>
 

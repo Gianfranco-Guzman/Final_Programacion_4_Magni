@@ -13,6 +13,22 @@ from app.modules.pedidos.realtime import PedidoRealtimePublisher
 from app.modules.pedidos.service import PedidoService
 
 
+_MP_REJECTION_MESSAGES: dict[str, str] = {
+    "cc_rejected_insufficient_amount": "Fondos insuficientes. Intentá con otra tarjeta.",
+    "cc_rejected_card_disabled": "La tarjeta está deshabilitada. Contactá a tu banco.",
+    "cc_rejected_bad_filled_card_number": "Número de tarjeta incorrecto.",
+    "cc_rejected_bad_filled_date": "Fecha de vencimiento incorrecta.",
+    "cc_rejected_bad_filled_security_code": "Código de seguridad incorrecto.",
+    "cc_rejected_bad_filled_other": "Datos de la tarjeta incorrectos. Verificá e intentá de nuevo.",
+    "cc_rejected_high_risk": "Pago rechazado por el banco. Intentá con otra tarjeta.",
+    "cc_rejected_max_attempts": "Superaste el límite de intentos. Esperá unos minutos e intentá de nuevo.",
+    "cc_rejected_call_for_authorize": "Tu banco requiere autorización previa. Llamá a tu banco.",
+    "cc_rejected_duplicate_payment": "Pago duplicado detectado.",
+    "cc_rejected_other_reason": "El pago fue rechazado por el banco. Intentá con otra tarjeta o elegí un medio de pago diferente.",
+}
+_DEFAULT_REJECTION_MSG = "El pago fue rechazado. Intentá con otra tarjeta o elegí otro medio de pago."
+
+
 class PagosService:
     @staticmethod
     def _get_sdk():
@@ -91,6 +107,12 @@ class PagosService:
         if status_code not in {200, 201}:
             detail = response_data.get("message") or response_data.get("error") or "No se pudo crear el pago"
             raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail)
+
+        mp_payment_status = response_data.get("status", "pending")
+        if mp_payment_status == "rejected":
+            status_detail = response_data.get("status_detail", "")
+            msg = _MP_REJECTION_MESSAGES.get(status_detail, _DEFAULT_REJECTION_MSG)
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
 
         pago = existing_pago or Pago(
             pedido_id=pedido.id,

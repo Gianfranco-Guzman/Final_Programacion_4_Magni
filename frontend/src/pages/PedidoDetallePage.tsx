@@ -4,6 +4,7 @@ import { hasAnyRole } from '@/auth/permissions'
 import { FeedbackAlert } from '@components/FeedbackAlert'
 import { Spinner } from '@components/Spinner'
 import { usePedido, useCancelarPedido } from '@hooks/usePedidos'
+import { useFormasPago } from '@hooks/useFormasPago'
 import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
 import { useAuthStore } from '@store/authStore'
 
@@ -31,16 +32,33 @@ const getEstadoLabel = (estado: string, tipoEntrega?: string): string => {
   return ESTADO_LABEL_BASE[estado] ?? estado
 }
 
+const TRANSFERENCIA_CBU = '0110599520000012345678'
+const TRANSFERENCIA_ALIAS = 'FOODSTORE.PAGOS'
+const TRANSFERENCIA_BANCO = 'Banco Nación Argentina'
+const TRANSFERENCIA_TITULAR = 'Food Store S.A.'
+
 export const PedidoDetallePage: React.FC = () => {
   const { pedidoId } = useParams<{ pedidoId: string }>()
   const pedidoIdNumber = Number(pedidoId)
   const navigate = useNavigate()
   const usuario = useAuthStore((state) => state.usuario)
   const esCajero = hasAnyRole(usuario?.roles, ['PEDIDOS']) && !hasAnyRole(usuario?.roles, ['ADMIN'])
+  const isCliente = hasAnyRole(usuario?.roles, ['CLIENT'])
   const rutaVolver = esCajero ? '/cajero' : '/pedidos'
+
   const { data: pedido, isLoading, error, refetch } = usePedido(pedidoIdNumber)
+  const { data: formasPago = [] } = useFormasPago()
   const cancelarMutation = useCancelarPedido()
   const [actionError, setActionError] = React.useState('')
+
+  const formaPago = React.useMemo(
+    () => formasPago.find((fp) => fp.id === pedido?.forma_pago_id),
+    [formasPago, pedido?.forma_pago_id],
+  )
+  const codigoPago = (formaPago?.codigo ?? formaPago?.nombre ?? '').toUpperCase()
+  const esTransferencia = codigoPago === 'TRANSFERENCIA'
+  const mostrarInstruccionesTransferencia =
+    esTransferencia && pedido?.estado_actual === 'PENDIENTE' && isCliente
 
   const handleWsMessage = React.useCallback((message: WsMessage) => {
     if (
@@ -102,6 +120,41 @@ export const PedidoDetallePage: React.FC = () => {
         ← {esCajero ? 'Volver al panel' : 'Volver a mis pedidos'}
       </button>
 
+      {mostrarInstruccionesTransferencia && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-6">
+          <h2 className="text-base font-semibold text-blue-800 mb-3">Realizá tu transferencia para confirmar el pedido</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
+            <div>
+              <p className="text-xs text-blue-600 font-medium uppercase mb-0.5">Banco</p>
+              <p className="text-gray-800 font-medium">{TRANSFERENCIA_BANCO}</p>
+            </div>
+            <div>
+              <p className="text-xs text-blue-600 font-medium uppercase mb-0.5">Titular</p>
+              <p className="text-gray-800 font-medium">{TRANSFERENCIA_TITULAR}</p>
+            </div>
+            <div>
+              <p className="text-xs text-blue-600 font-medium uppercase mb-0.5">CBU</p>
+              <p className="text-gray-800 font-mono font-medium">{TRANSFERENCIA_CBU}</p>
+            </div>
+            <div>
+              <p className="text-xs text-blue-600 font-medium uppercase mb-0.5">Alias</p>
+              <p className="text-gray-800 font-mono font-medium">{TRANSFERENCIA_ALIAS}</p>
+            </div>
+            <div>
+              <p className="text-xs text-blue-600 font-medium uppercase mb-0.5">Importe</p>
+              <p className="text-gray-800 font-bold text-lg">${pedido.total.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-blue-600 font-medium uppercase mb-0.5">Referencia</p>
+              <p className="text-gray-800 font-medium">Pedido #{pedido.id}</p>
+            </div>
+          </div>
+          <p className="text-xs text-blue-700">
+            Una vez que realices la transferencia, un cajero verificará el pago y confirmará tu pedido.
+          </p>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         {actionError && (
           <div className="mb-4">
@@ -126,11 +179,11 @@ export const PedidoDetallePage: React.FC = () => {
           </div>
           <div>
             <p className="font-medium text-gray-700">Entrega</p>
-            <p>{pedido.tipo_entrega === 'sucursal' ? 'Retiro en sucursal' : `Domicilio #${pedido.direccion_entrega_id}`}</p>
+            <p>{pedido.tipo_entrega === 'sucursal' ? 'Retiro en sucursal' : 'Entrega a domicilio'}</p>
           </div>
           <div>
-            <p className="font-medium text-gray-700">Forma de pago ID</p>
-            <p>#{pedido.forma_pago_id}</p>
+            <p className="font-medium text-gray-700">Forma de pago</p>
+            <p>{formaPago?.nombre ?? '—'}</p>
           </div>
         </div>
 

@@ -4,9 +4,10 @@ import { hasAnyRole } from '@/auth/permissions'
 import { FeedbackAlert } from '@components/FeedbackAlert'
 import { Spinner } from '@components/Spinner'
 import { usePedidos, useAvanzarEstado, useCancelarPedido } from '@hooks/usePedidos'
+import { useFormasPago } from '@hooks/useFormasPago'
 import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
 import { useAuthStore } from '@store/authStore'
-import { Pedido } from '@models/index'
+import { FormaPago, Pedido } from '@models/index'
 
 const ESTADOS_ACTIVOS = ['PENDIENTE', 'CONFIRMADO', 'EN_PREP', 'EN_CAMINO'] as const
 const ESTADOS_HISTORICOS = ['ENTREGADO', 'CANCELADO'] as const
@@ -67,43 +68,83 @@ const getNextLabel = (estado: string, tipoEntrega?: string): string | undefined 
 }
 
 
+const PAGO_BADGE: Record<string, string> = {
+  MERCADOPAGO: 'bg-blue-100 text-blue-700',
+  EFECTIVO: 'bg-green-100 text-green-700',
+  TRANSFERENCIA: 'bg-purple-100 text-purple-700',
+}
+
+const PAGO_HINT: Record<string, Record<string, string>> = {
+  PENDIENTE: {
+    MERCADOPAGO: 'Esperando pago online',
+    EFECTIVO: 'Cobrar al retirar',
+    TRANSFERENCIA: 'Verificar transferencia',
+  },
+}
+
 interface KanbanCardProps {
   pedido: Pedido
+  formaPago: FormaPago | undefined
   onAvanzar: (id: number) => void
   onCancelar: (id: number) => void
   isBusy: boolean
 }
 
-function KanbanCard({ pedido, onAvanzar, onCancelar, isBusy }: KanbanCardProps) {
+function KanbanCard({ pedido, formaPago, onAvanzar, onCancelar, isBusy }: KanbanCardProps) {
   const nextLabel = getNextLabel(pedido.estado_actual, pedido.tipo_entrega)
   const puedeCancel = ['PENDIENTE', 'CONFIRMADO'].includes(pedido.estado_actual)
+  const codigo = (formaPago?.codigo ?? formaPago?.nombre ?? '').toUpperCase()
+  const hint = PAGO_HINT[pedido.estado_actual]?.[codigo]
+  const isEsperandoMP = pedido.estado_actual === 'PENDIENTE' && codigo === 'MERCADOPAGO'
 
   return (
     <div className={`rounded-lg border border-t-4 bg-white shadow-sm p-3 ${ESTADO_COLORS[pedido.estado_actual] ?? 'border-t-gray-300 bg-white'}`}>
       <div className="flex items-center justify-between mb-1">
         <span className="font-bold text-gray-800 text-sm">#{pedido.id}</span>
-        <Link
-          to={`/pedidos/${pedido.id}`}
-          className="text-xs text-blue-600 hover:underline"
-        >
+        <Link to={`/pedidos/${pedido.id}`} className="text-xs text-blue-600 hover:underline">
           Ver
         </Link>
       </div>
+
       <p className="text-xs text-gray-500 mb-1">
         {new Date(pedido.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
       </p>
+
       <p className="text-base font-bold text-blue-700 mb-2">${pedido.total.toFixed(2)}</p>
+
+      <div className="flex gap-1 flex-wrap mb-2">
+        <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">
+          {pedido.tipo_entrega === 'sucursal' ? 'Retiro' : 'Domicilio'}
+        </span>
+        {formaPago && (
+          <span className={`text-xs rounded-full px-2 py-0.5 font-medium ${PAGO_BADGE[codigo] ?? 'bg-gray-100 text-gray-600'}`}>
+            {formaPago.nombre}
+          </span>
+        )}
+      </div>
+
+      {hint && (
+        <p className={`text-xs mb-2 font-medium ${isEsperandoMP ? 'text-amber-600' : 'text-gray-500'}`}>
+          {hint}
+        </p>
+      )}
+
       {pedido.notas && (
         <p className="text-xs text-gray-500 italic mb-2 line-clamp-2">"{pedido.notas}"</p>
       )}
+
       <div className="flex flex-col gap-1">
         {nextLabel && (
           <button
             onClick={() => onAvanzar(pedido.id)}
             disabled={isBusy}
-            className="w-full text-xs bg-blue-600 text-white rounded px-2 py-1.5 hover:bg-blue-700 disabled:opacity-50 font-medium"
+            className={`w-full text-xs rounded px-2 py-1.5 disabled:opacity-50 font-medium ${
+              isEsperandoMP
+                ? 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
           >
-            {nextLabel}
+            {isEsperandoMP ? 'Confirmar manualmente' : nextLabel}
           </button>
         )}
         {puedeCancel && (
@@ -126,6 +167,11 @@ export const CajeroPage: React.FC = () => {
   const historialRef = useRef<HTMLDivElement>(null)
   const usuario = useAuthStore((state) => state.usuario)
   const { data: pedidos = [], isLoading, error, refetch } = usePedidos({ size: 100 })
+  const { data: formasPago = [] } = useFormasPago()
+  const formasPagoMap = useMemo(
+    () => Object.fromEntries(formasPago.map((fp) => [fp.id, fp])),
+    [formasPago],
+  )
   const avanzarMutation = useAvanzarEstado()
   const cancelarMutation = useCancelarPedido()
 
@@ -252,6 +298,7 @@ export const CajeroPage: React.FC = () => {
                       <KanbanCard
                         key={pedido.id}
                         pedido={pedido}
+                        formaPago={formasPagoMap[pedido.forma_pago_id]}
                         onAvanzar={handleAvanzar}
                         onCancelar={handleCancelar}
                         isBusy={isBusy}

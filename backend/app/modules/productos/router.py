@@ -23,6 +23,7 @@ from app.modules.productos.schemas import (
     ProductoUpdate,
 )
 from app.modules.productos.service import ProductoService
+from app.modules.productos.realtime import ProductoRealtimePublisher
 
 router = APIRouter(tags=["productos"])
 
@@ -208,6 +209,7 @@ def crear_producto(
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.crear_producto(data, uow)
+    ProductoRealtimePublisher.queue_productos_updated(uow)
     return _build_producto_read(producto)
 
 
@@ -223,6 +225,7 @@ def actualizar_producto(
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.actualizar_producto(producto_id, data, uow)
+    ProductoRealtimePublisher.queue_productos_updated(uow)
     return _build_producto_read(producto)
 
 
@@ -242,6 +245,7 @@ def actualizar_imagenes_producto(
         ProductoUpdate(imagenes_url=data.imagenes_url),
         uow,
     )
+    ProductoRealtimePublisher.queue_productos_updated(uow)
     return _build_producto_read(producto)
 
 
@@ -256,6 +260,7 @@ def dar_de_baja(
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.dar_de_baja(producto_id, uow)
+    ProductoRealtimePublisher.queue_productos_updated(uow)
     return _build_producto_read(producto)
 
 
@@ -270,6 +275,7 @@ def reactivar_producto(
     _user: Usuario = Depends(require_role(["ADMIN"])),
 ):
     producto = ProductoService.reactivar_producto(producto_id, uow)
+    ProductoRealtimePublisher.queue_productos_updated(uow)
     return _build_producto_read(producto)
 
 
@@ -284,4 +290,5 @@ def alternar_disponibilidad(
     _user: Usuario = Depends(require_role(["ADMIN", "STOCK"])),
 ):
     producto = ProductoService.toggle_disponible(producto_id, uow)
+    ProductoRealtimePublisher.queue_productos_updated(uow)
     return _build_producto_read(producto)

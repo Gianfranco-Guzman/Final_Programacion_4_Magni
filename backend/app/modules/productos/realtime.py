@@ -4,15 +4,15 @@ from app.core.websocket import manager
 from app.db.unit_of_work import UnitOfWork
 
 
-class IngredienteRealtimePublisher:
+class ProductoRealtimePublisher:
 
     @staticmethod
     def queue_productos_updated(uow: UnitOfWork) -> None:
-        uow.add_after_commit(IngredienteRealtimePublisher._emit_from_request_thread)
+        uow.add_after_commit(ProductoRealtimePublisher._emit_from_request_thread)
 
     @staticmethod
     def _emit_from_request_thread() -> None:
-        from_thread.run(IngredienteRealtimePublisher.emit_productos_updated)
+        from_thread.run(ProductoRealtimePublisher.emit_productos_updated)
 
     @staticmethod
     async def emit_productos_updated() -> None:

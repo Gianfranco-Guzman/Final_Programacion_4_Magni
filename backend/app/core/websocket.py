@@ -34,6 +34,14 @@ class ConnectionManager:
     async def broadcast_to_roles(self, roles: Iterable[str], event: str, data: dict) -> None:
         await self._broadcast_rooms([f"role:{role}" for role in roles], event, data)
 
+    async def broadcast_all(self, event: str, data: dict) -> None:
+        delivered: set[WebSocket] = set()
+        for sockets in self.rooms.values():
+            for websocket in list(sockets):
+                if websocket not in delivered:
+                    await self.send_json(websocket, event, data)
+                    delivered.add(websocket)
+
     def _join_room(self, websocket: WebSocket, room_name: str) -> None:
         self.rooms.setdefault(room_name, set()).add(websocket)
         self.socket_rooms.setdefault(websocket, set()).add(room_name)

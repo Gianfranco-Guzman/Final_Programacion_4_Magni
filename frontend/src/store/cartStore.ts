@@ -16,6 +16,7 @@ interface CartState {
   increase: (productoId: number) => void
   decrease: (productoId: number) => void
   clearCart: () => void
+  syncProducts: (productos: Producto[]) => void
   openCart: () => void
   closeCart: () => void
   toggleCart: () => void
@@ -65,6 +66,17 @@ export const useCartStore = create<CartState>()(
         })),
 
       clearCart: () => set({ items: [] }),
+
+      syncProducts: (productos) =>
+        set((state) => {
+          const map = new Map(productos.map((p) => [p.id, p]))
+          return {
+            items: state.items.map((item) => ({
+              ...item,
+              producto: map.get(item.producto.id) ?? item.producto,
+            })),
+          }
+        }),
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),

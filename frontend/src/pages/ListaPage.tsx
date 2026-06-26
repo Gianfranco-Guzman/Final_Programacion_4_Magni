@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useProductos, useCategorias, useDarDeBaja, useReactivar, useExportarProductos } from '@hooks/useProductos'
+import { useWebSocket, WsMessage } from '@hooks/useWebSocket'
 import { useProductosContext } from '@context/ProductosContext'
 import { ProductGrid } from '@features/store/ProductGrid'
 import { ProductFilters } from '@features/store/ProductFilters'
@@ -16,9 +18,19 @@ export const ListaPage: React.FC = () => {
   const { state, dispatch } = useProductosContext()
   const usuario = useAuthStore((currentState) => currentState.usuario)
   const addItem = useCartStore((state) => state.addItem)
+  const syncProducts = useCartStore((state) => state.syncProducts)
   const showToast = useToastStore((state) => state.showToast)
   const isAdmin = hasAnyRole(usuario?.roles, ['ADMIN'])
   const isClient = hasAnyRole(usuario?.roles, ['CLIENT'])
+  const qc = useQueryClient()
+
+  const handleWsMessage = useCallback((msg: WsMessage) => {
+    if (msg.event === 'productos_updated') {
+      void qc.invalidateQueries({ queryKey: ['productos'] })
+    }
+  }, [qc])
+
+  useWebSocket({ enabled: true, onMessage: handleWsMessage })
 
   const handleAgregarAlCarrito = (producto: Producto) => {
     addItem(producto)
@@ -33,6 +45,12 @@ export const ListaPage: React.FC = () => {
     disponible: isAdmin ? (state.disponible ?? undefined) : true,
     incluir_baja: isAdmin ? state.showDeleted : false,
   })
+
+  useEffect(() => {
+    if (productosData?.items?.length) {
+      syncProducts(productosData.items)
+    }
+  }, [productosData, syncProducts])
 
   const { data: categorias = [] } = useCategorias()
   const darDeBajaMutation = useDarDeBaja()

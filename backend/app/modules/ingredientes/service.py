@@ -4,7 +4,7 @@ from decimal import Decimal
 from fastapi import HTTPException
 
 from app.modules.ingredientes.model import Ingrediente
-from app.db.enums import TipoMovimientoIngrediente, UnidadMedida
+from app.core.enums import TipoMovimientoIngrediente, UnidadMedida
 from app.db.unit_of_work import UnitOfWork
 from app.modules.ingredientes.schemas import IngredienteCreate, IngredienteUpdate, MovimientoEntradaRead, StockCargaInput, StockCorreccionInput
 from app.modules.ingredientes.stock_service import IngredienteStockService

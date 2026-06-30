@@ -5,8 +5,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.Config.config import get_settings
 from app.core.Config.dependencies import get_current_user, require_role
-from app.core.rate_limit import auth_rate_limiter
-from app.core.security import create_access_token
+from app.core.Security.rate_limit import auth_rate_limiter
+from app.core.Security.security import create_access_token
 from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.auth.schemas import (

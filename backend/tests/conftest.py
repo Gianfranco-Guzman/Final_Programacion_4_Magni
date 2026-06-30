@@ -8,7 +8,7 @@ from sqlalchemy import text
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.core.Config.config import get_settings
-from app.core.security import create_access_token, hash_password
+from app.core.Security.security import create_access_token, hash_password
 import app.modules.auth.model  # noqa: F401
 import app.modules.categorias.model  # noqa: F401
 import app.modules.direcciones.model  # noqa: F401
@@ -23,7 +23,7 @@ from app.modules.direcciones.model import DireccionEntrega
 from app.modules.formas_pago.model import FormaPago
 from app.modules.ingredientes.model import Ingrediente
 from app.modules.productos.model import Producto, ProductoDetalle
-from app.db.enums import TipoProducto, UnidadMedida
+from app.core.enums import TipoProducto, UnidadMedida
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.main import app
 

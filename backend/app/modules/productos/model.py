@@ -6,7 +6,7 @@ from sqlalchemy import Column, Enum as SAEnum, Numeric, Text
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlmodel import SQLModel, Field, Relationship
 
-from app.db.enums import TipoProducto, UnidadMedida
+from app.core.enums import TipoProducto, UnidadMedida
 
 
 class Producto(SQLModel, table=True):

@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 
 from app.modules.auth.model import Usuario
-from app.core.security import hash_password
+from app.core.Security.security import hash_password
 from app.db.unit_of_work import UnitOfWork
 from app.modules.admin.schemas import (
     AdminUserActionResponse,

@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, Request, WebSocket, WebSocketExcepti
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.Config.config import get_settings
-from app.core.security import decode_access_token
+from app.core.Security.security import decode_access_token
 from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 

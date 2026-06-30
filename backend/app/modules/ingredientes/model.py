@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy import Column, Enum as SAEnum, Numeric
 from sqlmodel import SQLModel, Field, Relationship
 
-from app.db.enums import TipoMovimientoIngrediente, UnidadMedida
+from app.core.enums import TipoMovimientoIngrediente, UnidadMedida
 
 
 class UnidadMedidaCatalogo(SQLModel, table=True):

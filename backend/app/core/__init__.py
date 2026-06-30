@@ -1,5 +1,5 @@
 from app.core.Config.config import Settings, get_settings
-from app.core.security import (
+from app.core.Security.security import (
     hash_password,
     verify_password,
     create_access_token,

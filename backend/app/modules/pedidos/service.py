@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import HTTPException
 
 from app.modules.ingredientes.model import Ingrediente
-from app.db.enums import TipoMovimientoIngrediente
+from app.core.enums import TipoMovimientoIngrediente
 from app.modules.pedidos.model import Pedido, DetallePedido, HistorialEstadoPedido
 from app.modules.productos.model import Producto
 from app.modules.auth.model import Usuario

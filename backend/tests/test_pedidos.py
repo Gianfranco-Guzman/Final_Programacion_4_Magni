@@ -77,7 +77,7 @@ def test_obtener_pedido_propio(client, cliente_headers, direccion, forma_pago_ef
 
 
 def test_obtener_pedido_ajeno_como_cliente(client, db, roles, cliente_headers, direccion, forma_pago_efectivo, producto):
-    from app.core.security import create_access_token
+    from app.core.Security.security import create_access_token
 
     otro = crear_usuario(db, "otro@test.com", "Otro12345!", "Otro", "Cliente", [roles["CLIENT"]])
     db.commit()

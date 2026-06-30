@@ -9,7 +9,6 @@ Sistema de gestion de pedidos de comida construido con:
 ## Integrantes
 
 - Gianfranco Guzman
-- Bruno Racconto
 - Alexander Filchel
 
 ## Video
@@ -29,10 +28,6 @@ Sistema de gestion de pedidos de comida construido con:
 - Rate limiting en auth (5 intentos / 15 min)
 - Tests de integracion backend (pytest)
 
-## Especificacion y roadmap
-
-- `TPI_PROG4_FOOD_STORE_v6.md` — especificacion tecnica objetivo
-- `CHANGES.md` — roadmap operativo de implementacion
 
 ## Requisitos
 
@@ -46,8 +41,6 @@ Sistema de gestion de pedidos de comida construido con:
 ```text
 .
 ├── README.md
-├── CHANGES.md
-├── TPI_PROG4_FOOD_STORE_v6.md
 ├── backend/
 │   ├── README.md
 │   ├── .env.example

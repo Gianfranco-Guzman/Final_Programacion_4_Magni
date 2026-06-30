@@ -276,12 +276,11 @@ export const CajeroPage: React.FC = () => {
       {isLoading ? (
         <div className="py-12"><Spinner /></div>
       ) : (
-        <div className="flex justify-center overflow-x-auto pb-4">
-          <div className="flex gap-5 min-w-max px-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
           {ESTADOS_ACTIVOS.map((estado) => {
             const lista = activos[estado] ?? []
             return (
-              <div key={estado} className="flex-shrink-0 w-72 flex flex-col gap-2">
+              <div key={estado} className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ESTADO_BADGE[estado]}`}>
                     {ESTADO_LABEL[estado]}
@@ -309,7 +308,6 @@ export const CajeroPage: React.FC = () => {
               </div>
             )
           })}
-          </div>
         </div>
       )}
 

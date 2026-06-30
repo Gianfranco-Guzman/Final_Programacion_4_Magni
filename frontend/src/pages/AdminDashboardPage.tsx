@@ -5,8 +5,6 @@ import {
   CartesianGrid,
   Cell,
   Legend,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -21,7 +19,6 @@ import {
   usePedidosPorEstadoStats,
   useProductosTopStats,
   useResumenStats,
-  useVentasStats,
 } from '@hooks/useEstadisticas'
 
 const COLORS = ['#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#dc2626', '#0891b2']
@@ -37,12 +34,11 @@ const StatCard = ({ title, value }: { title: string; value: string | number }) =
 
 export const AdminDashboardPage: React.FC = () => {
   const resumenQuery = useResumenStats()
-  const ventasQuery = useVentasStats('day')
   const topQuery = useProductosTopStats(8)
   const estadosQuery = usePedidosPorEstadoStats()
   const ingresosQuery = useIngresosFormaPagoStats()
 
-  const queries = [resumenQuery, ventasQuery, topQuery, estadosQuery, ingresosQuery]
+  const queries = [resumenQuery, topQuery, estadosQuery, ingresosQuery]
   const isLoading = queries.some((query) => query.isLoading)
   const error = queries.find((query) => query.error)?.error
 
@@ -59,7 +55,6 @@ export const AdminDashboardPage: React.FC = () => {
   }
 
   const resumen = resumenQuery.data
-  const ventas = ventasQuery.data ?? []
   const topProductos = topQuery.data ?? []
   const pedidosPorEstado = estadosQuery.data ?? []
   const ingresosPorFormaPago = ingresosQuery.data ?? []
@@ -77,44 +72,20 @@ export const AdminDashboardPage: React.FC = () => {
         <StatCard title="Ingresos mes actual" value={money(resumen?.ingresos_mes_actual ?? 0)} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Ventas por período</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={ventas}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="periodo" tickFormatter={(value) => new Date(value).toLocaleDateString('es-AR')} />
-                <YAxis />
-                <Tooltip
-                  formatter={(value: number, name: string) =>
-                    name === 'total_ventas' ? money(value) : value
-                  }
-                  labelFormatter={(value) => new Date(value).toLocaleDateString('es-AR')}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="total_ventas" name="Total ventas" stroke="#2563eb" strokeWidth={2} />
-                <Line type="monotone" dataKey="cantidad_pedidos" name="Cantidad pedidos" stroke="#16a34a" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Distribución por estado</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={pedidosPorEstado} dataKey="cantidad" nameKey="estado_codigo" outerRadius={110} label>
-                  {pedidosPorEstado.map((entry, index) => (
-                    <Cell key={entry.estado_codigo} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+      <div className="bg-white rounded-lg shadow-md p-5">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Distribución por estado</h2>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={pedidosPorEstado} dataKey="cantidad" nameKey="estado_codigo" outerRadius={110} label>
+                {pedidosPorEstado.map((entry, index) => (
+                  <Cell key={entry.estado_codigo} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

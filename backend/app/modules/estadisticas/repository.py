@@ -128,19 +128,17 @@ class EstadisticaRepository(BaseRepository):
         stmt = (
             select(
                 func.coalesce(FormaPago.codigo, FormaPago.nombre).label("forma_pago_codigo"),
-                func.coalesce(func.sum(Pago.transaction_amount), 0).label("total"),
-                func.count(Pago.id).label("cantidad"),
+                func.coalesce(func.sum(Pedido.total), 0).label("total"),
+                func.count(Pedido.id).label("cantidad"),
             )
             .join(Pedido, Pedido.forma_pago_id == FormaPago.id)
-            .join(Pago, Pago.pedido_id == Pedido.id)
             .where(
-                Pago.mp_status == "approved",
-                Pedido.estado_actual != "CANCELADO",
-                Pago.updated_at >= start,
-                Pago.updated_at <= end,
+                Pedido.estado_actual.notin_(["PENDIENTE", "CANCELADO"]),
+                Pedido.created_at >= start,
+                Pedido.created_at <= end,
             )
             .group_by(func.coalesce(FormaPago.codigo, FormaPago.nombre))
-            .order_by(func.sum(Pago.transaction_amount).desc())
+            .order_by(func.sum(Pedido.total).desc())
         )
         rows = self.session.exec(stmt).all()
         return [

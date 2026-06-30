@@ -462,14 +462,8 @@ export const AdminUsuariosPage: React.FC = () => {
               {usuarios.map((usuario) => (
                 <tr key={usuario.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{usuario.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {usuario.deleted_at ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Baja</span>
-                    ) : usuario.is_active ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Inactivo</span>
-                    )}
+                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-center ${usuario.deleted_at ? 'bg-red-100 text-red-800' : usuario.is_active ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    {usuario.deleted_at ? 'Baja' : usuario.is_active ? 'Activo' : 'Inactivo'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     <div className="font-semibold">{usuario.nombre} {usuario.apellido}</div>

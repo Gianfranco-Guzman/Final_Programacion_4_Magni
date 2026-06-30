@@ -188,50 +188,49 @@ export const AdminProductosPage: React.FC = () => {
              </div>
            </div>
 
-           <div className="bg-white rounded-lg shadow-md overflow-hidden">
-             <div className="overflow-x-auto">
-             <table className="min-w-full divide-y divide-gray-200">
-               <thead className="bg-gray-50">
-                 <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Imagen
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <table className="w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                       Imagen
+                     </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ID
                     </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     ID
-                   </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estado
+                     <th className="w-28 px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                       Estado
+                     </th>
+                    <th className="w-20 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Disponible
                     </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Disponible
-                   </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Producto
-                   </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Código
-                   </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tipo / stock
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Producto
                     </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Costo producción
-                   </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Precio de venta
-                   </th>
-                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Acciones
-                   </th>
-                 </tr>
-               </thead>
-               <tbody className="bg-white divide-y divide-gray-200">
-                 {productos.map((producto) => (
-                    <tr key={producto.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {getProductoImagenPrincipal(producto) ? (
-                          <img
-                            src={getCloudinaryProductImageUrl(getProductoImagenPrincipal(producto), 'f_auto,q_auto,c_fill,w_160,h_96') || ''}
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Código
+                    </th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                       Tipo / stock
+                     </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Costo producción
+                    </th>
+                    <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Precio de venta
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {productos.map((producto) => (
+                     <tr key={producto.id} className="hover:bg-gray-50">
+                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                         {getProductoImagenPrincipal(producto) ? (
+                           <img
+                             src={getCloudinaryProductImageUrl(getProductoImagenPrincipal(producto), 'f_auto,q_auto,c_fill,w_160,h_96') || ''}
                             alt={producto.nombre}
                             className="h-14 w-20 rounded object-cover border border-gray-200"
                           />
@@ -241,48 +240,32 @@ export const AdminProductosPage: React.FC = () => {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {producto.id}
+                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                         {producto.id}
+                       </td>
+                      <td className={`w-28 px-5 py-4 text-sm text-center font-medium ${producto.deleted_at ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                        {producto.deleted_at ? 'Baja' : 'Activo'}
                       </td>
-                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                       {producto.deleted_at ? (
-                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                           Baja
-                         </span>
-                       ) : (
-                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                           Activo
-                         </span>
-                       )}
-                     </td>
-                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                       {producto.disponible ? (
-                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                           Sí
-                         </span>
-                       ) : (
-                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                           No
-                         </span>
-                       )}
-                     </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        <div className="font-semibold">{producto.nombre}</div>
+                      <td className={`w-20 px-3 py-4 text-center text-sm font-medium ${producto.disponible ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                        {producto.disponible ? 'Sí' : 'No'}
                       </td>
-                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                       {producto.codigo}
-                     </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div>{producto.tipo_producto}</div>
-                        <div className="text-xs text-gray-400">Disp.: {getProductoStockDisponible(producto)}</div>
+                       <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                         <div className="font-semibold">{producto.nombre}</div>
+                       </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {producto.codigo}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        ${(Number(producto.precio_costo_calculado) || 0).toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {(() => {
-                          const margenEstilo = getMargenEstilo(producto)
-                          const precio = getProductoPrecioFinal(producto)
+                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                         <div>{producto.tipo_producto}</div>
+                         <div className="text-xs text-gray-400">Disp.: {getProductoStockDisponible(producto)}</div>
+                       </td>
+                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                         ${(Number(producto.precio_costo_calculado) || 0).toFixed(2)}
+                       </td>
+                       <td className="px-2 py-4 whitespace-nowrap text-sm">
+                         {(() => {
+                           const margenEstilo = getMargenEstilo(producto)
+                           const precio = getProductoPrecioFinal(producto)
                           return (
                             <div>
                               <div className={margenEstilo ? `font-medium ${margenEstilo.text}` : 'text-gray-700'}>
@@ -297,47 +280,48 @@ export const AdminProductosPage: React.FC = () => {
                           )
                         })()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {isAdmin && (
-                          <Link
-                            to={`/productos/editar/${producto.id}`}
-                            className="text-blue-600 hover:text-blue-900 mr-3"
-                          >
-                            Editar
-                          </Link>
-                        )}
-                        {canToggleDisponibilidad && (
-                          <button
-                            onClick={() => handleToggleDisponibilidad(producto)}
-                            className="text-amber-600 hover:text-amber-900 mr-3"
-                          >
-                            {producto.disponible ? 'No disponible' : 'Disponible'}
-                          </button>
-                        )}
-                        {isAdmin && (
-                          producto.deleted_at ? (
-                            <button
-                              onClick={() => handleReactivar(producto)}
-                              className="text-emerald-600 hover:text-emerald-900"
-                            >
-                              Reactivar
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleBaja(producto)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Dar de baja
-                            </button>
-                          )
-                        )}
-                      </td>
+                       <td className="px-4 py-4 text-sm font-medium">
+                         <div className="flex items-center justify-end gap-3 whitespace-nowrap">
+                           {isAdmin && (
+                             <Link
+                               to={`/productos/editar/${producto.id}`}
+                               className="text-blue-600 hover:text-blue-900"
+                             >
+                               Editar
+                             </Link>
+                           )}
+                           {canToggleDisponibilidad && (
+                             <button
+                               onClick={() => handleToggleDisponibilidad(producto)}
+                               className="text-amber-600 hover:text-amber-900"
+                             >
+                               {producto.disponible ? 'No disponible' : 'Disponible'}
+                             </button>
+                           )}
+                           {isAdmin && (
+                             producto.deleted_at ? (
+                               <button
+                                 onClick={() => handleReactivar(producto)}
+                                 className="text-emerald-600 hover:text-emerald-900"
+                               >
+                                 Reactivar
+                               </button>
+                             ) : (
+                               <button
+                                 onClick={() => handleBaja(producto)}
+                                 className="text-red-600 hover:text-red-900"
+                               >
+                                 Dar de baja
+                               </button>
+                             )
+                           )}
+                         </div>
+                       </td>
                    </tr>
                  ))}
                </tbody>
-             </table>
-             </div>
-           </div>
+              </table>
+            </div>
          </div>
        )}
     </div>

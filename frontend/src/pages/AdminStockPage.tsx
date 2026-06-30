@@ -214,7 +214,6 @@ export const AdminStockPage: React.FC = () => {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 mb-1">Gestión de stock</h1>
-          <p className="text-sm text-gray-500">Ingredientes ordenados por urgencia. Los críticos aparecen primero.</p>
         </div>
         <button
           onClick={() => historialRef.current?.scrollIntoView({ behavior: 'smooth' })}
@@ -266,12 +265,8 @@ export const AdminStockPage: React.FC = () => {
                     <td className="px-6 py-3 text-sm font-medium text-gray-900">{ing.nombre}</td>
                     <td className="px-6 py-3 text-sm text-gray-700">{formatStock(ing)}</td>
                     <td className="px-6 py-3 text-sm text-gray-500">{formatMinimo(ing)}</td>
-                    <td className="px-6 py-3">
-                      {nivel !== 'ok' && (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${estilos.badge}`}>
-                          {estilos.label}
-                        </span>
-                      )}
+                    <td className={`px-6 py-3 text-sm font-medium text-center ${estilos.badge}`}>
+                      {estilos.label}
                     </td>
                     <td className="px-6 py-3 text-right">
                       {!abierto && (

@@ -281,8 +281,8 @@ export const IngredientesPage: React.FC = () => {
                 const stockBajo = Number(ingrediente.stock_actual) <= Number(ingrediente.stock_minimo)
                 return (
                   <tr key={ingrediente.id} className={stockBajo ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-gray-50'}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {ingrediente.deleted_at ? <span className="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">Baja</span> : <span className="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Activo</span>}
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-center ${ingrediente.deleted_at ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                      {ingrediente.deleted_at ? 'Baja' : 'Activo'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       <div className="font-medium">{ingrediente.nombre}</div>

@@ -68,7 +68,6 @@ export const AdminDashboardPage: React.FC = () => {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-gray-800">Dashboard admin</h1>
-        <p className="text-sm text-gray-500 mt-1">Métricas operativas y de ventas del negocio.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

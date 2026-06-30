@@ -304,12 +304,8 @@ export function CategoriasPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {parent?.nombre || 'Raíz'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {categoria.deleted_at ? (
-                          <span className="text-red-700 font-medium">Baja</span>
-                        ) : (
-                          <span className="text-green-700 font-medium">Activa</span>
-                        )}
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-center ${categoria.deleted_at ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                        {categoria.deleted_at ? 'Baja' : 'Activa'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button

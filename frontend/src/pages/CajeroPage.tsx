@@ -250,7 +250,6 @@ export const CajeroPage: React.FC = () => {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Panel cajero</h1>
-          <p className="text-gray-500 text-sm mt-1">{pedidos.length} pedido(s) cargados</p>
         </div>
         <div className="flex gap-2 shrink-0">
           <button
@@ -277,11 +276,12 @@ export const CajeroPage: React.FC = () => {
       {isLoading ? (
         <div className="py-12"><Spinner /></div>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-4">
+        <div className="flex justify-center overflow-x-auto pb-4">
+          <div className="flex gap-5 min-w-max px-2">
           {ESTADOS_ACTIVOS.map((estado) => {
             const lista = activos[estado] ?? []
             return (
-              <div key={estado} className="flex-shrink-0 w-52 flex flex-col gap-2">
+              <div key={estado} className="flex-shrink-0 w-72 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ESTADO_BADGE[estado]}`}>
                     {ESTADO_LABEL[estado]}
@@ -309,6 +309,7 @@ export const CajeroPage: React.FC = () => {
               </div>
             )
           })}
+          </div>
         </div>
       )}
 
@@ -337,10 +338,8 @@ export const CajeroPage: React.FC = () => {
                       {new Date(pedido.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
                     </td>
                     <td className="px-5 py-3 text-sm font-semibold text-gray-800">${pedido.total.toFixed(2)}</td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ESTADO_BADGE[pedido.estado_actual]}`}>
-                        {getEstadoLabel(pedido.estado_actual, pedido.tipo_entrega)}
-                      </span>
+                    <td className={`px-5 py-3 text-sm text-center font-semibold ${ESTADO_BADGE[pedido.estado_actual]}`}>
+                      {getEstadoLabel(pedido.estado_actual, pedido.tipo_entrega)}
                     </td>
                     <td className={`px-5 py-3 text-xs max-w-xs truncate ${ESTADO_FILA_HISTORICO[pedido.estado_actual] ?? 'text-gray-500'}`}>
                       {pedido.notas ?? '—'}

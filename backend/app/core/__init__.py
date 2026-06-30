@@ -1,4 +1,4 @@
-from app.core.config import Settings, get_settings
+from app.core.Config.config import Settings, get_settings
 from app.core.security import (
     hash_password,
     verify_password,

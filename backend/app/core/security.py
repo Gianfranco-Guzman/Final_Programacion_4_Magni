@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import jwt
 import bcrypt
-from app.core.config import get_settings
+from app.core.Config.config import get_settings
 
 """Este modulo tiene funciones para el manejo de seguridad, incluyendo hashing de contraseñas y generación/decodificación de tokens JWT."""
 

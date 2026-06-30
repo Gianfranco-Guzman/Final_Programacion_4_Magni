@@ -1,6 +1,6 @@
 from fastapi import HTTPException, UploadFile, status
 
-from app.core.config import get_settings
+from app.core.Config.config import get_settings
 
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}

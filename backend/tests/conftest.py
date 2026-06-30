@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.core.config import get_settings
+from app.core.Config.config import get_settings
 from app.core.security import create_access_token, hash_password
 import app.modules.auth.model  # noqa: F401
 import app.modules.categorias.model  # noqa: F401

@@ -1,6 +1,6 @@
 from sqlmodel import select
 
-from app.core.base_repository import BaseRepository
+from app.db.base_repository import BaseRepository
 from app.modules.pagos.model import Pago
 
 

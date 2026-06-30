@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Response, UploadFile, status
 
-from app.core.dependencies import require_role
+from app.core.Config.dependencies import require_role
 from app.modules.auth.model import Usuario
 from app.modules.uploads.schemas import CloudinaryResponse
 from app.modules.uploads.service import UploadsService

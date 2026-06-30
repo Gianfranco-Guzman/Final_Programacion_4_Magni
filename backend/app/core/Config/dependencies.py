@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request, WebSocket, WebSocketException, status
 from fastapi.security import OAuth2PasswordBearer
 
-from app.core.config import get_settings
+from app.core.Config.config import get_settings
 from app.core.security import decode_access_token
 from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow

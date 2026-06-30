@@ -4,7 +4,7 @@ from decimal import Decimal
 from sqlalchemy import func
 from sqlmodel import select
 
-from app.core.base_repository import BaseRepository
+from app.db.base_repository import BaseRepository
 from app.modules.formas_pago.model import FormaPago
 from app.modules.pagos.model import Pago
 from app.modules.pedidos.model import DetallePedido, Pedido

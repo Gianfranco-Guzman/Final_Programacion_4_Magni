@@ -1,7 +1,7 @@
 from anyio import from_thread
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.core.dependencies import require_role
+from app.core.Config.dependencies import require_role
 from app.core.websocket import manager
 from app.modules.auth.model import Usuario
 from app.modules.categorias.model import Categoria

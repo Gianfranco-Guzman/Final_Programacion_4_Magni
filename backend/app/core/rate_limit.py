@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
 
-from app.core.config import get_settings
+from app.core.Config.config import get_settings
 
 
 class AuthRateLimiter:

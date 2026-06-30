@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request, status
 
-from app.core.dependencies import get_current_user
+from app.core.Config.dependencies import get_current_user
 from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.pagos.schemas import PagoCreateRequest, PagoResponse, WebhookResponse

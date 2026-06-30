@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy.orm import selectinload
 from sqlmodel import col, select
 
-from app.core.base_repository import BaseRepository
+from app.db.base_repository import BaseRepository
 from app.modules.pedidos.model import DetallePedido, HistorialEstadoPedido, Pedido
 
 

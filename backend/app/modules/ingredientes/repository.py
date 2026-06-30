@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from sqlmodel import select, func
 
-from app.core.base_repository import BaseRepository
+from app.db.base_repository import BaseRepository
 from app.db.enums import TipoMovimientoIngrediente
 from app.modules.ingredientes.model import Ingrediente, MovimientoStockIngrediente
 from app.modules.productos.model import ProductoDetalle

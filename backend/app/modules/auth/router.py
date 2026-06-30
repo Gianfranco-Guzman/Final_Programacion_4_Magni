@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.config import get_settings
-from app.core.dependencies import get_current_user, require_role
+from app.core.Config.config import get_settings
+from app.core.Config.dependencies import get_current_user, require_role
 from app.core.rate_limit import auth_rate_limiter
 from app.core.security import create_access_token
 from app.modules.auth.model import Usuario

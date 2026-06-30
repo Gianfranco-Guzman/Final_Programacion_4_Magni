@@ -2,7 +2,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import get_settings
+from app.core.Config.config import get_settings
 from app.db.base import create_all_tables
 from app.db.seed import populate_seed_data
 from app.modules.auth.router import router as auth_router

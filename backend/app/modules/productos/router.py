@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 
-from app.core.dependencies import (
+from app.core.Config.dependencies import (
     get_optional_current_user,
     require_role,
     user_has_any_role,

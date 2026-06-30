@@ -11,8 +11,15 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-from app.core.config import get_settings
-from app.db import models  # noqa: F401
+from app.core.Config.config import get_settings
+from app.modules.auth import model as auth_models  # noqa: F401
+from app.modules.categorias import model as categorias_models  # noqa: F401
+from app.modules.direcciones import model as direcciones_models  # noqa: F401
+from app.modules.formas_pago import model as formas_pago_models  # noqa: F401
+from app.modules.ingredientes import model as ingredientes_models  # noqa: F401
+from app.modules.pagos import model as pagos_models  # noqa: F401
+from app.modules.pedidos import model as pedidos_models  # noqa: F401
+from app.modules.productos import model as productos_models  # noqa: F401
 
 config = context.config
 

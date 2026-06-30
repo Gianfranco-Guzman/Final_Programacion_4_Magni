@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException, status
 
-from app.core.config import get_settings
+from app.core.Config.config import get_settings
 from app.modules.pagos.model import Pago
 from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork

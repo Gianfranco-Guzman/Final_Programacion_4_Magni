@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.dependencies import require_role
+from app.core.Config.dependencies import require_role
 from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.ingredientes.schemas import (

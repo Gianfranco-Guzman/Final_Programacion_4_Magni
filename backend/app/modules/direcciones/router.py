@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
-from app.core.dependencies import get_current_user
+from app.core.Config.dependencies import get_current_user
 from app.modules.auth.model import Usuario
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.direcciones.schemas import (

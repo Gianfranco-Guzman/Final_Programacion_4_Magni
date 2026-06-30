@@ -101,9 +101,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ producto, onDarDeBaja,
               <p className="text-xs text-gray-400 line-through mb-1">${precioBase.toFixed(2)}</p>
             )}
             {isAdminView && <p className="text-xs text-gray-500 mb-1">{producto.tipo_producto}</p>}
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${isOperationallyAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              {isOperationallyAvailable ? 'Disponible' : 'Sin stock'}
-            </span>
+            {isAdminView && (
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${isOperationallyAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                {isOperationallyAvailable ? 'Disponible' : 'Sin stock'}
+              </span>
+            )}
             {isAdminView && <p className="text-xs text-gray-400 mt-1">Stock calculado: {stockDisponible}</p>}
             {isAdminView && !producto.disponible && (
               <p className="text-xs text-amber-600 font-medium mt-1">
